@@ -4,6 +4,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 		editable: false,
 		content: function (config, pack) {
 			//非常感谢@柚子丶奶茶丶猫以及面具 提供的《云将》相关部分AI优化的修复代码
+			//bug修复
 			if (lib.card.huogong) lib.card.huogong.content=function(){
 				"step 0"
 				if(target.countCards('h')==0){
@@ -108,6 +109,39 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			if (lib.skill.channi&&lib.skill.channi.subSkill&&lib.skill.channi.subSkill.backup) lib.skill.channi.subSkill.backup.ai1=(card)=>{
 				if(get.name(card)==='sha') return 0;
 				return 5.5-get.value(card);
+			};
+			if (lib.skill.dcenyu) lib.skill.dcenyu.ai={
+				effect:{
+					target:(card,player,target)=>{
+						if(player===target) return;
+						if(game.hasPlayer2(current=>{
+							return current.hasHistory('useCard',evt=>evt.card.name==card.name&&evt.targets&&evt.targets.includes(target));
+						})&&(card.name=='sha'||get.type(card)=='trick')) return 'zeroplayertarget';
+					}
+				}
+			};
+			if (lib.skill.olchuming) lib.skill.olchuming.check=(event,player)=>{
+				if(event.source===event.player) return false;
+				if(!event.card||!event.cards||!event.cards.length) return true;
+				let target=event[player===event.source?'player':'source'];
+				return target&&target.isIn();
+			};
+			if (lib.skill.lingce) lib.skill.lingce.filter=function(event,player){
+				if(!event.card.isCard||!event.cards||event.cards.length!==1) return false;
+				return event.card.name=='qizhengxiangsheng'||get.zhinangs().includes(event.card.name)||player.getStorage('dinghan').includes(event.card.name);
+			};
+			if (lib.skill.manyi) lib.skill.manyi.ai={
+				effect:{
+					target:function(card,player,target){
+						if(card.name=='nanman') return 'zeroplayertarget';
+					},
+				},
+			};
+			if (lib.skill.gzzhengrong) lib.skill.gzzhengrong.check=function(event,player){
+				return !event.player.hasSkillTag('filterDamage',null,{
+					player:event.source,
+					card:event.card,
+				})&&get.damageEffect(event.player,event.source,player,_status.event.player)>0;
 			};
 
 			/*全局技*/
@@ -217,7 +251,6 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 										delete player._aiyh_order_temp;
 										return 0;
 									}
-									num /= 5;
 								}
 							}
 							delete player._aiyh_order_temp;
@@ -1324,9 +1357,9 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			}
 			if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 				let str = [
-					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>3</font>日</center>',
-					'◆新增界吕蒙〖勤学〗、界郭皇后〖殚心〗前瞻ai',
-					'◆移除所有过时彩蛋'
+					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>7</font>日</center>',
+					'◆修复本体花鬘〖蛮嗣〗、国战毌丘俭〖征荣〗ai',
+					'◆鼓励神司马懿ai不使用价值较低的牌'
 				];
 				let ul = document.createElement('ul');
 				ul.style.textAlign = 'left';
@@ -2321,6 +2354,56 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				};
 				//nsp
 				if (lib.config.extension_AI优化_dev) {
+					if (lib.skill.renjie2&&game.aiyh_skillOptEnabled('sbaiyin')) lib.skill.renjie2.mod={
+						aiOrder:(player,card,num)=>{
+							if(num<=0||typeof card!=='object'||!player.isPhaseUsing()) return 0;
+							if(player.awakenedSkills.includes('sbaiyin')){
+								if(player.countMark('renjie')<3&&player.getUseValue(card)<Math.min(1.8,0.18*player.hp*player.hp)) return 0;
+							}
+							else if(player.countMark('renjie')<4&&player.getUseValue(card)<Math.min(4,player.hp*player.hp/4)) return 0;
+						}
+					};
+					if (lib.skill.jsrgfenjian&&game.aiyh_skillOptEnabled('jsrgfenjian')){
+						if(lib.skill.jsrgfenjian.chooseButton) lib.skill.jsrgfenjian.chooseButton.check=function(button){
+							if(button.link[2]==='tao'){
+								let dying=_status.event.getParent(2).dying;
+								if(dying) return get.effect(dying,{
+									name:'tao',
+									isCard:true,
+									storage:{jsrgfenjian:true},
+								},_status.event.player);
+							}
+							return _status.event.player.getUseValue({
+								name:button.link[2],
+								isCard:true,
+								storage:{jsrgfenjian:true},
+							});
+						};
+						if(lib.skill.jsrgfenjian.ai) lib.skill.jsrgfenjian.ai.result={
+							player:(player)=>{
+								if(_status.event.dying) return 2*get.sgnAttitude(player,_status.event.dying);
+								return 1;
+							}
+						};
+					}
+					if (lib.skill.clanhuanghan&&game.aiyh_skillOptEnabled('clanhuanghan')){
+						lib.skill.clanhuanghan.check=(event,player)=>{
+							let num=get.cardNameLength(event.card)-player.getDamagedHp();
+							if(num>=0) return true;
+							if(num<-1) return false;
+							if(player.hasSkill('clanbaozu',null,false,false)&&player.awakenedSkills.includes('clanbaozu')&&player.getHistory('useSkill',evt=>{
+								return evt.skill=='clanhuanghan';
+							}).length) return true;
+							return false;
+						};
+						if(lib.skill.clanhuanghan.ai) lib.skill.clanhuanghan.ai.effect={
+							target:(card,player,target)=>{
+								if(!get.tag(card,'damage')||player.hasSkillTag('jueqing',false,target)) return;
+								let num=get.cardNameLength(card)-target.getDamagedHp();
+								if(num>0) return [1,num+0.1];
+							}
+						};
+					}
 					if (lib.skill.redanxin&&lib.skill.redanxin.ai&&game.aiyh_skillOptEnabled('redanxin')) lib.skill.redanxin.ai.effect={
 						target:(card,player,target)=>{
 							if(!get.tag(card,'damage')) return;
@@ -3144,6 +3227,50 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					}
 				};
 				if (lib.config.extension_AI优化_dev) {
+					if (lib.card.gz_haolingtianxia) lib.card.gz_haolingtianxia.content=function(){
+						'step 0'
+						event.list=game.filterPlayer(function(current){
+							return current!=target;
+						}).sortBySeat();
+						'step 1'
+						if(!target.isIn()){
+							event.finish();
+							return;
+						}
+						var current=event.list.shift();
+						if(!current||!current.isIn()||current.hasSkill('diaohulishan')){
+							if(event.list.length) event.redo();
+							else event.finish();
+							return;
+						}
+						event.current=current;
+						if(current.identity!='wei'){
+							current.chooseToDiscard('he','弃置一张牌，并视为对'+get.translation(target)+'使用一张【杀】，或点击「取消」弃置其一张牌').set('ai',function(card){
+								if(!_status.event.goon) return 0;
+								return 5-get.value(card);
+							}).set('goon',get.effect(target,{name:'guohe'},current)<get.effect(current,{name:'guohe'},current)+get.effect(target,{name:'sha'},current));
+						}
+						else{
+							current.chooseBool('是否视为对'+get.translation(target)+'使用一张【杀】？','若点击「取消」则改为获得其一张牌').set('ai',function(){
+								var player=_status.event.player,target=_status.event.getParent().target;
+								return get.effect(target,{name:'shunshou'},player)<=get.effect(target,{name:'sha'},player);
+							});
+						}
+						'step 2'
+						if(!target.isIn()){
+							event.finish();
+							return;
+						}
+						var current=event.current;
+						if(result.bool){
+							if(current.isIn()&&current.canUse({name:'sha',isCard:true},target,false)) current.useCard({name:'sha',isCard:true},target,false);
+						}
+						else{
+							current[current.identity=='wei'?'gainPlayerCard':'discardPlayerCard'](target,true,'he').set('boolline',true);
+						}
+						if(event.list.length) event.goto(1);
+					};
+					if (lib.card.tiesuo&&lib.card.tiesuo.ai&&lib.card.tiesuo.ai.basic) lib.card.tiesuo.ai.basic.order=7.3;
 					if (lib.card.jiu) lib.card.jiu.ai = {
 						basic: {
 							useful: (card, i) => {
@@ -3228,7 +3355,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 							}, 0);
 						},
 						target: (player, target, card) => {
-							let targets = get.copy(ui.selected.targets);
+							let targets = [].concat(ui.selected.targets);
 							if (_status.event.preTarget) targets.add(_status.event.preTarget);
 							if (targets.length) {
 								let preTarget = targets.lastItem, pre = _status.event.getTempCache('jiedao_result', preTarget.playerid);
@@ -3283,13 +3410,12 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 									if(target.hasSkillTag('noShan',null,event)) return false;
 									if(target.hasSkillTag('useShan',null,event)) return true;
 									if(event.baseDamage+event.extraDamage<=0 || get.attitude(target,player._trueMe||player)>0) return false;
-									if(event.shanRequired>1&&target.mayHaveShan(target,'use',null,'count')<event.shanRequired-(event.shanIgnored||0)) return false;
+									if(event.shanRequired>1&&lib.card.sha.ai.mayHaveShan(target,target,null,'count')<event.shanRequired-(event.shanIgnored||0)) return false;
 									if(event.baseDamage+event.extraDamage>=target.hp+
 										((player.hasSkillTag('jueqing',false,target)||target.hasSkill('gangzhi'))?target.hujia:0)) return true;
-									if(get.damageEffect(target,player,target,get.nature(event.card))>=0) return false;
+									if(!game.hasNature(event.card, 'ice')&&get.damageEffect(target,player,target,get.nature(event.card))>=0) return false;
 									return true;
 								})());
-								//next.autochoose=lib.filter.autoRespondShan;
 							}
 							"step 2"
 							if (!result || !result.bool || !result.result || result.result != 'shaned') event.trigger('shaHit');
@@ -3307,10 +3433,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 							}
 							"step 3"
 							if ((!result || !result.bool || !result.result || result.result != 'shaned') && !event.unhurt) {
-								/*if (target.hasCard(()=>true,'hs')&&get.damageEffect(target,player,target)<0){
-									//target.addSkill('sha_noshan');
-									target.addGaintag(target.getCards('hs'),'sha_noshan');
-								}*/
+								if (target.hasCard(()=>true,'hs')&&get.damageEffect(target,player,target)<0) target.addGaintag(target.getCards('hs'),'sha_noshan');
 								target.damage(get.nature(event.card));
 								event.result = { bool: true }
 								event.trigger('shaDamage');
@@ -3350,6 +3473,19 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 							}
 						};
 						if(lib.card.sha.ai){
+							/*lib.card.sha.ai.order=function(item,player){
+								let res=3;
+								if(player.hasSkillTag('presha',true,null,true)) res+=7;
+								if(typeof item!=='object') return res+0.05;
+								let effect=player.getUseValue(item,null,true),val;
+								player.getCards('hs','sha').forEach(i=>{
+									if(effect===false||i===item||item.cards&&item.cards.includes(i)) return;
+									val=player.getUseValue(i,null,true);
+									if(effect<val) effect=false;
+								});
+								if(effect===false) return res;
+								return res+0.15;
+							};*/
 							lib.card.sha.ai.order=function(item,player){
 								if(player.hasSkillTag('presha',true,null,true)) return 10;
 								if(typeof item==='object'&&game.hasNature(item,'linked')){
@@ -3389,7 +3525,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 									if(!player.hasSkillTag('directHit_ai',true,{
 										target:target,
 										card:card,
-									},true)) odds-=0.7*target.mayHaveShan(player,'use',null/*target.getCards(i=>i.hasGaintag('sha_noshan'))*/,'odds');
+									},true)) odds-=0.7*lib.card.sha.ai.mayHaveShan(player,target,target.getCards(i=>i.hasGaintag('sha_noshan')),'odds');
 									_status.event.putTempCache('sha_result','eff',{
 										target:target,
 										num:num,
@@ -3399,7 +3535,39 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 									return odds*eff;
 								},
 							};
-							//lib.translate.sha_noshan='invisible';
+							lib.card.sha.ai.mayHaveShan=(viewer,player,ignore,rvt)=>{
+								let count = 0;
+								if ((player.hp > 2 || !player.isZhu && player.hp > 1) && player.hasSkillTag('respondShan', true, 'use', true)) {
+									if (rvt === 'count') count++;
+									else return 1;
+								}
+								if (get.itemtype(viewer) !== 'player') viewer = _status.event.player;
+								let cards, selected = [];
+								if (get.itemtype(ignore) === 'cards') selected.addArray(ignore);
+								if (player === viewer || get.itemtype(viewer) == 'player') cards = player.getKnownCards(viewer);
+								else cards = player.getShownCards();
+								cards = cards.filter(card => {
+									if (selected.includes(card)) return false;
+									let name = get.name(card, player);
+									if (name === 'shan' || name === 'hufu') return lib.filter.cardEnabled(card, player, 'forceEnable');
+									return false;
+								});
+								count += cards.length;
+								if (count && rvt !== 'count') return true;
+								let hs = player.getCards('hs').filter(i => !cards.includes(i)).length;
+								if (!hs) {
+									if (rvt === 'count') return count;
+									return 0;
+								}
+								if (rvt === 'count') {
+									if (player.isPhaseUsing()) return count + hs / 6;
+									return count + hs / 3.5;
+								}
+								if (player.isPhaseUsing()) count += -1.5 * Math.log(1 - hs / 10);
+								else count += 2 * hs / (5 + hs);
+								return Math.min(1, count);
+							};
+							lib.translate.sha_noshan='invisible';
 						}
 					}
 					if(lib.card.gz_wenheluanwu) lib.card.gz_wenheluanwu.content=function(){
@@ -4022,7 +4190,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			},
 			dev: {
 				name: '测试&前瞻AI开关',
-				intro: '目前包括以下前瞻AI优化：<br>【杀】<br>【酒】<br>【借刀杀人】<br>【文和乱武】<br>【太平要术】<br>【出其不意】<br>OL文钦〖犷骜〗<br>哪吒〖三头〗〖法器〗<br>转韩遂〖逆乱〗<br>神关羽、TW神关羽〖武魂〗<br>蔡文姬、界蔡文姬〖断肠〗<br>许贡〖业仇〗<br>曹髦〖决讨〗<br>张华〖弼昏〗<br>新潘凤〖狂斧〗<br>十周年滕芳兰〖落宠〗<br>起刘备〖积善〗〖振鞘〗<br>神马超、S特神马超〖狩骊〗〖横骛〗<br>司马师〖泰然〗<br>王濬〖长驱〗<br>界吕蒙〖勤学〗<br>界郭皇后〖殚心〗',
+				intro: '目前包括以下前瞻AI优化：<br>【杀】<br>【酒】<br>【借刀杀人】<br>【铁索连环】<br>【文和乱武】<br>【号令天下】<br>【太平要术】<br>【出其不意】<br>OL文钦〖犷骜〗<br>哪吒〖三头〗〖法器〗<br>转韩遂〖逆乱〗<br>神关羽、TW神关羽〖武魂〗<br>蔡文姬、界蔡文姬〖断肠〗<br>许贡〖业仇〗<br>曹髦〖决讨〗<br>张华〖弼昏〗<br>新潘凤〖狂斧〗<br>十周年滕芳兰〖落宠〗<br>起刘备〖积善〗〖振鞘〗<br>神马超、S特神马超〖狩骊〗〖横骛〗<br>司马师〖泰然〗<br>王濬〖长驱〗<br>界吕蒙〖勤学〗<br>界郭皇后〖殚心〗<br>族钟毓〖惶汗〗<br>转夏侯荣〖奋剑〗',
 				init: true
 			},
 			bd3: {
@@ -5083,11 +5251,11 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			intro: `<font color=#00FFFF>建立者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157<br><font color=#00FFFF>现更者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157
 				<br><font color=#00FFFF>特别鸣谢</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp寰宇星城(插件功能)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp༺ཌༀཉི梦ღ沫ღ惜༃ༀ(工具人)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp萌新（转型中）(本体优化)
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp😁呲牙哥！(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp读书人(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp幸运女神在微笑(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspAurora(代码参考)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp蓝色火鸡(代码提供)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp呓如惑(测试反馈)
-				<br><font color=#00FFFF>当前版本号</font>：<font color=#FFFF00>1.3.5.1</font><br><font color=#00FFFF>支持本体最低版本号</font>：<font color=#FFFF00>1.10.4</font><br><font color=#00FFFF>建议本体最低版本号</font>：<font color=#FFFF00>1.10.5</font><br><font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00> 3</font>日<font color=fire>10</font>时<br>`,
+				<br><font color=#00FFFF>当前版本号</font>：<font color=#FFFF00>1.3.5.3</font><br><font color=#00FFFF>支持本体最低版本号</font>：<font color=#FFFF00>1.10.4</font><br><font color=#00FFFF>建议本体最低版本号</font>：<font color=#FFFF00>1.10.5</font><br><font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00> 7</font>日<font color=fire>21</font>时<br>`,
 			author: '',
 			diskURL: '',
 			forumURL: '',
-			version: '1.3.5.1'
+			version: '1.3.5.3'
 		},
 		files: { character: [], card: [], skill: [] }
 	}
