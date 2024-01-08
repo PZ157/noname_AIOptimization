@@ -3510,8 +3510,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 									let eff=-1.5,odds=1.35,num=1;
 									if(isLink){
 										let cache=_status.event.getTempCache('sha_result','eff');
-										if(typeof cache!=='object') return eff;
-										if(cache.odds<1.35&&cache.target.hp>cache.num&&get.attitude(player,cache.target)>0) return 1.35*cache.eff;
+										if(typeof cache!=='object'||cache.card!==get.translation(card)) return eff;
+										if(cache.odds<1.35&&cache.bool) return 1.35*cache.eff;
 										return cache.odds*cache.eff;
 									}
 									if(player.hasSkill('jiu')||player.hasSkillTag('damageBonus',true,{
@@ -3534,8 +3534,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 										card:card,
 									},true)) odds-=0.7*lib.card.sha.ai.mayHaveShan(player,target,target.getCards(i=>i.hasGaintag('sha_noshan')),'odds');
 									_status.event.putTempCache('sha_result','eff',{
-										target:target,
-										num:num,
+										bool:target.hp>num&&get.attitude(player,target)>0,
+										card:get.translation(card),
 										eff:eff,
 										odds:odds
 									});
