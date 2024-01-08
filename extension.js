@@ -1364,9 +1364,9 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 				let str = [
 					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>8</font>日</center>',
-					'◆修复本体花鬘〖蛮嗣〗、国战毌丘俭〖征荣〗ai',
+					'◆修复本体花鬘〖蛮嗣〗、国战毌丘俭〖征荣〗、神张辽〖夺锐〗ai',
 					'◆鼓励神司马懿ai不使用价值较低的牌',
-					'◆修复神张辽〖夺锐〗ai'
+					'◆王异、界王异〖贞烈〗ai增加被强命检测'
 				];
 				let ul = document.createElement('ul');
 				ul.style.textAlign = 'left';
@@ -2361,6 +2361,27 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				};
 				//nsp
 				if (lib.config.extension_AI优化_dev) {
+					if (lib.skill.zhenlie&&game.aiyh_skillOptEnabled('zhenlie', '优化〖贞烈〗ai', 'zhenlie_check')) lib.skill.zhenlie.check=function(event,player){
+						if(event.getParent().excluded.includes(player)) return false;
+						if(get.attitude(player,event.player)>0||player.hp<2&&!get.tag(event.card,'damage')) return false;
+						let evt=event.getParent(),
+							directHit=evt.nowuxie&&get.type(event.card,'trick')==='trick'||evt.directHit&&evt.directHit.includes(player)||evt.customArgs&&evt.customArgs.default&&evt.customArgs.default.directHit2;
+						if(get.tag(event.card,'respondSha')){
+							if(directHit||player.countCards('h',{name:'sha'})===0) return true;
+						}
+						else if(get.tag(event.card,'respondShan')){
+							if(directHit||player.countCards('h',{name:'shan'})===0) return true;
+						}
+						else if(get.tag(event.card,'damage')){
+							if(event.card.name==='huogong') return event.player.countCards('h')>4-player.hp-player.hujia;
+							if(event.card.name==='shuiyanqijunx') return player.countCards('e')===0;
+							return true;
+						}
+						else if(player.hp>2){
+							if(event.card.name==='shunshou'||(event.card.name==='zhujinqiyuan'&&(event.card.yingbian||get.distance(event.player,player)<0))) return true;
+						}
+						return false;
+					};
 					if (lib.skill.renjie2&&game.aiyh_skillOptEnabled('sbaiyin')) lib.skill.renjie2.mod={
 						aiOrder:(player,card,num)=>{
 							if(num<=0||typeof card!=='object'||!player.isPhaseUsing()) return 0;
@@ -4197,7 +4218,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			},
 			dev: {
 				name: '测试&前瞻AI开关',
-				intro: '目前包括以下前瞻AI优化：<br>【杀】<br>【酒】<br>【借刀杀人】<br>【铁索连环】<br>【文和乱武】<br>【号令天下】<br>【太平要术】<br>【出其不意】<br>OL文钦〖犷骜〗<br>哪吒〖三头〗〖法器〗<br>转韩遂〖逆乱〗<br>神关羽、TW神关羽〖武魂〗<br>蔡文姬、界蔡文姬〖断肠〗<br>许贡〖业仇〗<br>曹髦〖决讨〗<br>张华〖弼昏〗<br>新潘凤〖狂斧〗<br>十周年滕芳兰〖落宠〗<br>起刘备〖积善〗〖振鞘〗<br>神马超、S特神马超〖狩骊〗〖横骛〗<br>司马师〖泰然〗<br>王濬〖长驱〗<br>界吕蒙〖勤学〗<br>界郭皇后〖殚心〗<br>族钟毓〖惶汗〗<br>转夏侯荣〖奋剑〗',
+				intro: '目前包括以下前瞻AI优化：<br>【杀】<br>【酒】<br>【借刀杀人】<br>【铁索连环】<br>【文和乱武】<br>【号令天下】<br>【太平要术】<br>【出其不意】<br>OL文钦〖犷骜〗<br>哪吒〖三头〗〖法器〗<br>转韩遂〖逆乱〗<br>神关羽、TW神关羽〖武魂〗<br>蔡文姬、界蔡文姬〖断肠〗<br>许贡〖业仇〗<br>曹髦〖决讨〗<br>张华〖弼昏〗<br>新潘凤〖狂斧〗<br>十周年滕芳兰〖落宠〗<br>起刘备〖积善〗〖振鞘〗<br>神马超、S特神马超〖狩骊〗〖横骛〗<br>司马师〖泰然〗<br>王濬〖长驱〗<br>界吕蒙〖勤学〗<br>界郭皇后〖殚心〗<br>族钟毓〖惶汗〗<br>转夏侯荣〖奋剑〗<br>王异、界王异〖贞烈〗',
 				init: true
 			},
 			bd3: {
@@ -4231,8 +4252,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				onclick: function () {
 					let txt = '{';
 					for (let i in lib.config) {
-						if (!i.indexOf('extension_AI优化_')) txt += '\rb' + i.slice(15) + ' : ' + JSON.stringify(lib.config[i]).replace('\n', '\r') + ',';
-						else if (!i.indexOf('aiyh_character_skill_id_')) txt += '\rs' + i.slice(24) + ' : ' + JSON.stringify(lib.config[i]).replace('\n', '\r') + ',';
+						if (!i.indexOf('extension_AI优化_')) txt += '\r	b' + i.slice(15) + ' : ' + JSON.stringify(lib.config[i]).replace('\n', '\r') + ',';
+						else if (!i.indexOf('aiyh_character_skill_id_')) txt += '\r	s' + i.slice(24) + ' : ' + JSON.stringify(lib.config[i]).replace('\n', '\r') + ',';
 					}
 					txt += '\r}';
 					let textarea = document.createElement('textarea');
@@ -5258,7 +5279,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			intro: `<font color=#00FFFF>建立者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157<br><font color=#00FFFF>现更者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157
 				<br><font color=#00FFFF>特别鸣谢</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp寰宇星城(插件功能)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp༺ཌༀཉི梦ღ沫ღ惜༃ༀ(工具人)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp萌新（转型中）(本体优化)
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp😁呲牙哥！(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp读书人(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp幸运女神在微笑(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspAurora(代码参考)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp蓝色火鸡(代码提供)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp呓如惑(测试反馈)
-				<br><font color=#00FFFF>当前版本号</font>：<font color=#FFFF00>1.3.5.3</font><br><font color=#00FFFF>支持本体最低版本号</font>：<font color=#FFFF00>1.10.4</font><br><font color=#00FFFF>建议本体最低版本号</font>：<font color=#FFFF00>1.10.5</font><br><font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00> 8</font>日<font color=fire>10</font>时<br>`,
+				<br><font color=#00FFFF>当前版本号</font>：<font color=#FFFF00>1.3.5.3</font><br><font color=#00FFFF>支持本体最低版本号</font>：<font color=#FFFF00>1.10.4</font><br><font color=#00FFFF>建议本体最低版本号</font>：<font color=#FFFF00>1.10.5</font><br><font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00> 8</font>日<font color=fire>14</font>时<br>`,
 			author: '',
 			diskURL: '',
 			forumURL: '',
