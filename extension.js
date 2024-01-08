@@ -1366,7 +1366,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>8</font>日</center>',
 					'◆修复本体花鬘〖蛮嗣〗、国战毌丘俭〖征荣〗、神张辽〖夺锐〗ai',
 					'◆鼓励神司马懿ai不使用价值较低的牌',
-					'◆王异、界王异〖贞烈〗ai增加被强命检测'
+					'◆王异、界王异〖贞烈〗ai增加被强命检测',
+					'◆优化【杀】测试ai'
 				];
 				let ul = document.createElement('ul');
 				ul.style.textAlign = 'left';
@@ -3361,7 +3362,9 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 									if (target.hasSkillTag('directHit_ai', true, {
 										target: effs[i].target,
 										card: i
-									}, true) || usable === 1 && (target.needsToDiscard() > Math.max(0, 3 - target.hp) || !effs[i].target.mayHaveShan(player, 'use'))) {
+									}, true) || usable === 1 && (target.needsToDiscard() > Math.max(0, 3 - target.hp) || !effs[i].target.mayHaveShan(player, 'use', effs[i].target.getCards(i=>{
+										return i.hasGaintag('sha_notshan');
+									})))) {
 										delete target._jiu_temp;
 										return 1;
 									}
@@ -3418,7 +3421,11 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 							if (typeof event.baseDamage != 'number') event.baseDamage = 1;
 							if (typeof event.extraDamage != 'number') event.extraDamage = 0;
 							"step 1"
-							if (event.directHit || event.directHit2 || (!_status.connectMode && lib.config.skip_shan && !target.hasShan())) event._result = { bool: false };
+							if (!_status.connectMode && lib.config.skip_shan && !target.hasShan()) event._result = {bool: false};
+							else if (event.directHit || event.directHit2) event._result = {
+								bool: false,
+								direct: true
+							};
 							else if (event.skipShan) event._result = { bool: true, result: 'shaned' };
 							else {
 								var next = target.chooseToUse('请使用一张闪响应杀');
@@ -3438,7 +3445,9 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 									if(target.hasSkillTag('noShan',null,event)) return false;
 									if(target.hasSkillTag('useShan',null,event)) return true;
 									if(event.baseDamage+event.extraDamage<=0 || get.attitude(target,player._trueMe||player)>0) return false;
-									if(event.shanRequired>1&&lib.card.sha.ai.mayHaveShan(target,target,null,'count')<event.shanRequired-(event.shanIgnored||0)) return false;
+									if(event.shanRequired>1&&target.mayHaveShan(target,'use',target.getCards(i=>{
+										return i.hasGaintag('sha_notshan');
+									}),'count')<event.shanRequired-(event.shanIgnored||0)) return false;
 									if(event.baseDamage+event.extraDamage>=target.hp+
 										((player.hasSkillTag('jueqing',false,target)||target.hasSkill('gangzhi'))?target.hujia:0)) return true;
 									if(!game.hasNature(event.card, 'ice')&&get.damageEffect(target,player,target,get.nature(event.card))>=0) return false;
@@ -3461,7 +3470,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 							}
 							"step 3"
 							if ((!result || !result.bool || !result.result || result.result != 'shaned') && !event.unhurt) {
-								if (target.hasCard(()=>true,'hs')&&get.damageEffect(target,player,target)<0) target.addGaintag(target.getCards('hs'),'sha_noshan');
+								if ((!result || !result.direct)&&target.hasCard(()=>true,'hs')&&get.damageEffect(target,player,target)<0) target.addGaintag(target.getCards('hs'),'sha_notshan');
 								target.damage(get.nature(event.card));
 								event.result = { bool: true }
 								event.trigger('shaDamage');
@@ -3553,7 +3562,9 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 									if(!player.hasSkillTag('directHit_ai',true,{
 										target:target,
 										card:card,
-									},true)) odds-=0.7*lib.card.sha.ai.mayHaveShan(player,target,target.getCards(i=>i.hasGaintag('sha_noshan')),'odds');
+									},true)) odds-=0.7*target.mayHaveShan(player,'use',target.getCards(i=>{
+										return i.hasGaintag('sha_notshan');
+									}),'odds');
 									_status.event.putTempCache('sha_result','eff',{
 										bool:target.hp>num&&get.attitude(player,target)>0,
 										card:get.translation(card),
@@ -3563,39 +3574,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 									return odds*eff;
 								},
 							};
-							lib.card.sha.ai.mayHaveShan=(viewer,player,ignore,rvt)=>{
-								let count = 0;
-								if ((player.hp > 2 || !player.isZhu && player.hp > 1) && player.hasSkillTag('respondShan', true, 'use', true)) {
-									if (rvt === 'count') count++;
-									else return 1;
-								}
-								if (get.itemtype(viewer) !== 'player') viewer = _status.event.player;
-								let cards, selected = [];
-								if (get.itemtype(ignore) === 'cards') selected.addArray(ignore);
-								if (player === viewer || get.itemtype(viewer) == 'player') cards = player.getKnownCards(viewer);
-								else cards = player.getShownCards();
-								cards = cards.filter(card => {
-									if (selected.includes(card)) return false;
-									let name = get.name(card, player);
-									if (name === 'shan' || name === 'hufu') return lib.filter.cardEnabled(card, player, 'forceEnable');
-									return false;
-								});
-								count += cards.length;
-								if (count && rvt !== 'count') return true;
-								let hs = player.getCards('hs').filter(i => !cards.includes(i)).length;
-								if (!hs) {
-									if (rvt === 'count') return count;
-									return 0;
-								}
-								if (rvt === 'count') {
-									if (player.isPhaseUsing()) return count + hs / 6;
-									return count + hs / 3.5;
-								}
-								if (player.isPhaseUsing()) count += -1.5 * Math.log(1 - hs / 10);
-								else count += 2 * hs / (5 + hs);
-								return Math.min(1, count);
-							};
-							lib.translate.sha_noshan='invisible';
+							lib.translate.sha_notshan='invisible';
 						}
 					}
 					if(lib.card.gz_wenheluanwu) lib.card.gz_wenheluanwu.content=function(){
@@ -5279,11 +5258,11 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			intro: `<font color=#00FFFF>建立者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157<br><font color=#00FFFF>现更者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157
 				<br><font color=#00FFFF>特别鸣谢</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp寰宇星城(插件功能)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp༺ཌༀཉི梦ღ沫ღ惜༃ༀ(工具人)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp萌新（转型中）(本体优化)
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp😁呲牙哥！(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp读书人(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp幸运女神在微笑(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspAurora(代码参考)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp蓝色火鸡(代码提供)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp呓如惑(测试反馈)
-				<br><font color=#00FFFF>当前版本号</font>：<font color=#FFFF00>1.3.5.3</font><br><font color=#00FFFF>支持本体最低版本号</font>：<font color=#FFFF00>1.10.4</font><br><font color=#00FFFF>建议本体最低版本号</font>：<font color=#FFFF00>1.10.5</font><br><font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00> 8</font>日<font color=fire>14</font>时<br>`,
+				<br><font color=#00FFFF>当前版本号</font>：<font color=#FFFF00>1.3.5.3</font><br><font color=#00FFFF>支持本体最低版本号</font>：<font color=#FFFF00>1.10.4</font><br><font color=#00FFFF>建议本体最低版本号</font>：<font color=#FFFF00>1.10.5</font><br><font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00> 8</font>日<font color=fire>15</font>时<br>`,
 			author: '',
 			diskURL: '',
 			forumURL: '',
-			version: '1.3.5.3'
+			version: '1.3.5.4'
 		},
 		files: { character: [], card: [], skill: [] }
 	}
