@@ -4,7 +4,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 		editable: false,
 		content: function (config, pack) {
 			//非常感谢@柚子丶奶茶丶猫以及面具 提供的《云将》相关部分AI优化的修复代码
-			//bug修复
+
+			/*bug修复*/
 			if (lib.card.huogong) lib.card.huogong.content=function(){
 				"step 0"
 				if(target.countCards('h')==0){
@@ -142,6 +143,11 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					player:event.source,
 					card:event.card,
 				})&&get.damageEffect(event.player,event.source,player,_status.event.player)>0;
+			};
+			if (lib.skill.drlt_duorui) lib.skill.drlt_duorui.filter=function(event,player){
+				if(get.attitude(_status.event.player,event.player)>=0) return false;
+				if(player.storage.drlt_duorui.length) return false;
+				return event.player.isIn()&&_status.currentPhase==player;
 			};
 
 			/*全局技*/
@@ -426,7 +432,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					}
 				}
 			};
-			lib.skill._aiyh_filterSameName={
+			lib.skill._aiyh_filterSameName={//同名武将筛选
 				enable:'phaseUse',
 				filter:(event,player)=>{
 					return player===game.me&&lib.config.extension_AI优化_filterSameName;
@@ -1340,7 +1346,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				});
 				return lib.config['aiyh_character_skill_id_' + id];
 			};
-			{
+			{//本体版本检测
 				let noname = lib.version.split('.').slice(2), min = ['4'], len = Math.min(noname.length, min.length), status = false;
 				if (lib.version.slice(0, 5) === '1.10.') for (let i = 0; i < len; i++) {
 					if (noname[i] < min[i]) {
@@ -1357,9 +1363,10 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			}
 			if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 				let str = [
-					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>7</font>日</center>',
+					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>8</font>日</center>',
 					'◆修复本体花鬘〖蛮嗣〗、国战毌丘俭〖征荣〗ai',
-					'◆鼓励神司马懿ai不使用价值较低的牌'
+					'◆鼓励神司马懿ai不使用价值较低的牌',
+					'◆修复神张辽〖夺锐〗ai'
 				];
 				let ul = document.createElement('ul');
 				ul.style.textAlign = 'left';
@@ -3187,7 +3194,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			});
 			if (lib.config.extension_AI优化_kpAi) lib.arenaReady.push(function () {//本体AI优化
 				//卡牌AI
-				lib.skill._aiyh_reserved_shan = {//防酒杀ai
+				lib.skill._aiyh_reserved_shan = {//防酒杀ai，盲猜酒约等于没有
 					silent: true,
 					locked: true,
 					unique: true,
@@ -5251,7 +5258,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			intro: `<font color=#00FFFF>建立者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157<br><font color=#00FFFF>现更者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157
 				<br><font color=#00FFFF>特别鸣谢</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp寰宇星城(插件功能)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp༺ཌༀཉི梦ღ沫ღ惜༃ༀ(工具人)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp萌新（转型中）(本体优化)
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp😁呲牙哥！(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp读书人(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp幸运女神在微笑(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspAurora(代码参考)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp蓝色火鸡(代码提供)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp呓如惑(测试反馈)
-				<br><font color=#00FFFF>当前版本号</font>：<font color=#FFFF00>1.3.5.3</font><br><font color=#00FFFF>支持本体最低版本号</font>：<font color=#FFFF00>1.10.4</font><br><font color=#00FFFF>建议本体最低版本号</font>：<font color=#FFFF00>1.10.5</font><br><font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00> 7</font>日<font color=fire>21</font>时<br>`,
+				<br><font color=#00FFFF>当前版本号</font>：<font color=#FFFF00>1.3.5.3</font><br><font color=#00FFFF>支持本体最低版本号</font>：<font color=#FFFF00>1.10.4</font><br><font color=#00FFFF>建议本体最低版本号</font>：<font color=#FFFF00>1.10.5</font><br><font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00> 8</font>日<font color=fire>10</font>时<br>`,
 			author: '',
 			diskURL: '',
 			forumURL: '',
