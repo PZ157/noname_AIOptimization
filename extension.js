@@ -1365,6 +1365,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				let str = [
 					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>10</font>日</center>',
 					'◆优化界黄忠、OL界黄忠〖烈弓〗，OL邓芝〖修好〗ai',
+					'◆修复TW神关羽〖武魂〗前瞻ai弹窗',
 					'◆修复版本号显示错误的问题',
 					'◆其他bug修复'
 				];
@@ -2999,7 +3000,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 									temp=get.attitude(target,i);
 									if(temp<0) die.push(i);
 									else{
-										temp=Math.sqrt(att)*i.countMark('twwuhun');
+										temp=Math.sqrt(temp)*i.countMark('twwuhun');
 										if(!extra[0]||temp<extra[1]) extra=[i,temp];
 									}
 								});
@@ -5277,11 +5278,11 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			intro: `<font color=#00FFFF>建立者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157<br><font color=#00FFFF>现更者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157
 				<br><font color=#00FFFF>特别鸣谢</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp寰宇星城(插件功能)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp༺ཌༀཉི梦ღ沫ღ惜༃ༀ(工具人)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp萌新（转型中）(本体优化)
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp😁呲牙哥！(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp读书人(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp幸运女神在微笑(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspAurora(代码参考)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp蓝色火鸡(代码提供)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp呓如惑(测试反馈)
-				<br><font color=#00FFFF>当前版本号</font>：<font color=#FFFF00>1.3.5.4</font><br><font color=#00FFFF>支持本体最低版本号</font>：<font color=#FFFF00>1.10.4</font><br><font color=#00FFFF>建议本体最低版本号</font>：<font color=#FFFF00>1.10.5</font><br><font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>10</font>日<font color=fire>11</font>时<br>`,
+				<br><font color=#00FFFF>当前版本号</font>：<font color=#FFFF00>1.3.5.5</font><br><font color=#00FFFF>支持本体最低版本号</font>：<font color=#FFFF00>1.10.4</font><br><font color=#00FFFF>建议本体最低版本号</font>：<font color=#FFFF00>1.10.5</font><br><font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>10</font>日<font color=fire>22</font>时<br>`,
 			author: '',
 			diskURL: '',
 			forumURL: '',
-			version: '1.3.5.4'
+			version: '1.3.5.5'
 		},
 		files: { character: [], card: [], skill: [] }
 	}
