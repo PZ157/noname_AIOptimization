@@ -1347,7 +1347,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				return lib.config['aiyh_character_skill_id_' + id];
 			};
 			{//本体版本检测
-				let noname = lib.version.split('.').slice(2), min = ['4'], len = Math.min(noname.length, min.length), status = false;
+				let noname = lib.version.split('.').slice(2), min = ['6'], len = Math.min(noname.length, min.length), status = false;
 				if (lib.version.slice(0, 5) === '1.10.') for (let i = 0; i < len; i++) {
 					if (noname[i] < min[i]) {
 						status = '您的无名杀版本太低';
@@ -1363,10 +1363,10 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			}
 			if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 				let str = [
-					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>10</font>日</center>',
+					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>11</font>日</center>',
 					'◆优化界黄忠、OL界黄忠〖烈弓〗，OL邓芝〖修好〗ai',
 					'◆修复TW神关羽〖武魂〗前瞻ai弹窗',
-					'◆修复版本号显示错误的问题',
+					'◆适配最新版本',
 					'◆其他bug修复'
 				];
 				let ul = document.createElement('ul');
@@ -4274,12 +4274,6 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				onclick: function () {
 					let container = ui.create.div('.popup-container.editor');
 					let editorpage = ui.create.div(container);
-					let discardConfig = ui.create.div('.editbutton', '取消', editorpage, function () {
-						ui.window.classList.remove('shortcutpaused');
-						ui.window.classList.remove('systempaused');
-						container.delete(null);
-						delete window.saveNonameInput;
-					});
 					let node = container;
 					let str = '//完整粘贴你保存的AI优化配置到等号右端\r_status.aiyh_config = ';
 					node.code = str;
@@ -4311,8 +4305,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 						game.reload();
 					};
 					window.saveNonameInput = saveInput;
-					let saveConfig = ui.create.div('.editbutton', '保存', editorpage, saveInput);
-					let editor = ui.create.div(editorpage);
+					let editor = ui.create.editor(container, saveInput);
 					if (node.aced) {
 						ui.window.appendChild(node);
 						node.editor.setValue(node.code, 1);
@@ -4328,26 +4321,13 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 						node.textarea.value = node.code;
 					}
 					else {
-						let aceReady = function () {
-							ui.window.appendChild(node);
-							let mirror = window.CodeMirror(editor, {
-								value: node.code,
-								mode: "javascript",
-								lineWrapping: !lib.config.touchscreen && lib.config.mousewheel,
-								lineNumbers: true,
-								indentUnit: 4,
-								autoCloseBrackets: true,
-								theme: 'mdn-like'
+						if (!window.CodeMirror) {
+							import('../../game/codemirror.js').then(() => {
+								lib.codeMirrorReady(node, editor);
 							});
-							lib.setScroll(editor.querySelector('.CodeMirror-scroll'));
-							node.aced = true;
-							node.editor = mirror;
-						}
-						if (!window.ace) {
-							lib.init.js(lib.assetURL + 'game', 'codemirror', aceReady);
 							lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
 						}
-						else aceReady();
+						else lib.codeMirrorReady(node, editor);
 					}
 				}
 			},
@@ -4410,15 +4390,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				name: '编辑伪禁列表',
 				clear: true,
 				onclick: function () {
-					//代码取自［编辑统率将池］
 					let container = ui.create.div('.popup-container.editor');
 					let editorpage = ui.create.div(container);
-					let discardConfig = ui.create.div('.editbutton', '取消', editorpage, function () {
-						ui.window.classList.remove('shortcutpaused');
-						ui.window.classList.remove('systempaused');
-						container.delete(null);
-						delete window.saveNonameInput;
-					});
 					let node = container;
 					let map = lib.config.extension_AI优化_wj || [];
 					let str = 'disabled=[';
@@ -4452,12 +4425,12 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 						delete window.saveNonameInput;
 					};
 					window.saveNonameInput = saveInput;
-					let saveConfig = ui.create.div('.editbutton', '保存', editorpage, saveInput);
-					let editor = ui.create.div(editorpage);
+					let editor = ui.create.editor(container, saveInput);
 					if (node.aced) {
 						ui.window.appendChild(node);
 						node.editor.setValue(node.code, 1);
-					} else if (lib.device == 'ios') {
+					}
+					else if (lib.device == 'ios') {
 						ui.window.appendChild(node);
 						if (!node.textarea) {
 							let textarea = document.createElement('textarea');
@@ -4466,26 +4439,15 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 							lib.setScroll(textarea);
 						}
 						node.textarea.value = node.code;
-					} else {
-						let aceReady = function () {
-							ui.window.appendChild(node);
-							let mirror = window.CodeMirror(editor, {
-								value: node.code,
-								mode: 'javascript',
-								lineWrapping: !lib.config.touchscreen && lib.config.mousewheel,
-								lineNumbers: true,
-								indentUnit: 4,
-								autoCloseBrackets: true,
-								theme: 'mdn-like'
+					}
+					else {
+						if (!window.CodeMirror) {
+							import('../../game/codemirror.js').then(() => {
+								lib.codeMirrorReady(node, editor);
 							});
-							lib.setScroll(editor.querySelector('.CodeMirror-scroll'));
-							node.aced = true;
-							node.editor = mirror;
-						};
-						if (!window.ace) {
-							lib.init.js(lib.assetURL + 'game', 'codemirror', aceReady);
 							lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
-						} else aceReady();
+						}
+						else lib.codeMirrorReady(node, editor);
 					}
 				}
 			},
@@ -4972,12 +4934,6 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				onclick: function () {
 					let container = ui.create.div('.popup-container.editor');
 					let editorpage = ui.create.div(container);
-					let discardConfig = ui.create.div('.editbutton', '取消', editorpage, function () {
-						ui.window.classList.remove('shortcutpaused');
-						ui.window.classList.remove('systempaused');
-						container.delete(null);
-						delete window.saveNonameInput;
-					});
 					let node = container;
 					let map = lib.config.extension_AI优化_qz || {};
 					let str = 'weight={',
@@ -5020,12 +4976,12 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 						delete window.saveNonameInput;
 					};
 					window.saveNonameInput = saveInput;
-					let saveConfig = ui.create.div('.editbutton', '保存', editorpage, saveInput);
-					let editor = ui.create.div(editorpage);
+					let editor = ui.create.editor(container, saveInput);
 					if (node.aced) {
 						ui.window.appendChild(node);
 						node.editor.setValue(node.code, 1);
-					} else if (lib.device == 'ios') {
+					}
+					else if (lib.device == 'ios') {
 						ui.window.appendChild(node);
 						if (!node.textarea) {
 							let textarea = document.createElement('textarea');
@@ -5034,26 +4990,15 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 							lib.setScroll(textarea);
 						}
 						node.textarea.value = node.code;
-					} else {
-						let aceReady = function () {
-							ui.window.appendChild(node);
-							let mirror = window.CodeMirror(editor, {
-								value: node.code,
-								mode: 'javascript',
-								lineWrapping: !lib.config.touchscreen && lib.config.mousewheel,
-								lineNumbers: true,
-								indentUnit: 4,
-								autoCloseBrackets: true,
-								theme: 'mdn-like'
+					}
+					else {
+						if (!window.CodeMirror) {
+							import('../../game/codemirror.js').then(() => {
+								lib.codeMirrorReady(node, editor);
 							});
-							lib.setScroll(editor.querySelector('.CodeMirror-scroll'));
-							node.aced = true;
-							node.editor = mirror;
-						};
-						if (!window.ace) {
-							lib.init.js(lib.assetURL + 'game', 'codemirror', aceReady);
 							lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
-						} else aceReady();
+						}
+						else lib.codeMirrorReady(node, editor);
 					}
 				}
 			},
@@ -5135,12 +5080,6 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				onclick: function () {
 					let container = ui.create.div('.popup-container.editor');
 					let editorpage = ui.create.div(container);
-					let discardConfig = ui.create.div('.editbutton', '取消', editorpage, function () {
-						ui.window.classList.remove('shortcutpaused');
-						ui.window.classList.remove('systempaused');
-						container.delete(null);
-						delete window.saveNonameInput;
-					});
 					let node = container;
 					let map = lib.config.extension_AI优化_cf || {};
 					let str = 'threaten={',
@@ -5183,12 +5122,12 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 						delete window.saveNonameInput;
 					};
 					window.saveNonameInput = saveInput;
-					let saveConfig = ui.create.div('.editbutton', '保存', editorpage, saveInput);
-					let editor = ui.create.div(editorpage);
+					let editor = ui.create.editor(container, saveInput);
 					if (node.aced) {
 						ui.window.appendChild(node);
 						node.editor.setValue(node.code, 1);
-					} else if (lib.device == 'ios') {
+					}
+					else if (lib.device == 'ios') {
 						ui.window.appendChild(node);
 						if (!node.textarea) {
 							let textarea = document.createElement('textarea');
@@ -5197,26 +5136,15 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 							lib.setScroll(textarea);
 						}
 						node.textarea.value = node.code;
-					} else {
-						let aceReady = function () {
-							ui.window.appendChild(node);
-							let mirror = window.CodeMirror(editor, {
-								value: node.code,
-								mode: 'javascript',
-								lineWrapping: !lib.config.touchscreen && lib.config.mousewheel,
-								lineNumbers: true,
-								indentUnit: 4,
-								autoCloseBrackets: true,
-								theme: 'mdn-like'
+					}
+					else {
+						if (!window.CodeMirror) {
+							import('../../game/codemirror.js').then(() => {
+								lib.codeMirrorReady(node, editor);
 							});
-							lib.setScroll(editor.querySelector('.CodeMirror-scroll'));
-							node.aced = true;
-							node.editor = mirror;
-						};
-						if (!window.ace) {
-							lib.init.js(lib.assetURL + 'game', 'codemirror', aceReady);
 							lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
-						} else aceReady();
+						}
+						else lib.codeMirrorReady(node, editor);
 					}
 				}
 			},
@@ -5278,7 +5206,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			intro: `<font color=#00FFFF>建立者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157<br><font color=#00FFFF>现更者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157
 				<br><font color=#00FFFF>特别鸣谢</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp寰宇星城(插件功能)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp༺ཌༀཉི梦ღ沫ღ惜༃ༀ(工具人)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp萌新（转型中）(本体优化)
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp😁呲牙哥！(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp读书人(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp幸运女神在微笑(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspAurora(代码参考)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp蓝色火鸡(代码提供)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp呓如惑(测试反馈)
-				<br><font color=#00FFFF>当前版本号</font>：<font color=#FFFF00>1.3.5.5</font><br><font color=#00FFFF>支持本体最低版本号</font>：<font color=#FFFF00>1.10.4</font><br><font color=#00FFFF>建议本体最低版本号</font>：<font color=#FFFF00>1.10.5</font><br><font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>10</font>日<font color=fire>22</font>时<br>`,
+				<br><font color=#00FFFF>当前版本号</font>：<font color=#FFFF00>1.3.5.5</font><br><font color=#00FFFF>支持本体最低版本号</font>：<font color=#FFFF00>1.10.6</font><br><font color=#00FFFF>建议本体最低版本号</font>：<font color=#FFFF00>1.10.6</font><br><font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>11</font>日<font color=fire> 8</font>时<br>`,
 			author: '',
 			diskURL: '',
 			forumURL: '',
