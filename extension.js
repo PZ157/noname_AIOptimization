@@ -1346,11 +1346,74 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				});
 				return lib.config['aiyh_character_skill_id_' + id];
 			};
+			game.aiyh_configBan = (temp, identity, info) => {
+					game.prompt('请输入要'+info+'AI禁选的武将id<br>（如标曹操为“caocao”，神曹操为“shen_caocao”），再次输入同id即可退出', function (str) {
+						if (str) {
+							var thisstr = '';
+							if (lib.character[str]) {
+								thisstr = str;
+								var lists = lib.config['extension_AI优化_'+identity] || [];
+								if (lists && lists.includes(thisstr)) {
+									lists.remove(thisstr);
+									temp.innerHTML = '<div style="color:rgb(210,210,000);font-family:xinwei"><font size="4">' + (lib.translate[thisstr] || '未知') + '已移出'+info+'AI禁选</font></div>';
+									temp.ready = true;
+									setTimeout(() => {
+										temp.innerHTML = '<li>'+info+'AI禁将';
+										delete temp.ready;
+									}, 1600);
+								} else {
+									lists.push(thisstr);
+									temp.innerHTML = '<div style="color:rgb(255,97,3);font-family:xinwei"><font size="4">' + (lib.translate[thisstr] || '未知') + '已加入'+info+'AI禁选</font></div>';
+									temp.ready = true;
+									setTimeout(() => {
+										temp.innerHTML = '<li>'+info+'AI禁将';
+										delete temp.ready;
+									}, 1600);
+								}
+								game.saveExtensionConfig('AI优化', identity, lists);
+							} else {
+								temp.innerHTML = '<div style="color:rgb(255,0,0);font-family:xinwei"><font size="4">找不到该武将</font></div>';
+								temp.ready = true;
+								setTimeout(() => {
+									temp.innerHTML = '<li>'+info+'AI禁将';
+									delete temp.ready;
+								}, 1600);
+							}
+						}
+					});
+			};
+			game.aiyh_configBanList = (identity, info) => {
+				var h = document.body.offsetHeight;
+				var w = document.body.offsetWidth;
+				var lists = lib.config['extension_AI优化_'+identity] || [];
+				//改自手杀ui和群英荟萃
+				var SRr = "<html><head><meta charset='utf-8'><style type='text/css'>body {background-image: url('" + lib.assetURL + "extension/AI优化/beijing.png');background-size: 100% 100%;background-position: center;--w: 560px;--h: calc(var(--w) * 610/1058);width: var(--w);height: var(--h);background-repeat: no-repeat;background-attachment: fixed;}h1{text-shadow:1px 1px 1PX #000000,1px -1px 1PX #000000,-1px 1px 1PX #000000,-1px -1px 1PX #000000;font-size:20px}div {width: 160vmin;height: 63vmin;border: 0px solid black;border-radius: 9px;padding: 35px;margin-top: 5.5vmin;margin-bottom: 5.5vmin;margin-left: 10.5vmin;margin-right: 10.5vmin;position: center;}div.ex1 {width: 160vmin;height: 63vmin;overflow: auto;}</style></head><body><div class='ex1'>";
+				if (lists && lists.length > 0) {
+					for (let i = 0; i < lists.length; i++) {
+						SRr += '〖';
+						if (lib.translate[lists[i]]) SRr += lib.translate[lists[i]] + '（' + lists[i] + '）〗';
+						else SRr += lists[i] + '〗';
+					}
+					SRr += '</div></body></html>';
+				}
+				else SRr += "亲～您尚未禁将</div></body></html>";
+				var banList = ui.create.div('', '<div style="z-index:114514"><iframe width="' + w + 'px" height="' + h + 'px" srcdoc="<!DOCTYPE html>' + SRr + '"></iframe></div>', ui.window);
+				var banList_close = ui.create.div('', '<div style="height:10px;width:' + w + 'px;text-align:center;z-index:114514"><font size="5em">关闭</font></div>', banList, function () {
+					banList.delete();
+				});
+			};
 			{//本体版本检测
-				let noname = lib.version.split('.').slice(2), min = ['6'], len = Math.min(noname.length, min.length), status = false;
+				let noname = lib.version.split('.').slice(2), min = ['4'], len = Math.min(noname.length, min.length), status = false;
 				if (lib.version.slice(0, 5) === '1.10.') for (let i = 0; i < len; i++) {
 					if (noname[i] < min[i]) {
 						status = '您的无名杀版本太低';
+						break;
+					}
+					if (i===0&&(noname[i]==='4'||noname[i]==='5')) {
+						if (localStorage.getItem('aiyh_version_check_alerted')!==lib.version) {
+							localStorage.setItem('aiyh_version_check_alerted', lib.version);
+							alert('为适配最新版本，［载入本扩展配置］［编辑伪禁列表］［编辑武将权重］［编辑修改的技能威胁度］等功能于当前版本无法使用，请及时更新无名杀至1.10.6及以上或使用《AI优化》1.3.5.5版本');
+						}
 						break;
 					}
 				}
@@ -1364,10 +1427,10 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 				let str = [
 					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>11</font>日</center>',
-					'◆优化界黄忠、OL界黄忠〖烈弓〗，OL邓芝〖修好〗ai',
-					'◆修复TW神关羽〖武魂〗前瞻ai弹窗',
-					'◆适配最新版本',
-					'◆其他bug修复'
+					'◆移除已加入本体的34个武将技能优化和7种卡牌优化',
+					'◆移除本体已修复的7个武将技能和2种卡牌的bug',
+					'◆修复并简化身份禁将表的函数写法',
+					'◆适配最新版本'
 				];
 				let ul = document.createElement('ul');
 				ul.style.textAlign = 'left';
@@ -4490,390 +4553,84 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				clear: true,
 				name: '<li>主公AI禁将',
 				onclick: function () {
-					var temp = this;
-					game.prompt('请输入要主公AI禁选的武将id<br>（如标曹操为“caocao”，神曹操为“shen_caocao”），再次输入同id即可退出', function (str) {
-						if (str) {
-							var thisstr = '';
-							if (lib.character[str]) {
-								thisstr = str;
-								var lists = lib.config.extension_AI优化_zhu || [];
-								if (lists && lists.includes(thisstr)) {
-									lists.remove(thisstr);
-									temp.innerHTML = '<div style="color:rgb(210,210,000);font-family:xinwei"><font size="4">' + (lib.translate[thisstr] || '未知') + '已移出主公AI禁选</font></div>';
-									temp.ready = true;
-									setTimeout(() => {
-										temp.innerHTML = '<li>主公AI禁将';
-										delete temp.ready;
-									}, 1600);
-								} else {
-									lists.push(thisstr);
-									temp.innerHTML = '<div style="color:rgb(255,97,3);font-family:xinwei"><font size="4">' + (lib.translate[thisstr] || '未知') + '已加入主公AI禁选</font></div>';
-									temp.ready = true;
-									setTimeout(() => {
-										temp.innerHTML = '<li>主公AI禁将';
-										delete temp.ready;
-									}, 1600);
-								}
-								game.saveExtensionConfig('AI优化', 'zhu', lists);
-							} else {
-								temp.innerHTML = '<div style="color:rgb(255,0,0);font-family:xinwei"><font size="4">找不到该武将</font></div>';
-								temp.ready = true;
-								setTimeout(() => {
-									temp.innerHTML = '<li>主公AI禁将';
-									delete temp.ready;
-								}, 1600);
-							}
-						}
-					});
+					game.aiyh_configBan(this,'zhu','主公');
 				}
 			},
 			banzhubiao: {
 				name: '<li>主公AI禁选表(点击查看)',
 				clear: true,
 				onclick: function () {
-					var h = document.body.offsetHeight;
-					var w = document.body.offsetWidth;
-					var lists = lib.config.extension_AI优化_zhu || [];
-					//改自手杀ui和群英荟萃
-					var SRr = "<html><head><meta charset='utf-8'><style type='text/css'>body {background-image: url('" + lib.assetURL + "extension/AI优化/beijing.png');background-size: 100% 100%;background-position: center;--w: 560px;--h: calc(var(--w) * 610/1058);width: var(--w);height: var(--h);background-repeat: no-repeat;background-attachment: fixed;}h1{text-shadow:1px 1px 1PX #000000,1px -1px 1PX #000000,-1px 1px 1PX #000000,-1px -1px 1PX #000000;font-size:20px}div {width: 160vmin;height: 63vmin;border: 0px solid black;border-radius: 9px;padding: 35px;margin-top: 5.5vmin;margin-bottom: 5.5vmin;margin-left: 10.5vmin;margin-right: 10.5vmin;position: center;}div.ex1 {width: 160vmin;height: 63vmin;overflow: auto;}</style></head><body><div class='ex1'>";
-					if (lists && lists.length > 0) {
-						for (var i = 0; i < lists.length; i++) {
-							SRr += '〖';
-							if (lib.translate[lists[i]]) SRr += lib.translate[lists[i]] + '（' + lists[i] + '）〗';
-							else SRr += lists[i] + '〗';
-						}
-						SRr += '</div></body></html>';
-					}
-					else SRr += "亲～您尚未禁将</div></body></html>";
-					banzhucharacter = ui.create.div('', '<div style="z-index:114514"><iframe width="' + w + 'px" height="' + h + 'px" srcdoc="<!DOCTYPE html>' + SRr + '"></iframe></div>', ui.window);
-					banzhucharacter_close = ui.create.div('', '<div style="height:10px;width:' + w + 'px;text-align:center;z-index:114514"><font size="5em">关闭</font></div>', banzhucharacter, function () {
-						banzhucharacter.delete();
-					});
+					game.aiyh_configBanList('zhu','主公');
 				}
 			},
 			banzhong: {
 				clear: true,
 				name: '<li>忠臣AI禁将',
 				onclick: function () {
-					var temp = this;
-					game.prompt('请输入要忠臣AI禁选的武将id<br>（如标曹操为“caocao”，神曹操为“shen_caocao”），再次输入同id即可退出', function (str) {
-						if (str) {
-							var thisstr = '';
-							if (lib.character[str]) {
-								thisstr = str;
-								var lists = lib.config.extension_AI优化_zhong || [];
-								if (lists && lists.includes(thisstr)) {
-									lists.remove(thisstr);
-									temp.innerHTML = '<div style="color:rgb(210,210,000);font-family:xinwei"><font size="4">' + (lib.translate[thisstr] || '未知') + '已移出忠臣AI禁选</font></div>';
-									temp.ready = true;
-									setTimeout(() => {
-										temp.innerHTML = '<li>忠臣AI禁将';
-										delete temp.ready;
-									}, 1600);
-								} else {
-									lists.push(thisstr);
-									temp.innerHTML = '<div style="color:rgb(255,97,3);font-family:xinwei"><font size="4">' + (lib.translate[thisstr] || '未知') + '已加入忠臣AI禁选</font></div>';
-									temp.ready = true;
-									setTimeout(() => {
-										temp.innerHTML = '<li>忠臣AI禁将';
-										delete temp.ready;
-									}, 1600);
-								}
-								game.saveExtensionConfig('AI优化', 'zhong', lists);
-							} else {
-								temp.innerHTML = '<div style="color:rgb(255,0,0);font-family:xinwei"><font size="4">找不到该武将</font></div>';
-								temp.ready = true;
-								setTimeout(() => {
-									temp.innerHTML = '<li>忠臣AI禁将';
-									delete temp.ready;
-								}, 1600);
-							}
-						}
-					});
+					game.aiyh_configBan(this,'zhong','忠臣');
 				}
 			},
 			banzhongbiao: {
 				name: '<li>忠臣AI禁选表(点击查看)',
 				clear: true,
 				onclick: function () {
-					var h = document.body.offsetHeight;
-					var w = document.body.offsetWidth;
-					var lists = lib.config.extension_AI优化_zhong || [];
-					//改自手杀ui和群英荟萃
-					var SRr = "<html><head><meta charset='utf-8'><style type='text/css'>body {background-image: url('" + lib.assetURL + "extension/AI优化/beijing.png');background-size: 100% 100%;background-position: center;--w: 560px;--h: calc(var(--w) * 610/1058);width: var(--w);height: var(--h);background-repeat: no-repeat;background-attachment: fixed;}h1{text-shadow:1px 1px 1PX #000000,1px -1px 1PX #000000,-1px 1px 1PX #000000,-1px -1px 1PX #000000;font-size:20px}div {width: 160vmin;height: 63vmin;border: 0px solid black;border-radius: 9px;padding: 35px;margin-top: 5.5vmin;margin-bottom: 5.5vmin;margin-left: 10.5vmin;margin-right: 10.5vmin;position: center;}div.ex1 {width: 160vmin;height: 63vmin;overflow: auto;}</style></head><body><div class='ex1'>";
-					if (lists && lists.length > 0) {
-						for (var i = 0; i < lists.length; i++) {
-							SRr += '〖';
-							if (lib.translate[lists[i]]) SRr += lib.translate[lists[i]] + '（' + lists[i] + '）〗';
-							else SRr += lists[i] + '〗';
-						}
-						SRr += '</div></body></html>';
-					}
-					else SRr += "亲～您尚未禁将</div></body></html>";
-					banzhongcharacter = ui.create.div('', '<div style="z-index:114514"><iframe width="' + w + 'px" height="' + h + 'px" srcdoc="<!DOCTYPE html>' + SRr + '"></iframe></div>', ui.window);
-					banzhongcharacter_close = ui.create.div('', '<div style="height:10px;width:' + w + 'px;text-align:center;z-index:114514"><font size="5em">关闭</font></div>', banzhongcharacter, function () {
-						banzhongcharacter.delete();
-					});
+					game.aiyh_configBanList('zhong','忠臣');
 				}
 			},
 			banfan: {
 				clear: true,
 				name: '<li>反贼AI禁将',
 				onclick: function () {
-					var temp = this;
-					game.prompt('请输入要反贼AI禁选的武将id<br>（如标曹操为“caocao”，神曹操为“shen_caocao”），再次输入同id即可退出', function (str) {
-						if (str) {
-							var thisstr = '';
-							if (lib.character[str]) {
-								thisstr = str;
-								var lists = lib.config.extension_AI优化_fan || [];
-								if (lists && lists.includes(thisstr)) {
-									lists.remove(thisstr);
-									temp.innerHTML = '<div style="color:rgb(210,210,000);font-family:xinwei"><font size="4">' + (lib.translate[thisstr] || '未知') + '已移出反贼AI禁选</font></div>';
-									temp.ready = true;
-									setTimeout(() => {
-										temp.innerHTML = '<li>反贼AI禁将';
-										delete temp.ready;
-									}, 1600);
-								} else {
-									lists.push(thisstr);
-									temp.innerHTML = '<div style="color:rgb(255,97,3);font-family:xinwei"><font size="4">' + (lib.translate[thisstr] || '未知') + '已加入反贼AI禁选</font></div>';
-									temp.ready = true;
-									setTimeout(() => {
-										temp.innerHTML = '<li>反贼AI禁将';
-										delete temp.ready;
-									}, 1600);
-								}
-								game.saveExtensionConfig('AI优化', 'fan', lists);
-							} else {
-								temp.innerHTML = '<div style="color:rgb(255,0,0);font-family:xinwei"><font size="4">找不到该武将</font></div>';
-								temp.ready = true;
-								setTimeout(() => {
-									temp.innerHTML = '<li>反贼AI禁将';
-									delete temp.ready;
-								}, 1600);
-							}
-						}
-					});
+					game.aiyh_configBan(this,'fan','反贼');
 				}
 			},
 			banfanbiao: {
 				name: '<li>反贼AI禁选表(点击查看)',
 				clear: true,
 				onclick: function () {
-					var h = document.body.offsetHeight;
-					var w = document.body.offsetWidth;
-					var lists = lib.config.extension_AI优化_fan || [];
-					//改自手杀ui和群英荟萃
-					var SRr = "<html><head><meta charset='utf-8'><style type='text/css'>body {background-image: url('" + lib.assetURL + "extension/AI优化/beijing.png');background-size: 100% 100%;background-position: center;--w: 560px;--h: calc(var(--w) * 610/1058);width: var(--w);height: var(--h);background-repeat: no-repeat;background-attachment: fixed;}h1{text-shadow:1px 1px 1PX #000000,1px -1px 1PX #000000,-1px 1px 1PX #000000,-1px -1px 1PX #000000;font-size:20px}div {width: 160vmin;height: 63vmin;border: 0px solid black;border-radius: 9px;padding: 35px;margin-top: 5.5vmin;margin-bottom: 5.5vmin;margin-left: 10.5vmin;margin-right: 10.5vmin;position: center;}div.ex1 {width: 160vmin;height: 63vmin;overflow: auto;}</style></head><body><div class='ex1'>";
-					if (lists && lists.length > 0) {
-						for (var i = 0; i < lists.length; i++) {
-							SRr += '〖';
-							if (lib.translate[lists[i]]) SRr += lib.translate[lists[i]] + '（' + lists[i] + '）〗';
-							else SRr += lists[i] + '〗';
-						}
-						SRr += '</div></body></html>';
-					}
-					else SRr += "亲～您尚未禁将</div></body></html>";
-					banfancharacter = ui.create.div('', '<div style="z-index:114514"><iframe width="' + w + 'px" height="' + h + 'px" srcdoc="<!DOCTYPE html>' + SRr + '"></iframe></div>', ui.window);
-					banfancharacter_close = ui.create.div('', '<div style="height:10px;width:' + w + 'px;text-align:center;z-index:114514"><font size="5em">关闭</font></div>', banfancharacter, function () {
-						banfancharacter.delete();
-					});
+					game.aiyh_configBanList('fan','反贼');
 				}
 			},
 			bannei: {
 				clear: true,
 				name: '<li>内奸AI禁将',
 				onclick: function () {
-					var temp = this;
-					game.prompt('请输入要内奸AI禁选的武将id<br>（如标曹操为“caocao”，神曹操为“shen_caocao”），再次输入同id即可退出', function (str) {
-						if (str) {
-							var thisstr = '';
-							if (lib.character[str]) {
-								thisstr = str;
-								var lists = lib.config.extension_AI优化_nei || [];
-								if (lists && lists.includes(thisstr)) {
-									lists.remove(thisstr);
-									temp.innerHTML = '<div style="color:rgb(210,210,000);font-family:xinwei"><font size="4">' + (lib.translate[thisstr] || '未知') + '已移出内奸AI禁选</font></div>';
-									temp.ready = true;
-									setTimeout(() => {
-										temp.innerHTML = '<li>内奸AI禁将';
-										delete temp.ready;
-									}, 1600);
-								} else {
-									lists.push(thisstr);
-									temp.innerHTML = '<div style="color:rgb(255,97,3);font-family:xinwei"><font size="4">' + (lib.translate[thisstr] || '未知') + '已加入内奸AI禁选</font></div>';
-									temp.ready = true;
-									setTimeout(() => {
-										temp.innerHTML = '<li>内奸AI禁将';
-										delete temp.ready;
-									}, 1600);
-								}
-								game.saveExtensionConfig('AI优化', 'nei', lists);
-							} else {
-								temp.innerHTML = '<div style="color:rgb(255,0,0);font-family:xinwei"><font size="4">找不到该武将</font></div>';
-								temp.ready = true;
-								setTimeout(() => {
-									temp.innerHTML = '<li>内奸AI禁将';
-									delete temp.ready;
-								}, 1600);
-							}
-						}
-					});
+					game.aiyh_configBan(this,'nei','内奸');
 				}
 			},
 			banneibiao: {
 				name: '<li>内奸AI禁选表(点击查看)',
 				clear: true,
 				onclick: function () {
-					var h = document.body.offsetHeight;
-					var w = document.body.offsetWidth;
-					var lists = lib.config.extension_AI优化_nei || [];
-					//改自手杀ui和群英荟萃
-					var SRr = "<html><head><meta charset='utf-8'><style type='text/css'>body {background-image: url('" + lib.assetURL + "extension/AI优化/beijing.png');background-size: 100% 100%;background-position: center;--w: 560px;--h: calc(var(--w) * 610/1058);width: var(--w);height: var(--h);background-repeat: no-repeat;background-attachment: fixed;}h1{text-shadow:1px 1px 1PX #000000,1px -1px 1PX #000000,-1px 1px 1PX #000000,-1px -1px 1PX #000000;font-size:20px}div {width: 160vmin;height: 63vmin;border: 0px solid black;border-radius: 9px;padding: 35px;margin-top: 5.5vmin;margin-bottom: 5.5vmin;margin-left: 10.5vmin;margin-right: 10.5vmin;position: center;}div.ex1 {width: 160vmin;height: 63vmin;overflow: auto;}</style></head><body><div class='ex1'>";
-					if (lists && lists.length > 0) {
-						for (var i = 0; i < lists.length; i++) {
-							SRr += '〖';
-							if (lib.translate[lists[i]]) SRr += lib.translate[lists[i]] + '（' + lists[i] + '）〗';
-							else SRr += lists[i] + '〗';
-						}
-						SRr += '</div></body></html>';
-					}
-					else SRr += "亲～您尚未禁将</div></body></html>";
-					banneicharacter = ui.create.div('', '<div style="z-index:114514"><iframe width="' + w + 'px" height="' + h + 'px" srcdoc="<!DOCTYPE html>' + SRr + '"></iframe></div>', ui.window);
-					banneicharacter_close = ui.create.div('', '<div style="height:10px;width:' + w + 'px;text-align:center;z-index:114514"><font size="5em">关闭</font></div>', banneicharacter, function () {
-						banneicharacter.delete();
-					});
+					game.aiyh_configBanList('nei','内奸');
 				}
 			},
 			bandizhu: {
 				clear: true,
 				name: '<li>地主AI禁将',
 				onclick: function () {
-					var temp = this;
-					game.prompt('请输入要地主AI禁选的武将id<br>（如标曹操为“caocao”，神曹操为“shen_caocao”），再次输入同id即可退出', function (str) {
-						if (str) {
-							var thisstr = '';
-							if (lib.character[str]) {
-								thisstr = str;
-								var lists = lib.config.extension_AI优化_dizhu || [];
-								if (lists && lists.includes(thisstr)) {
-									lists.remove(thisstr);
-									temp.innerHTML = '<div style="color:rgb(210,210,000);font-family:xinwei"><font size="4">' + (lib.translate[thisstr] || '未知') + '已移出地主AI禁选</font></div>';
-									temp.ready = true;
-									setTimeout(() => {
-										temp.innerHTML = '<li>地主AI禁将';
-										delete temp.ready;
-									}, 1600);
-								} else {
-									lists.push(thisstr);
-									temp.innerHTML = '<div style="color:rgb(255,97,3);font-family:xinwei"><font size="4">' + (lib.translate[thisstr] || '未知') + '已加入地主AI禁选</font></div>';
-									temp.ready = true;
-									setTimeout(() => {
-										temp.innerHTML = '<li>地主AI禁将';
-										delete temp.ready;
-									}, 1600);
-								}
-								game.saveExtensionConfig('AI优化', 'dizhu', lists);
-							} else {
-								temp.innerHTML = '<div style="color:rgb(255,0,0);font-family:xinwei"><font size="4">找不到该武将</font></div>';
-								temp.ready = true;
-								setTimeout(() => {
-									temp.innerHTML = '<li>地主AI禁将';
-									delete temp.ready;
-								}, 1600);
-							}
-						}
-					});
+					game.aiyh_configBan(this,'dizhu','地主');
 				}
 			},
 			bandizhubiao: {
 				name: '<li>地主AI禁选表(点击查看)',
 				clear: true,
 				onclick: function () {
-					var h = document.body.offsetHeight;
-					var w = document.body.offsetWidth;
-					var lists = lib.config.extension_AI优化_dizhu || [];
-					//改自手杀ui和群英荟萃
-					var SRr = "<html><head><meta charset='utf-8'><style type='text/css'>body {background-image: url('" + lib.assetURL + "extension/AI优化/beijing.png');background-size: 100% 100%;background-position: center;--w: 560px;--h: calc(var(--w) * 610/1058);width: var(--w);height: var(--h);background-repeat: no-repeat;background-attachment: fixed;}h1{text-shadow:1px 1px 1PX #000000,1px -1px 1PX #000000,-1px 1px 1PX #000000,-1px -1px 1PX #000000;font-size:20px}div {width: 160vmin;height: 63vmin;border: 0px solid black;border-radius: 9px;padding: 35px;margin-top: 5.5vmin;margin-bottom: 5.5vmin;margin-left: 10.5vmin;margin-right: 10.5vmin;position: center;}div.ex1 {width: 160vmin;height: 63vmin;overflow: auto;}</style></head><body><div class='ex1'>";
-					if (lists && lists.length > 0) {
-						for (var i = 0; i < lists.length; i++) {
-							SRr += '〖';
-							if (lib.translate[lists[i]]) SRr += lib.translate[lists[i]] + '（' + lists[i] + '）〗';
-							else SRr += lists[i] + '〗';
-						}
-						SRr += '</div></body></html>';
-					}
-					else SRr += "亲～您尚未禁将</div></body></html>";
-					bandizhucharacter = ui.create.div('', '<div style="z-index:114514"><iframe width="' + w + 'px" height="' + h + 'px" srcdoc="<!DOCTYPE html>' + SRr + '"></iframe></div>', ui.window);
-					bandizhucharacter_close = ui.create.div('', '<div style="height:10px;width:' + w + 'px;text-align:center;z-index:114514"><font size="5em">关闭</font></div>', bandizhucharacter, function () {
-						bandizhucharacter.delete();
-					});
+					game.aiyh_configBanList('dizhu','地主');
 				}
 			},
 			bannongmin: {
 				clear: true,
 				name: '<li>农民AI禁将',
 				onclick: function () {
-					var temp = this;
-					game.prompt('请输入要农民AI禁选的武将id<br>（如标曹操为“caocao”，神曹操为“shen_caocao”），再次输入同id即可退出', function (str) {
-						if (str) {
-							var thisstr = '';
-							if (lib.character[str]) {
-								thisstr = str;
-								var lists = lib.config.extension_AI优化_nongmin || [];
-								if (lists && lists.includes(thisstr)) {
-									lists.remove(thisstr);
-									temp.innerHTML = '<div style="color:rgb(210,210,000);font-family:xinwei"><font size="4">' + (lib.translate[thisstr] || '未知') + '已移出农民AI禁选</font></div>';
-									temp.ready = true;
-									setTimeout(() => {
-										temp.innerHTML = '<li>农民AI禁将';
-										delete temp.ready;
-									}, 1600);
-								} else {
-									lists.push(thisstr);
-									temp.innerHTML = '<div style="color:rgb(255,97,3);font-family:xinwei"><font size="4">' + (lib.translate[thisstr] || '未知') + '已加入农民AI禁选</font></div>';
-									temp.ready = true;
-									setTimeout(() => {
-										temp.innerHTML = '<li>农民AI禁将';
-										delete temp.ready;
-									}, 1600);
-								}
-								game.saveExtensionConfig('AI优化', 'nongmin', lists);
-							} else {
-								temp.innerHTML = '<div style="color:rgb(255,0,0);font-family:xinwei"><font size="4">找不到该武将</font></div>';
-								temp.ready = true;
-								setTimeout(() => {
-									temp.innerHTML = '<li>农民AI禁将';
-									delete temp.ready;
-								}, 1600);
-							}
-						}
-					});
+					game.aiyh_configBan(this,'nongmin','农民');
 				}
 			},
 			bannongminbiao: {
 				name: '<li>农民AI禁选表(点击查看)',
 				clear: true,
 				onclick: function () {
-					var h = document.body.offsetHeight;
-					var w = document.body.offsetWidth;
-					var lists = lib.config.extension_AI优化_nongmin || [];
-					//改自手杀ui和群英荟萃
-					var SRr = "<html><head><meta charset='utf-8'><style type='text/css'>body {background-image: url('" + lib.assetURL + "extension/AI优化/beijing.png');background-size: 100% 100%;background-position: center;--w: 560px;--h: calc(var(--w) * 610/1058);width: var(--w);height: var(--h);background-repeat: no-repeat;background-attachment: fixed;}h1{text-shadow:1px 1px 1PX #000000,1px -1px 1PX #000000,-1px 1px 1PX #000000,-1px -1px 1PX #000000;font-size:20px}div {width: 160vmin;height: 63vmin;border: 0px solid black;border-radius: 9px;padding: 35px;margin-top: 5.5vmin;margin-bottom: 5.5vmin;margin-left: 10.5vmin;margin-right: 10.5vmin;position: center;}div.ex1 {width: 160vmin;height: 63vmin;overflow: auto;}</style></head><body><div class='ex1'>";
-					if (lists && lists.length > 0) {
-						for (var i = 0; i < lists.length; i++) {
-							SRr += '〖';
-							if (lib.translate[lists[i]]) SRr += lib.translate[lists[i]] + '（' + lists[i] + '）〗';
-							else SRr += lists[i] + '〗';
-						}
-						SRr += '</div></body></html>';
-					}
-					else SRr += "亲～您尚未禁将</div></body></html>";
-					bannongmincharacter = ui.create.div('', '<div style="z-index:114514"><iframe width="' + w + 'px" height="' + h + 'px" srcdoc="<!DOCTYPE html>' + SRr + '"></iframe></div>', ui.window);
-					bannongmincharacter_close = ui.create.div('', '<div style="height:10px;width:' + w + 'px;text-align:center;z-index:114514"><font size="5em">关闭</font></div>', bannongmincharacter, function () {
-						bannongmincharacter.delete();
-					});
+					game.aiyh_configBanList('nongmin','农民');
 				}
 			},
 			bd6: {
@@ -5206,7 +4963,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			intro: `<font color=#00FFFF>建立者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157<br><font color=#00FFFF>现更者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157
 				<br><font color=#00FFFF>特别鸣谢</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp寰宇星城(插件功能)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp༺ཌༀཉི梦ღ沫ღ惜༃ༀ(工具人)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp萌新（转型中）(本体优化)
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp😁呲牙哥！(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp读书人(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp幸运女神在微笑(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspAurora(代码参考)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp蓝色火鸡(代码提供)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp呓如惑(测试反馈)
-				<br><font color=#00FFFF>当前版本号</font>：<font color=#FFFF00>1.3.5.5</font><br><font color=#00FFFF>支持本体最低版本号</font>：<font color=#FFFF00>1.10.6</font><br><font color=#00FFFF>建议本体最低版本号</font>：<font color=#FFFF00>1.10.6</font><br><font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>11</font>日<font color=fire> 8</font>时<br>`,
+				<br><font color=#00FFFF>当前版本号</font>：<font color=#FFFF00>1.3.5.5</font><br><font color=#00FFFF>支持本体最低版本号</font>：<font color=#FFFF00>1.10.6</font><br><font color=#00FFFF>建议本体最低版本号</font>：<font color=#FFFF00>1.10.6</font><br><font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>11</font>日<font color=fire>10</font>时<br>`,
 			author: '',
 			diskURL: '',
 			forumURL: '',
