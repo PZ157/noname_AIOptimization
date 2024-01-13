@@ -2327,7 +2327,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				};
 				if (lib.config.extension_AI优化_dev) {
 					if (lib.card.tiesuo&&lib.card.tiesuo.ai&&lib.card.tiesuo.ai.basic) lib.card.tiesuo.ai.basic.order=7.3;
-					if (lib.card.sha.ai){
+					if (lib.card.sha&&lib.card.sha.ai){
 						/*lib.card.sha.ai.order=function(item,player){
 							let res=3;
 							if(player.hasSkillTag('presha',true,null,true)) res+=7;
@@ -3615,7 +3615,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				skill: {},
 				translate: {}
 			},
-			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>13</font>日<font color=fire>15</font>时
+			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>13</font>日<font color=fire>16</font>时
 				<br><font color=#00FFFF>建立者</font>：
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子
