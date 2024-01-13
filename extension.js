@@ -1281,10 +1281,12 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			}
 			if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 				let str = [
-					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>11</font>日</center>',
+					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>13</font>日</center>',
+					'◆新增［一键复制仓库链接］功能',
 					'◆移除已加入本体的34个武将技能优化和6种卡牌优化',
 					'◆移除本体已修复的7个武将技能和2种卡牌的bug',
-					'◆修复并简化身份禁将表的函数写法',
+					'◆简化扩展设置界面，移除特别鸣谢名单',
+					'◆修复并简化伪禁衍生功能的函数写法',
 					'◆适配最新版本'
 				];
 				let ul = document.createElement('ul');
@@ -2817,7 +2819,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				}
 			},
 			bd1: {
-				name: '<hr>可通过<font color=fire>无名杀频道</font>、<font color=#FFFF00>无名杀扩展交流</font>、<font color=#00FFFF>Q群</font>或<font color=#00FFFF>下方链接</font><font color=#00FFB0>获取</font>本扩展最新版本',
+				name: '<br><hr>可通过<font color=fire>无名杀频道</font>、<font color=#FFFF00>无名杀扩展交流</font>、<font color=#00FFFF>Q群</font>或<font color=#00FFFF>下方链接</font><font color=#00FFB0>获取</font>本扩展最新版本',
 				clear: true
 			},
 			copyQg: {
@@ -2866,6 +2868,23 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					if (document.execCommand('copy')) {
 						document.execCommand('copy');
 						alert('提取码：dwOG\n无需登录，浏览器访问即可获取本扩展最新版本');
+					}
+					else alert('复制失败');
+					document.body.removeChild(textarea);
+				}
+			},
+			copyGit: {
+				name: '一键复制<font color=#FFFF00>GitHub</font><font color=#00FFFF>仓库链接</font>',
+				clear: true,
+				onclick: function () {
+					const textarea = document.createElement('textarea');
+					textarea.setAttribute('readonly', 'readonly');
+					textarea.value = 'https://github.com/PZ157/noname_AIOptimization';
+					document.body.appendChild(textarea);
+					textarea.select();
+					if (document.execCommand('copy')) {
+						document.execCommand('copy');
+						alert('链接已复制到剪贴板，欢迎志同道合之人为无名杀和本扩展提供代码');
 					}
 					else alert('复制失败');
 					document.body.removeChild(textarea);
@@ -3596,14 +3615,18 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				skill: {},
 				translate: {}
 			},
-			intro: `<font color=#00FFFF>建立者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157<br><font color=#00FFFF>现更者</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157
-				<br><font color=#00FFFF>特别鸣谢</font>：<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp寰宇星城(插件功能)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp༺ཌༀཉི梦ღ沫ღ惜༃ༀ(工具人)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp萌新（转型中）(本体优化)
-				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp😁呲牙哥！(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp读书人(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp幸运女神在微笑(扩展宣传)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspAurora(代码参考)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp蓝色火鸡(代码提供)<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp呓如惑(测试反馈)
-				<br><font color=#00FFFF>当前版本号</font>：<font color=#FFFF00>1.3.6</font><br><font color=#00FFFF>支持本体最低版本号</font>：<font color=#FFFF00>1.10.6</font><br><font color=#00FFFF>建议本体最低版本号</font>：<font color=#FFFF00>1.10.6</font><br><font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>11</font>日<font color=fire>11</font>时<br>`,
-			author: '',
+			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>13</font>日<font color=fire>15</font>时
+				<br><font color=#00FFFF>建立者</font>：
+				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具
+				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子
+				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157
+				<br><font color=#00FFFF>现更者</font>：157
+				<br><font color=#00FFB0>当前版本号</font>：<font color=#FFFF00>1.4</font>
+				<br><font color=#00FFB0>支持本体最低版本号</font>：<font color=#FFFF00>1.10.6</font>
+				<br><font color=#00FFB0>建议本体最低版本号</font>：<font color=#FFFF00>1.10.6</font>`,
 			diskURL: '',
 			forumURL: '',
-			version: '1.3.6'
+			version: '1.4'
 		},
 		files: { character: [], card: [], skill: [] }
 	}
