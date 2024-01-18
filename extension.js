@@ -164,7 +164,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				ai: {
 					effect: {
 						player: function (card, player, target) {
-							if (lib.config.extension_AI优化_nhFriends != 'off' && !player._nhFriends_temp && get.itemtype(target) == 'player' && player != game.me && get.tag(card, 'damage') && card.name != 'huogong' && (!lib.config.extension_AI优化_ntAoe || card.name != 'nanman' && card.name != 'wanjian') && get.attitude(player, target) > 0) {
+							if (lib.config.extension_AI优化_nhFriends === 'off' || player._nhFriends_temp || get.itemtype(target) !== 'player' || player === game.me) return;
+							if (get.tag(card, 'damage') && card.name != 'huogong' && (!lib.config.extension_AI优化_ntAoe || card.name != 'nanman' && card.name != 'wanjian') && get.attitude(player, target) > 0) {
 								let num = 0;
 								if (lib.config.extension_AI优化_nhFriends == 'ph') num = player.hp;
 								else num = parseInt(lib.config.extension_AI优化_nhFriends);
@@ -211,7 +212,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					if (event.qz > 0.01) list.push('-0.01');
 					list.push('暂不设置');
 					list.push('设置');
-					player.chooseControl(list).set('prompt', get.translation(event.name) + '的 权重：<font color=#FFFF00>' + event.qz + '</font>').set('prompt2', '该值将作为内奸AI判断角色实力的首选').set('ai', function () {
+					player.chooseControl(list).set('prompt', get.translation(event.name) + '的 权重：<font color=#FFFF00>' + event.qz + '</font>')
+					.set('prompt2', '该值将作为内奸AI判断角色实力的首选').set('ai', function () {
 						return '暂不设置';
 					});
 					'step 3'
@@ -260,7 +262,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					if (event.th > 0.01) con.push('-0.01');
 					con.push('暂不处理');
 					con.push('确认修改');
-					player.chooseControl(con).set('prompt', '<font color=#00FFFF>' + get.translation(event.target) + '</font>的【<font color=#FFFF00>' + get.translation(event.skill) + '</font>】：当前为<font color=#00FFFF>' + event.th + '</font>').set('prompt2', str).set('ai', function () {
+					player.chooseControl(con).set('prompt', '<font color=#00FFFF>' + get.translation(event.target) + '</font>的【<font color=#FFFF00>' + get.translation(event.skill) + '</font>】：当前为<font color=#00FFFF>' + event.th + '</font>')
+					.set('prompt2', str).set('ai', function () {
 						return '确认修改';
 					});
 					'step 8'
@@ -399,7 +402,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 								if (get.attitude(game.zhu, player) < -1 || (get.attitude(game.zhu, player) < 0 && player.ai.shown >= 0.95)) return 1;
 								return -3;
 							}
-							if (!player.hasSkill('gjcx_neiZhong') && !player.hasSkill('gjcx_neiJiang') && (player.hp <= 2 && game.zhu.hp <= 2 || game.zhu.isHealthy() && lib.config.extension_AI优化_sfjAi) || game.zhu.hp <= 1 && !player.countCards('hs', 'tao') && (player.hasSkill('gjcx_neiZhong') || !lib.config.extension_AI优化_sfjAi)) return 1;
+							if (!player.hasSkill('gjcx_neiZhong') && !player.hasSkill('gjcx_neiJiang') && (player.hp <= 2 && game.zhu.hp <= 2 || game.zhu.isHealthy() && lib.config.extension_AI优化_sfjAi)
+							|| game.zhu.hp <= 1 && !player.countCards('hs', 'tao') && (player.hasSkill('gjcx_neiZhong') || !lib.config.extension_AI优化_sfjAi)) return 1;
 							return -3;
 						}
 					}
@@ -583,13 +587,21 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					event.num = -1;
 					if (player.name1 != undefined) {
 						if (lib.config.extension_AI优化_wj.includes(player.name1)) event.num = 0;
-						else if (get.mode() == 'identity' && ((player == game.zhu || player == game.rZhu || player == game.bZhu) && lib.config.extension_AI优化_zhu.includes(player.name1) || player.identity == 'nei' && lib.config.extension_AI优化_nei.includes(player.name1) || (player == game.zhong || player.identity == 'zhong') && lib.config.extension_AI优化_zhong.includes(player.name1) || player.identity == 'fan' && lib.config.extension_AI优化_fan.includes(player.name1))) event.num = 0;
-						else if (get.mode() == 'doudizhu' && (player == game.zhu && lib.config.extension_AI优化_dizhu.includes(player.name1) || player.identity == 'fan' && lib.config.extension_AI优化_nongmin.includes(player.name1))) event.num = 0;
+						else if (get.mode() == 'identity' && ((player == game.zhu || player == game.rZhu || player == game.bZhu) && lib.config.extension_AI优化_zhu.includes(player.name1)
+						|| player.identity == 'nei' && lib.config.extension_AI优化_nei.includes(player.name1)
+						|| (player == game.zhong || player.identity == 'zhong') && lib.config.extension_AI优化_zhong.includes(player.name1)
+						|| player.identity == 'fan' && lib.config.extension_AI优化_fan.includes(player.name1))) event.num = 0;
+						else if (get.mode() == 'doudizhu' && (player == game.zhu && lib.config.extension_AI优化_dizhu.includes(player.name1)
+						|| player.identity == 'fan' && lib.config.extension_AI优化_nongmin.includes(player.name1))) event.num = 0;
 					}
 					if (event.num === -1 && player.name2 != undefined) {
 						if (lib.config.extension_AI优化_wj.includes(player.name2)) event.num = 1;
-						else if (get.mode() == 'identity' && ((player == game.zhu || player == game.rZhu || player == game.bZhu) && lib.config.extension_AI优化_zhu.includes(player.name2) || player.identity == 'nei' && lib.config.extension_AI优化_nei.includes(player.name2) || (player == game.zhong || player.identity == 'zhong') && lib.config.extension_AI优化_zhong.includes(player.name2) || player.identity == 'fan' && lib.config.extension_AI优化_fan.includes(player.name2))) event.num = 1;
-						else if (get.mode() == 'doudizhu' && (player == game.zhu && lib.config.extension_AI优化_dizhu.includes(player.name2) || player.identity == 'fan' && lib.config.extension_AI优化_nongmin.includes(player.name2))) event.num = 1;
+						else if (get.mode() == 'identity' && ((player == game.zhu || player == game.rZhu || player == game.bZhu) && lib.config.extension_AI优化_zhu.includes(player.name2)
+						|| player.identity == 'nei' && lib.config.extension_AI优化_nei.includes(player.name2)
+						|| (player == game.zhong || player.identity == 'zhong') && lib.config.extension_AI优化_zhong.includes(player.name2)
+						|| player.identity == 'fan' && lib.config.extension_AI优化_fan.includes(player.name2))) event.num = 1;
+						else if (get.mode() == 'doudizhu' && (player == game.zhu && lib.config.extension_AI优化_dizhu.includes(player.name2)
+						|| player.identity == 'fan' && lib.config.extension_AI优化_nongmin.includes(player.name2))) event.num = 1;
 					}
 					if (event.num < 0) event.finish();
 					'step 1'
@@ -631,8 +643,12 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					_status.aiyhlist.randomSort();
 					for (let i = 0; i < _status.aiyhlist.length; i++) {
 						if (lib.config.extension_AI优化_wj.includes(_status.aiyhlist[i])) continue;
-						if (get.mode() == 'identity' && ((player == game.zhu || player == game.rZhu || player == game.bZhu) && lib.config.extension_AI优化_zhu.includes(_status.aiyhlist[i]) || player.identity == 'nei' && lib.config.extension_AI优化_nei.includes(_status.aiyhlist[i]) || (player == game.zhong || player.identity == 'zhong') && lib.config.extension_AI优化_zhong.includes(_status.aiyhlist[i]) || player.identity == 'fan' && lib.config.extension_AI优化_fan.includes(_status.aiyhlist[i]))) continue;
-						if (get.mode() == 'doudizhu' && (player == game.zhu && lib.config.extension_AI优化_dizhu.includes(_status.aiyhlist[i]) || player.identity == 'fan' && lib.config.extension_AI优化_nongmin.includes(_status.aiyhlist[i]))) continue;
+						if (get.mode() == 'identity' && ((player == game.zhu || player == game.rZhu || player == game.bZhu) && lib.config.extension_AI优化_zhu.includes(_status.aiyhlist[i])
+						|| player.identity == 'nei' && lib.config.extension_AI优化_nei.includes(_status.aiyhlist[i])
+						|| (player == game.zhong || player.identity == 'zhong') && lib.config.extension_AI优化_zhong.includes(_status.aiyhlist[i])
+						|| player.identity == 'fan' && lib.config.extension_AI优化_fan.includes(_status.aiyhlist[i]))) continue;
+						if (get.mode() == 'doudizhu' && (player == game.zhu && lib.config.extension_AI优化_dizhu.includes(_status.aiyhlist[i])
+						|| player.identity == 'fan' && lib.config.extension_AI优化_nongmin.includes(_status.aiyhlist[i]))) continue;
 						list.push(_status.aiyhlist[i]);
 						if (list.length >= hx) break;
 					}
@@ -1036,7 +1052,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 										if (get.attitude(game.zhu, i) > 0) player.ai.shown -= 0.5;
 										else if (i.identity == 'fan') player.ai.shown = 0.99;
 									}
-								} else if (trigger.targets && trigger.targets.length == 1 && player != trigger.targets[0] && !player.hasSkill('gjcx_neiZhong') && !player.hasSkill('gjcx_neiJiang') && get.attitude(game.zhu, trigger.targets[0]) * get.effect(trigger.targets[0], trigger.card, player, game.zhu) < 0) {
+								} else if (trigger.targets && trigger.targets.length == 1 && player != trigger.targets[0] && !player.hasSkill('gjcx_neiZhong') && !player.hasSkill('gjcx_neiJiang')
+								&& get.attitude(game.zhu, trigger.targets[0]) * get.effect(trigger.targets[0], trigger.card, player, game.zhu) < 0) {
 									player.removeSkill('gjcx_neiAi_expose');
 									player.ai.shown = 0.99;
 								} else if (!player.hasSkill('gjcx_neiFan')) player.ai.shown -= 0.03;
@@ -1281,13 +1298,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			}
 			if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 				let str = [
-					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>13</font>日</center>',
-					'◆新增［一键复制仓库链接］功能',
-					'◆移除已加入本体的34个武将技能优化和6种卡牌优化',
-					'◆移除本体已修复的7个武将技能和2种卡牌的bug',
-					'◆简化扩展设置界面，移除特别鸣谢名单',
-					'◆修复并简化伪禁衍生功能的函数写法',
-					'◆适配最新版本'
+					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>18</font>日</center>',
+					'◆严重bug修复'
 				];
 				let ul = document.createElement('ul');
 				ul.style.textAlign = 'left';
@@ -1343,7 +1355,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					sortedObj[key] = lib.config.extension_AI优化_qz[key];
 				});
 				game.saveExtensionConfig('AI优化', 'qz', sortedObj);
-				for (i in lib.config.extension_AI优化_qz) {
+				for (let i in lib.config.extension_AI优化_qz) {
 					qz += '<option value=' + i + '>' + lib.translate[i] + '(' + i + ')：' + lib.config.extension_AI优化_qz[i] + '</option>';
 				}
 				//选项显示摘自@Aurora《战斗记录》
@@ -1357,7 +1369,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					sortedObj[key] = lib.config.extension_AI优化_cf[key];
 				});
 				game.saveExtensionConfig('AI优化', 'cf', sortedObj);
-				for (i in lib.config.extension_AI优化_cf) {
+				for (let i in lib.config.extension_AI优化_cf) {
 					cf += '<option value=' + i + '>' + i + ' | ' + (lib.translate[i] || '无') + '：' + lib.config.extension_AI优化_cf[i] + '</option>';
 				}
 				lib.extensionMenu.extension_AI优化.chooseCf.name = '<span style="font-family: xinwei">请选择要删除的技能威胁度</span><br><select id="AI优化_chooseCf" size="1" style="width:180px">' + cf + '</select>';
@@ -2811,11 +2823,20 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					node.parentNode.style.width = '300px';
 					if(link === 'jieshao') node.innerHTML = `本扩展以『云将』『官将重修』中部分功能为基础，@柚子丶奶茶丶猫以及面具 退圈前已许可修改，现由@翩翩浊世许公子 和 @157 整理，@157负责主要后续维护，与原作者无关
 						<br><br><font color=#FF3300>注意！</font>本扩展与其他有AI功能的扩展同时打开可能会导致AI错乱。若下面涉及到的本体武将或卡牌出现bug建议关闭本扩展后测试
-						<br><br><br><li><font color=#FFFF00>本体武将优化相关</font>：<br>刘焉〖立牧〗<br>神马超〖狩骊〗〖横骛〗<br>曹髦〖潜龙〗<br>神甘宁〖劫营〗<br>夏侯紫萼〖血偿〗<br><br><br>
-						<li><font color=#00FFFF>本体卡牌AI相关</font>：<br>●<span style="font-family: xingkai">南蛮入侵</span><br>将身份奖惩写在【南蛮入侵】中对使用者的效益里，一定程度上减少人机杀敌一千自损八百的情况；<br>增加对有「打出杀」标签的角色的判断，具体化残血主公的放大效益，一定程度上鼓励人机开aoe收残血反；<br>有无懈的队友一般会在自己也是aoe的目标且没有响应的情况下比较当前响应角色和自己的情况决定要不要不出无懈，已响应或不为目标也会看在队友实力雄厚的情况下可能不出无懈<br>●<span style="font-family: xingkai">万箭齐发</span>与<span style="font-family: xingkai">南蛮入侵</span>类似
-						<br>●<span style="font-family: xingkai">以逸待劳</span><br>修复文字描述错误，对决模式目标默认选择己方角色<br><br><br><li><span style="font-family: xingkai">身份局相关：</span><br>●没有队友、场上有忠臣存活的反贼和内奸，以及没有忠臣、场上有多名反贼存活的主公和内奸彼此会减少伤害牌的使用，并在自己血还够扛的情况下会救濒死的对方；<br>●需要弃牌时，主公会盲那些身份尚不明朗的人，前提是对方体力大于1或者自己有绝情标签（一定程度上避免盲忠弃牌后果），如果是忠内混战，主公还会把身份尚不明朗的人都连起来；<br>●稍稍提高对主公用伤害牌或兵乐的影响；<br>
-						●内奸将根据玩家设置的武将权重和［第二权重参考］选择的选项作为侧重判断场上角色实力、战损程度、牌持有量、有无翻面决定自己是跳反、跳忠还是酱油（主公比较健康且忠反双方实力差距不大时酱油）；<br>●通过内奸的努力，会逐渐减少其身份暴露度，但如果他跳反时救人或直接伤害主忠，将其身份直接暴露，如果救主忠，大幅减少其身份暴露度；<br>●内奸跳忠/反时会优先打反/忠，需要弃牌时会盲身份不明朗的角色，并尽量规避对主以及忠/反使用伤害牌，自己和主公比较健康时也会救忠/反；<br>●内奸打酱油时，只关心自己和主公，非必要不用牌，需要弃牌时使用伤害牌但也不酒杀，对忠反的生死漠不关心
-						<br><br><br><li><span style="font-family: xingkai">其他：</span><br>●人机拥有多张同名牌时鼓励人机使用点数较小的牌，弃牌时鼓励保留点数较大的牌，但由于是微调数值收效甚微；<br>●鼓励拥有reverseEquip标签的角色刷装备，大幅降低已被废除的装备栏对应副类别的牌的价值`;
+						<br><br><br><li><font color=#FFFF00>本体武将优化相关</font>：<br>刘焉〖立牧〗<br>神马超〖狩骊〗〖横骛〗<br>曹髦〖潜龙〗<br>神甘宁〖劫营〗<br>夏侯紫萼〖血偿〗
+						<br><br><br><li><font color=#00FFFF>本体卡牌AI相关</font>：<br>●<span style="font-family: xingkai">南蛮入侵</span>
+						<br>将身份奖惩写在【南蛮入侵】中对使用者的效益里，一定程度上减少人机杀敌一千自损八百的情况；<br>增加对有「打出杀」标签的角色的判断，具体化残血主公的放大效益，一定程度上鼓励人机开aoe收残血反；
+						<br>有无懈的队友一般会在自己也是aoe的目标且没有响应的情况下比较当前响应角色和自己的情况决定要不要不出无懈，已响应或不为目标也会看在队友实力雄厚的情况下可能不出无懈
+						<br>●<span style="font-family: xingkai">万箭齐发</span>与<span style="font-family: xingkai">南蛮入侵</span>类似
+						<br>●<span style="font-family: xingkai">以逸待劳</span><br>修复文字描述错误，对决模式目标默认选择己方角色
+						<br><br><br><li><span style="font-family: xingkai">身份局相关：</span><br>●没有队友、场上有忠臣存活的反贼和内奸，以及没有忠臣、场上有多名反贼存活的主公和内奸彼此会减少伤害牌的使用，并在自己血还够扛的情况下会救濒死的对方；
+						<br>●需要弃牌时，主公会盲那些身份尚不明朗的人，前提是对方体力大于1或者自己有绝情标签（一定程度上避免盲忠弃牌后果），如果是忠内混战，主公还会把身份尚不明朗的人都连起来；<br>●稍稍提高对主公用伤害牌或兵乐的影响；
+						<br>●内奸将根据玩家设置的武将权重和［第二权重参考］选择的选项作为侧重判断场上角色实力、战损程度、牌持有量、有无翻面决定自己是跳反、跳忠还是酱油（主公比较健康且忠反双方实力差距不大时酱油）；
+						<br>●通过内奸的努力，会逐渐减少其身份暴露度，但如果他跳反时救人或直接伤害主忠，将其身份直接暴露，如果救主忠，大幅减少其身份暴露度；
+						<br>●内奸跳忠/反时会优先打反/忠，需要弃牌时会盲身份不明朗的角色，并尽量规避对主以及忠/反使用伤害牌，自己和主公比较健康时也会救忠/反；
+						<br>●内奸打酱油时，只关心自己和主公，非必要不用牌，需要弃牌时使用伤害牌但也不酒杀，对忠反的生死漠不关心
+						<br><br><br><li><span style="font-family: xingkai">其他：</span><br>●人机拥有多张同名牌时鼓励人机使用点数较小的牌，弃牌时鼓励保留点数较大的牌，但由于是微调数值收效甚微；
+						<br>●鼓励拥有reverseEquip标签的角色刷装备，大幅降低已被废除的装备栏对应副类别的牌的价值`;
 				}
 			},
 			bd1: {
@@ -3450,7 +3471,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				}
 			},
 			tip3: {
-				name: '<br><font color=#FF3300>注意！</font>通过以下功能修改的技能威胁度会<font color=#00FFFF>覆盖</font>技能原有的威胁度<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp由于威胁度一般会与卡牌收益作积，为避免新手胡乱设置可能引起的错乱ai，故部分功能不允许将威胁度设为<font color=#FFFF00>非正数</font>',
+				name: `<br><font color=#FF3300>注意！</font>通过以下功能修改的技能威胁度会<font color=#00FFFF>覆盖</font>技能原有的威胁度
+					<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp由于威胁度一般会与卡牌收益作积，为避免新手胡乱设置可能引起的错乱ai，故部分功能不允许将威胁度设为<font color=#FFFF00>非正数</font>`,
 				clear: true
 			},
 			fixCf: {
@@ -3460,7 +3482,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			},
 			applyCf: {
 				name: '威胁度补充',
-				intro: '〔自动补充〕会在进入游戏时根据武将评级对没有添加威胁度的武将技能增加一定威胁度，单机时可通过〈千幻聆音〉等扩展修改武将评级以影响对应技能威胁度；<br>〔手动补充〕会在游戏开始或隐匿武将展示武将牌时建议玩家为没有添加威胁度的技能赋威胁度',
+				intro: `〔自动补充〕会在进入游戏时根据武将评级对没有添加威胁度的武将技能增加一定威胁度，单机时可通过〈千幻聆音〉等扩展修改武将评级以影响对应技能威胁度；
+					<br>〔手动补充〕会在游戏开始或隐匿武将展示武将牌时建议玩家为没有添加威胁度的技能赋威胁度`,
 				init: 'off',
 				item: {
 					off: '不补充',
@@ -3615,7 +3638,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				skill: {},
 				translate: {}
 			},
-			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>13</font>日<font color=fire>16</font>时
+			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>18</font>日<font color=fire>10</font>时
 				<br><font color=#00FFFF>建立者</font>：
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子
@@ -3626,7 +3649,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				<br><font color=#00FFB0>建议本体最低版本号</font>：<font color=#FFFF00>1.10.6</font>`,
 			diskURL: '',
 			forumURL: '',
-			version: '1.4'
+			version: '1.4.0.1'
 		},
 		files: { character: [], card: [], skill: [] }
 	}
