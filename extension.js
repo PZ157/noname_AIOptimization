@@ -112,6 +112,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 										delete player._aiyh_order_temp;
 										return 0;
 									}
+									if (card.name !== 'zhuge') num /= 5;
 								}
 							}
 							delete player._aiyh_order_temp;
@@ -1298,8 +1299,9 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			}
 			if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 				let str = [
-					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>18</font>日</center>',
-					'◆严重bug修复'
+					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>23</font>日</center>',
+					'◆优化替换装备ai，降低ai替换装备区牌的优先级',
+					'◆将“建议本体最低版本号”改为“最佳适配本体版本号”'
 				];
 				let ul = document.createElement('ul');
 				ul.style.textAlign = 'left';
@@ -3638,7 +3640,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				skill: {},
 				translate: {}
 			},
-			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>18</font>日<font color=fire>10</font>时
+			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>23</font>日<font color=fire>18</font>时
 				<br><font color=#00FFFF>建立者</font>：
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子
@@ -3646,10 +3648,10 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				<br><font color=#00FFFF>现更者</font>：157
 				<br><font color=#00FFB0>当前版本号</font>：<font color=#FFFF00>1.4</font>
 				<br><font color=#00FFB0>支持本体最低版本号</font>：<font color=#FFFF00>1.10.6</font>
-				<br><font color=#00FFB0>建议本体最低版本号</font>：<font color=#FFFF00>1.10.6</font>`,
+				<br><font color=#00FFB0>最佳适配本体版本号</font>：<font color=#FFFF00>1.10.6.1</font>`,
 			diskURL: '',
 			forumURL: '',
-			version: '1.4.0.1'
+			version: '1.4.0.2'
 		},
 		files: { character: [], card: [], skill: [] }
 	}
