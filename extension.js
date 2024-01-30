@@ -1299,7 +1299,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			}
 			if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 				let str = [
-					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>23</font>日</center>',
+					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>30</font>日</center>',
 					'◆优化替换装备ai，降低ai替换装备区牌的优先级',
 					'◆将“建议本体最低版本号”改为“最佳适配本体版本号”'
 				];
@@ -2159,123 +2159,6 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 						}
 					}
 				};
-				if (lib.skill.qianlong && game.aiyh_skillOptEnabled('qianlong')) lib.skill.qianlong.content = function () {
-					'step 0'
-					var cards = get.cards(3);
-					event.cards = cards;
-					game.cardsGotoOrdering(cards);
-					//展示牌
-					game.log(player, '展示了', event.cards);
-					event.videoId = lib.status.videoId++;
-					game.broadcastAll(
-						function (player, id, cards) {
-							if (player == game.me || player.isUnderControl()) return;
-							var str = get.translation(player) + '发动了【潜龙】';
-							var dialog = ui.create.dialog(str, cards);
-							dialog.videoId = id;
-						},
-						player,
-						event.videoId,
-						event.cards
-					);
-					game.addVideo('showCards', player, [get.translation(player) + '发动了【潜龙】', get.cardsInfo(event.cards)]);
-					if (player != game.me && !player.isUnderControl() && !player.isOnline()) game.delay(2);
-					//选牌
-					var next = player.chooseToMove('潜龙：获得至多' + get.cnNumber(Math.min(3, player.getDamagedHp())) + '张牌并将其余牌置于牌堆底');
-					next.set('list', [['置于牌堆底', cards], ['自己获得']]);
-					next.set('filterMove', function (from, to, moved) {
-						if (moved[0].includes(from.link)) {
-							if (typeof to == 'number') {
-								if (to == 1) {
-									if (moved[1].length >= _status.event.player.getDamagedHp()) return false;
-								}
-								return true;
-							}
-						}
-						return true;
-					});
-					next.set('processAI', function (list) {
-						var cards = list[0][1].slice(0),
-							player = _status.event.player;
-						cards.sort(function (a, b) {
-							return get.value(b, player) - get.value(a, player);
-						});
-						if (player.hasCard('sha') && player.storage.juetao == false) {
-							var gain,
-								bottom = [];
-							var pai = cards.filter(function (card) {
-								return card.name != 'sha';
-							});
-							if (pai.length <= player.getDamagedHp()) {
-								var gain = pai;
-							} else {
-								pai.sort(function (a, b) {
-									return get.value(b, player) - get.value(a, player);
-								});
-								var gain = pai.splice(0, player.getDamagedHp());
-								var bottom = bottom.push(pai);
-							}
-							return [bottom, gain];
-						} else {
-							return [cards, cards.splice(0, _status.event.player.getDamagedHp())];
-						}
-					});
-					'step 1'
-					game.broadcastAll('closeDialog', event.videoId);
-					game.addVideo('cardDialog', null, event.videoId);
-					var moved = result.moved;
-					if (moved[0].length > 0) {
-						for (var i of moved[0]) {
-							i.fix();
-							ui.cardPile.appendChild(i);
-						}
-					}
-					if (moved[1].length > 0) player.gain(moved[1], 'gain2');
-				};
-				if (lib.skill.drlt_jieying && game.aiyh_skillOptEnabled('drlt_jieying')) {
-					lib.skill.drlt_jieying.ai = {
-						effect: {
-							player: function (card, player, target) {
-								if (get.name(card) == 'lebu' && get.attitude(player, target) < 0) return target.countCards('h') * 0.8 + target.getHandcardLimit() * 0.7;
-							}
-						}
-					};
-					if (lib.skill.drlt_jieying && lib.skill.drlt_jieying.subSkill && lib.skill.drlt_jieying.subSkill['2']) lib.skill.drlt_jieying.subSkill['2'].content = function () {
-						'step 0'
-						player.chooseTarget(get.prompt('drlt_jieying'), '将“营”交给一名角色；其摸牌阶段多摸一张牌，出牌阶段使用【杀】的次数上限+1且手牌上限+1。该角色回合结束后，其移去“营”标记，然后你获得其所有手牌。', function (card, player, target) {
-							return target != player;
-						}).ai = function (target) {
-							if (get.attitude(player, target) > 0 && target.countCards('h') > 3 && (target.hp > 2 || (target.hp > 1 && target.getEquip(2)))) return 0.8 * target.countCards('h');
-							if (get.attitude(player, target) < 1 && target.countCards('h') >= 0 && target.countCards('j', { name: 'lebu' }) > 0) return target.countCards('h') * 0.8 + target.getHandcardLimit() * 0.7 + 2;
-							if (get.attitude(player, target) < 1 && target.countCards('h') > 0) {
-								if (target.hasSkillTag('directHit_ai', true, {
-									target: player,
-									card: new lib.element.VCard({ name: 'sha' })
-								}, true)) return 0;
-								if (target.getEquip('zhangba') || target.getEquip('guanshi')) return 0;
-								if (player.countCards('e', function (card) {
-									return get.subtype(card) == 'equip2' && get.name(card) != 'baiyin';
-								}) && !target.hasSkillTag('unequip_ai', false, {
-									name: card ? card.name : null,
-									target: target,
-									card: card
-								})) return target.countCards('h') * 0.8 + target.getHandcardLimit() * 0.7;
-								if (player.countCards('h', { name: 'shan' }) > 1 && !target.getEquip('qinglong')) return target.countCards('h') * 0.8 + target.getHandcardLimit() * 0.7;
-								if (!target.inRange(player)) return target.countCards('h') * 0.8 + target.getHandcardLimit() * 0.7;
-							}
-							return 0;
-						};
-						'step 1'
-						if (result.bool) {
-							var target = result.targets[0];
-							player.line(target);
-							player.logSkill('drlt_jieying', target);
-							var mark = player.countMark('drlt_jieying_mark');
-							player.removeMark('drlt_jieying_mark', mark);
-							target.addMark('drlt_jieying_mark', mark);
-						}
-					};
-				};
 				if (lib.skill.twxuechang && lib.skill.twxuechang.ai && game.aiyh_skillOptEnabled('twxuechang')) lib.skill.twxuechang.ai.result = {
 					player: function (player, target) {
 						var hs = player.getCards('h').sort(function (a, b) {
@@ -2341,73 +2224,6 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				};
 				if (lib.config.extension_AI优化_dev) {
 					if (lib.card.tiesuo&&lib.card.tiesuo.ai&&lib.card.tiesuo.ai.basic) lib.card.tiesuo.ai.basic.order=7.3;
-					if (lib.card.sha&&lib.card.sha.ai){
-						/*lib.card.sha.ai.order=function(item,player){
-							let res=3;
-							if(player.hasSkillTag('presha',true,null,true)) res+=7;
-							if(typeof item!=='object') return res+0.05;
-							let effect=player.getUseValue(item,null,true),
-								shas=player.getCardUsable('sha')-1.5,val;
-							player.getCards('hs','sha').forEach(i=>{
-								if(effect===false||i===item||item.cards&&item.cards.includes(i)) return;
-								val=player.getUseValue(i,null,true);
-								if(shas*(effect-val)>0) effect=false;
-							});
-							if(effect===false) return res;
-							return res+0.15;
-						};*/
-						lib.card.sha.ai.order=function(item,player){
-							if(player.hasSkillTag('presha',true,null,true)) return 10;
-							if(typeof item==='object'&&game.hasNature(item,'linked')){
-								if(game.hasPlayer(function(current){
-									return current!=player&&current.isLinked()&&player.canUse(item,current,null,true)&&get.effect(current,item,player,player)>0&&lib.card.sha.ai.canLink(player,current,item);
-								})&&game.countPlayer(function(current){
-									return current.isLinked()&&get.damageEffect(current,player,player,get.nature(item))>0;
-								})>1) return 3.1;
-								return 3;
-							}
-							return 3.05;
-						};
-						lib.card.sha.ai.result={
-							target:function(player,target,card,isLink){
-								let eff=-1.5,odds=1.35,num=1;
-								if(isLink){
-									let cache=_status.event.getTempCache('sha_result','eff');
-									if(typeof cache!=='object'||cache.card!==get.translation(card)) return eff;
-									if(cache.odds<1.35&&cache.bool) return 1.35*cache.eff;
-									return cache.odds*cache.eff;
-								}
-								if(player.hasSkill('jiu')||player.hasSkillTag('damageBonus',true,{
-									target:target,
-									card:card
-								})){
-									if(target.hasSkillTag('filterDamage',null,{
-										player:player,
-										card:card,
-										jiu:true,
-									})) eff=-0.5;
-									else{
-										num=2;
-										if(get.attitude(player,target)>0) eff=-7;
-										else eff=-4;
-									}
-								}
-								if(!player.hasSkillTag('directHit_ai',true,{
-									target:target,
-									card:card,
-								},true)) odds-=0.7*target.mayHaveShan(player,'use',target.getCards(i=>{
-									return i.hasGaintag('sha_notshan');
-								}),'odds');
-								_status.event.putTempCache('sha_result','eff',{
-									bool:target.hp>num&&get.attitude(player,target)>0,
-									card:get.translation(card),
-									eff:eff,
-									odds:odds
-								});
-								return odds*eff;
-							},
-						};
-					}
 				}
 				if (lib.card.nanman) lib.card.nanman.ai = {
 					wuxie: function (target, card, player, viewer, status) {
@@ -2825,7 +2641,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					node.parentNode.style.width = '300px';
 					if(link === 'jieshao') node.innerHTML = `本扩展以『云将』『官将重修』中部分功能为基础，@柚子丶奶茶丶猫以及面具 退圈前已许可修改，现由@翩翩浊世许公子 和 @157 整理，@157负责主要后续维护，与原作者无关
 						<br><br><font color=#FF3300>注意！</font>本扩展与其他有AI功能的扩展同时打开可能会导致AI错乱。若下面涉及到的本体武将或卡牌出现bug建议关闭本扩展后测试
-						<br><br><br><li><font color=#FFFF00>本体武将优化相关</font>：<br>刘焉〖立牧〗<br>神马超〖狩骊〗〖横骛〗<br>曹髦〖潜龙〗<br>神甘宁〖劫营〗<br>夏侯紫萼〖血偿〗
+						<br><br><br><li><font color=#FFFF00>本体武将优化相关</font>：<br>刘焉〖立牧〗<br>神马超〖狩骊〗〖横骛〗<br>夏侯紫萼〖血偿〗
 						<br><br><br><li><font color=#00FFFF>本体卡牌AI相关</font>：<br>●<span style="font-family: xingkai">南蛮入侵</span>
 						<br>将身份奖惩写在【南蛮入侵】中对使用者的效益里，一定程度上减少人机杀敌一千自损八百的情况；<br>增加对有「打出杀」标签的角色的判断，具体化残血主公的放大效益，一定程度上鼓励人机开aoe收残血反；
 						<br>有无懈的队友一般会在自己也是aoe的目标且没有响应的情况下比较当前响应角色和自己的情况决定要不要不出无懈，已响应或不为目标也会看在队友实力雄厚的情况下可能不出无懈
@@ -3640,7 +3456,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				skill: {},
 				translate: {}
 			},
-			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>23</font>日<font color=fire>18</font>时
+			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>30</font>日<font color=fire>18</font>时
 				<br><font color=#00FFFF>建立者</font>：
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子
@@ -3648,7 +3464,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				<br><font color=#00FFFF>现更者</font>：157
 				<br><font color=#00FFB0>当前版本号</font>：<font color=#FFFF00>1.4</font>
 				<br><font color=#00FFB0>支持本体最低版本号</font>：<font color=#FFFF00>1.10.6</font>
-				<br><font color=#00FFB0>最佳适配本体版本号</font>：<font color=#FFFF00>1.10.6.1</font>`,
+				<br><font color=#00FFB0>最佳适配本体版本号</font>：<font color=#FFFF00>1.10.6.2</font>`,
 			diskURL: '',
 			forumURL: '',
 			version: '1.4.0.2'
