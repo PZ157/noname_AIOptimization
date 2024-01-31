@@ -1300,8 +1300,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 				let str = [
 					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>30</font>日</center>',
-					'◆优化替换装备ai，降低ai替换装备区牌的优先级',
-					'◆将“建议本体最低版本号”改为“最佳适配本体版本号”'
+					'◆删除已加入本体的杀测试ai，曹髦〖潜龙〗，神甘宁〖劫营〗等',
+					'◆重写刘焉两个技能ai'
 				];
 				let ul = document.createElement('ul');
 				ul.style.textAlign = 'left';
@@ -1738,135 +1738,153 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				}
 			});
 			if (lib.config.extension_AI优化_wjAi) lib.arenaReady.push(function () {//武将AI
-				if (game.aiyh_skillOptEnabled('xinfu_limu')) lib.skill.xinfu_limu = {
-					mod: {
-						targetInRange: function (card, player, target) {
-							if (player.countCards('j') && player.inRange(target)) {
-								return true;
+				if (game.aiyh_skillOptEnabled('xinfu_tushe')) lib.skill.xinfu_tushe={
+					audio:2,
+					mod:{
+						aiOrder(player,card,num){
+							if(get.tag(card,'multitarget')){
+								if(player.countCards('h',{type:'basic'})) return num/10;
+								return num*10;
 							}
+							if(get.type(card)==='basic') return num+6;
 						},
-						cardUsableTarget: function (card, player, target) {
-							if (player.countCards('j') && player.inRange(target)) return true;
+						aiValue(player,card,num){
+							if(card.name==='zhangba'){
+								let fact=(n)=>{
+									if(n>1) return n*fact(n-1);
+									return 1;
+								},basic=0;
+								return fact(Math.min(player.countCards('hs',i=>{
+									if(get.tag(i,'multitarget')) return 2;
+									if(!['shan','tao','jiu'].includes(card.name)) return 1;
+									basic++;
+								})/(1+basic),player.getCardUsable('sha')));
+							}
+							if(['shan','tao','jiu'].includes(card.name)){
+								if(player.getEquip('zhangba')&&player.countCards('hs')>1) return 0.01;
+								return num/2;
+							}
+							if(get.tag(card,'multitarget')) return num+game.players.length;
 						},
-						aiValue: function (player, card, num) {
-							if (card.name == 'zhangba') return 30;
-							if (player.getEquip('zhangba') && player.countCards('hs') > 1 && ['shan', 'tao', 'jiu'].includes(card.name)) return 0;
-							if (card.name == 'shan' || card.name == 'tao' || card.name == 'jiu') return num / 3;
+						aiUseful(player,card,num){
+							if(get.name(card,player)==='shan'){
+								if(player.countCards('hs',i=>{
+									if(card===i||card.cards&&card.cards.includes(i)) return false;
+									return get.name(i,player)==='shan';
+								})) return -1;
+								return num/Math.pow(Math.max(1,player.hp),2);
+							}
 						}
 					},
-					locked: false,
-					audio: 2,
-					enable: 'phaseUse',
-					discard: false,
-					filter: function (event, player) {
-						if (player.hasJudge('lebu')) return false;
-						return player.countCards('hes', { suit: 'diamond' }) > 0;
+					trigger:{
+						player:"useCardToPlayered",
 					},
-					viewAs: {
-						name: 'lebu'
+					frequent:true,
+					filter:function (event,player){
+						if(get.type(event.card)=='equip') return false;
+						if(event.getParent().triggeredTargets3.length>1) return false;
+						return event.targets.length>0&&!player.countCards('h',{type:'basic'});
 					},
-					position: 'hes',
-					filterCard: function (card, player, event) {
-						return get.suit(card) == 'diamond' && player.canAddJudge({ name: 'lebu', cards: [card] });
+					content:function (){
+						player.draw(trigger.targets.length);
 					},
-					selectTarget: -1,
-					filterTarget: function (card, player, target) {
-						return player == target;
-					},
-					check: function (card) {
-						var player = _status.event.player;
-						if (!player.getEquip('zhangba') && player.countCards('hs', 'sha') < 2) {
-							if (
-								player.countCards('h', function (cardx) {
-									return cardx != card && cardx.name == 'shan';
-								}) > 0
-							)
-								return 0;
-							var damaged = player.maxHp - player.hp - 1;
-							var ts = player.countCards('h', function (cardx) {
-								return cardx != card && cardx.name == 'tao';
-							});
-							if (ts > 0 && ts > damaged) return 0;
-						}
-						if (card.name == 'shan') return 15;
-						if (card.name == 'tao') return 10;
-						return 9 - get.value(card);
-					},
-					onuse: function (links, player) {
-						var next = game.createEvent('limu_recover', false, _status.event.getParent());
-						next.player = player;
-						next.setContent(function () {
-							player.recover();
-						});
-					},
-					ai: {
-						result: {
-							target: 1,
-							ignoreStatus: true
-						},
-						order: function (item, player) {
-							if (player.countCards('hs', 'zhangba') || player.countCards('h', function (card) {
-								return get.suit(card) == 'diamond' && get.type(card) == 'basic';
-							}) == 1 && player.countCards('h', function (card) {
-								return get.name(card) != 'sha' && get.type(card) == 'basic';
-							}) == 1 && player.countCards('h', { type: 'trick' }) > 0) return get.order({ name: 'sha' }) + 1;
-							if (player.getDamagedHp() >= 2) return 5;
-							if (game.hasPlayer(function (current) {
-								return current != player && player.inRange(current) && get.attitude(player, current) <= 0;
-							})) {
-								if (player.countCards('hs', 'sha') > 1) return 3;
-								if (player.countCards('h', 'sha') > 0 && player.countCards('h', 'tao') == 0 && player.countCards('h', 'shan') == 0 && player.countCards('h', 'jiu') == 0) return 3;
-								if (player.countCards('h', function (card) {
-									return get.suit(card) == 'diamond' && get.type(card) == 'basic';
-								}) == 1 && player.countCards('h', function (card) {
-									return get.name(card) != 'sha' && get.type(card) == 'basic';
-								}) == 1 && (player.countCards('h', 'taoyuan') > 0 || player.countCards('h', 'wugu') > 0 || player.countCards('h', 'tiesuo') > 0 || player.countCards('h', 'nanman') > 0 || player.countCards('h', 'wanjian') > 0)) return 12;
-							}
-							if (player.getEquip('zhangba')) return 15;
-							return 0;
-						},
-						effect: {
-							player: function (card, player, target) {
-								if (card.name == 'zhangba' && player.hasSkill('xinfu_tushe')) {
-									return [3.5, 3.5];
-								}
-								if (player.countCards('h', 'jiu') + player.countCards('h', 'tao') == 1 && player.countCards('h', { type: 'basic' }) == 1 && player.hasSkill('xinfu_tushe')) {
-									if (card.name == 'tao') {
-										return [2.5, 2.5];
-									}
-									if (card.name == 'jiu') {
-										return [2.5, 2.5];
-									}
-								}
-								if (player.getEquip('zhangba') && player.hasSkill('xinfu_tushe')) {
-									if (get.attitude(player, target) <= 0 && card.name == 'sha') {
-										return [2.5, 2.5];
-									}
-									if (card.name == 'jiu') {
-										return [2.5, 2.5];
-									}
-									if (!player.countCards('h', { type: 'basic' })) {
-										if (get.type2(card) == 'trick') {
-											return [3, 3];
-										}
-									}
-								}
-								if (!player.countCards('h', { type: 'basic' }) && player.countCards('j') && player.hasSkill('xinfu_tushe')) {
-									if (card.name == 'wugu' || card.name == 'taoyuan' || card.name == 'tiesuo') {
-										return [1, 1.5];
-									}
+					ai:{
+						presha:true,
+						pretao:true,
+						threaten:1.8,
+						effect:{
+							player(card,player,target){
+								if(typeof card==='object'&&card.name!=='shan'&&get.type(card)!=='equip'&&!player.countCards('h',i=>{
+									if(card===i||card.cards&&card.cards.includes(i)) return false;
+									return get.type(i)==='basic';
+								})){
+									let targets=[],evt=_status.event.getParent('useCard');
+									targets.addArray(ui.selected.targets);
+									if(evt&&evt.card==card) targets.addArray(evt.targets);
+									if(targets.length) return [1,targets.length];
+									if(get.tag(card,'multitarget')) return [1,game.players.length-1];
 								}
 							}
-						},
-						basic: {
-							order: 1,
-							useful: 1,
-							value: 8
-						},
-						tag: {
-							skip: 'phaseUse'
 						}
-					}
+					},
+				};
+				if (game.aiyh_skillOptEnabled('xinfu_limu')) lib.skill.xinfu_limu={
+					mod:{
+						targetInRange(card,player,target){
+							if(player.countCards('j')&&player.inRange(target)) return true;
+						},
+						cardUsableTarget(card,player,target){
+							if(player.countCards('j')&&player.inRange(target)) return true;
+						},
+						aiOrder(player,card,num){
+							if(get.type(card,'delay')&&player.canUse(card,player)&&player.canAddJudge(card)) return 15;
+						}
+					},
+					locked:false,
+					audio:2,
+					enable:"phaseUse",
+					discard:false,
+					filter:function (event,player){
+						if(player.hasJudge('lebu')) return false;
+						return player.countCards('hes',{suit:'diamond'})>0;
+					},
+					viewAs:{name:'lebu'},
+					//prepare:"throw",
+					position:"hes",
+					filterCard:function(card,player,event){
+						return get.suit(card)=='diamond'&&player.canAddJudge({name:'lebu',cards:[card]});
+					},
+					selectTarget:-1,
+					filterTarget:function (card,player,target){
+						return player==target;
+					},
+					check:function(card){
+						var player=_status.event.player;
+						if(!player.getEquip('zhangba')){
+							let damaged=player.maxHp-player.hp-1;
+							if(player.countCards('h',function(cardx){
+								if(cardx==card) return false;
+								if(cardx.name=='tao'){
+									if(damaged<1) return true;
+									damaged--;
+								}
+								return ['shan','jiu'].includes(cardx.name);
+							})>0) return 0;
+						}
+						if(card.name=='shan') return 15;
+						if(card.name=='tao'||card.name=='jiu') return 10;
+						return 9-get.value(card);
+					},
+					onuse:function (links,player){
+						var next=game.createEvent('limu_recover',false,_status.event.getParent());
+						next.player=player;
+						next.setContent(function(){player.recover()});
+					},
+					ai:{
+						result:{
+							target(player,target){
+								let res=lib.card.lebu.ai.result.target(player,target);
+								if(target.isDamaged()) return res+2*Math.abs(get.recoverEffect(target,player,target));
+								return res;
+							},
+							ignoreStatus:true
+						},
+						order(item,player){
+							if(player.countCards('j')) return 0;
+							return 12;
+						},
+						effect:{
+							target(card,player,target){
+								if(target.isPhaseUsing()&&typeof card==='object'&&get.type(card,target)==='delay'&&!target.countCards('j')){
+									let shas=target.getCards('hs',i=>{
+										if(card===i||card.cards&&card.cards.includes(i)) return false;
+										return get.name(i,target)==='sha'&&target.getUseValue(i)>0;
+									})-target.getCardUsable('sha');
+									if(shas>0) return [1,1.5*shas];
+								}
+							}
+						}
+					},
 				};
 				if (lib.skill.shouli && game.aiyh_skillOptEnabled('shouli')) lib.skill.shouli.ai = {
 					respondSha: true,
@@ -2641,7 +2659,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					node.parentNode.style.width = '300px';
 					if(link === 'jieshao') node.innerHTML = `本扩展以『云将』『官将重修』中部分功能为基础，@柚子丶奶茶丶猫以及面具 退圈前已许可修改，现由@翩翩浊世许公子 和 @157 整理，@157负责主要后续维护，与原作者无关
 						<br><br><font color=#FF3300>注意！</font>本扩展与其他有AI功能的扩展同时打开可能会导致AI错乱。若下面涉及到的本体武将或卡牌出现bug建议关闭本扩展后测试
-						<br><br><br><li><font color=#FFFF00>本体武将优化相关</font>：<br>刘焉〖立牧〗<br>神马超〖狩骊〗〖横骛〗<br>夏侯紫萼〖血偿〗
+						<br><br><br><li><font color=#FFFF00>本体武将优化相关</font>：<br>刘焉〖图射〗〖立牧〗<br>神马超〖狩骊〗〖横骛〗<br>夏侯紫萼〖血偿〗
 						<br><br><br><li><font color=#00FFFF>本体卡牌AI相关</font>：<br>●<span style="font-family: xingkai">南蛮入侵</span>
 						<br>将身份奖惩写在【南蛮入侵】中对使用者的效益里，一定程度上减少人机杀敌一千自损八百的情况；<br>增加对有「打出杀」标签的角色的判断，具体化残血主公的放大效益，一定程度上鼓励人机开aoe收残血反；
 						<br>有无懈的队友一般会在自己也是aoe的目标且没有响应的情况下比较当前响应角色和自己的情况决定要不要不出无懈，已响应或不为目标也会看在队友实力雄厚的情况下可能不出无懈
@@ -3456,7 +3474,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				skill: {},
 				translate: {}
 			},
-			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>30</font>日<font color=fire>18</font>时
+			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>31</font>日<font color=fire>14</font>时
 				<br><font color=#00FFFF>建立者</font>：
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子
@@ -3464,10 +3482,10 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				<br><font color=#00FFFF>现更者</font>：157
 				<br><font color=#00FFB0>当前版本号</font>：<font color=#FFFF00>1.4</font>
 				<br><font color=#00FFB0>支持本体最低版本号</font>：<font color=#FFFF00>1.10.6</font>
-				<br><font color=#00FFB0>最佳适配本体版本号</font>：<font color=#FFFF00>1.10.6.2</font>`,
+				<br><font color=#00FFB0>最佳适配本体版本号</font>：<font color=#FFFF00>1.10.7</font>`,
 			diskURL: '',
 			forumURL: '',
-			version: '1.4.0.2'
+			version: '1.4.0.3'
 		},
 		files: { character: [], card: [], skill: [] }
 	}
