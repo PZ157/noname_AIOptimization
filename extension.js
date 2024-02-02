@@ -16,11 +16,6 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				content: function () {
 					if (!_status.aiyh_firstDo) {
 						_status.aiyh_firstDo = true;
-						_status.aiyh_MAXNUM = 0;
-						for (let i of ui.cardPile.childNodes) {
-							_status.aiyh_MAXNUM = Math.max(_status.aiyh_MAXNUM, get.number(i));
-						}
-						if (!_status.aiyh_MAXNUM) _status.aiyh_MAXNUM = 13;
 						for (let i in lib.config.extension_AI优化_cf) {//修改技能威胁度
 							if (!lib.skill[i]) lib.skill[i] = { ai: { threaten: lib.config.extension_AI优化_cf[i] } };
 							else if (!lib.skill[i].ai) lib.skill[i].ai = { threaten: lib.config.extension_AI优化_cf[i] };
@@ -60,6 +55,13 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 								}
 							}
 						}
+						game.countPlayer2(current=>{
+							current.storage.sftj={
+								cg1:current.name1,
+								cg2:current.name2
+							};
+						});
+						if(lib.config.extension_AI优化_apart) get.sfInit();
 					}
 					player.addSkill('aiyh_gjcx_qj');
 					if (get.mode() == 'identity' && _status.mode != 'zhong' && _status.mode != 'purple') {//身份局ai
@@ -288,61 +290,6 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 						else if (result.control == '-0.1') event.th -= 0.1;
 						else if (result.control == '-0.01') event.th -= 0.01;
 						event.goto(7);
-					}
-				}
-			};
-			lib.skill._aiyh_filterSameName={//同名武将筛选
-				enable:'phaseUse',
-				filter:(event,player)=>{
-					return player===game.me&&lib.config.extension_AI优化_filterSameName;
-				},
-				filterTarget:true,
-				log:false,
-				charlotte:true,
-				superCharlotte:true,
-				prompt:'在当前模式快速启用或禁用所选武将的同名武将',
-				content:()=>{
-					'step 0'
-					event.num=1;
-					event.banname=get.mode()+'_banned';
-					event.name=target.name1.split('_');
-					'step 1'
-					event.name=event.name[event.name.length-1];
-					event.enable=[];
-					event.disable=[];
-					for(let i in lib.character){
-						let temp=i.split('_');
-						if(temp[temp.length-1]===event.name){
-							if(lib.filter.characterDisabled(i)) event.disable.push(i);
-							else event.enable.push(i);
-						}
-					}
-					if(event.enable.length) player.chooseButton(['选择要禁用的武将，直接点“确定”则全部禁用',[event.enable,'character']],[0,Infinity]).set('ai',button=>0);
-					else event.goto(3);
-					'step 2'
-					if(result.bool){
-						let arr;
-						if(result.links&&result.links.length) arr=result.links;
-						else arr=event.enable;
-						lib.config.extension_AI优化_sameName[get.mode()].addArray(arr);
-						lib.config[event.banname].addArray(arr);
-					}
-					'step 3'
-					if(event.disable.length) player.chooseButton(['选择要启用的武将，直接点“确定”则全部启用',[event.disable, 'character']],[0,Infinity]).set('ai',button=>0);
-					'step 4'
-					if(result.bool){
-						let arr;
-						if(result.links&&result.links.length) arr=result.links;
-						else arr=event.disable;
-						lib.config.extension_AI优化_sameName[get.mode()].removeArray(arr);
-						lib.config[event.banname].removeArray(arr);
-					}
-					game.saveExtensionConfig('AI优化','sameName',lib.config.extension_AI优化_sameName);
-					game.saveConfig(event.banname,lib.config[event.banname]);
-					if(event.num&&target.name2){
-						event.num=0;
-						event.name=target.name2.split('_');
-						event.goto(1);
 					}
 				}
 			};
@@ -877,11 +824,224 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					}
 				}
 			};
-			lib.translate._aiyh_filterSameName='<font color=#39FF14>同名武将筛选</font>';
+			lib.skill._sftj_operateJl={//胜负记录操作
+				enable:'phaseUse',
+				filter:function(event,player){
+					return player==game.me&&lib.config.extension_AI优化_operateJl;
+				},
+				filterTarget:function(card,player,target){
+					if(target.name.indexOf('unknown')==0&&(target.name2==undefined||target.name2.indexOf('unknown')==0)) return false;
+					return true;
+				},
+				selectTarget:[0,Infinity],
+				multitarget:true,
+				multiline:true,
+				prompt:'若选择角色则对这些角色的武将牌当前游戏模式的胜负记录进行操作，否则从所有武将包选择进行操作',
+				log:false,
+				charlotte:true,
+				superCharlotte:true,
+				content:function(){
+					'step 0'
+					targets.sortBySeat();
+					if(targets.length){
+						event.names=[];
+						for(let i of targets){
+							if(i.name.indexOf('unknown')) event.names.push(i.name);
+							if(i.name2!=undefined&&i.name2.indexOf('unknown')) event.names.push(i.name2);
+						}
+						event.goto(4);
+					}
+					else{
+						let ts=[];
+						event.sorts=[];
+						for(let i in lib.characterPack){
+							if(Object.prototype.toString.call(lib.characterPack[i])==='[object Object]'){
+								event.sorts.push(lib.characterPack[i]);
+								ts.push(lib.translate[i+'_character_config']);
+							}
+						}
+						if(!ts.length) event.finish();
+						else{
+							event.videoId=lib.status.videoId++;
+							let func=function(player,list,id){
+								let choiceList=ui.create.dialog('请选择要做记录操作的武将所在的武将包');
+								choiceList.videoId=id;
+								for(let i=0;i<list.length;i++){
+									let str='<div class="popup text" style="width:calc(100% - 10px);display:inline-block">'+list[i]+'</div>';
+									let next=choiceList.add(str);
+									next.firstChild.addEventListener(lib.config.touchscreen?'touchend':'click',ui.click.button);
+									next.firstChild.link=i;
+									for(let j in lib.element.button){
+										next[j]=lib.element.button[j];
+									}
+									choiceList.buttons.add(next.firstChild);
+								}
+								return choiceList;
+							};
+							if(game.me.isOnline2()) game.me.send(func,game.me,ts,event.videoId);
+							event.dialog=func(game.me,ts,event.videoId);
+							if(_status.auto) event.dialog.style.display='none';
+							let next=game.me.chooseButton();
+							next.set('dialog',event.videoId);
+							next.set('forced',true);
+							next.set('ai',function(button){
+								return 1;
+							});
+							next.set('selectButton',[0,ts.length]);
+						}
+					}
+					'step 1'
+					if(game.me.isOnline2()) game.me.send('closeDialog',event.videoId);
+					event.dialog.close();
+					if(result.links&&result.links.length){
+						let nums=result.links.sort();
+						event.names=[];
+						for(let num of nums){
+							for(let i in event.sorts[num]){
+								event.names.push(i);
+							}
+						}
+						if(!event.names.length){
+							alert('所选武将包不包含武将');
+							event.finish();
+						}
+					}
+					else event.finish();
+					'step 2'
+					player.chooseButton(['请选择要对当前游戏模式胜负记录进行操作的武将',[event.names,'character']],[1,Infinity]).ai=function(button){
+						return 0;
+					};
+					'step 3'
+					if(result.bool&&result.links) event.names=result.links;
+					else event.finish();
+					'step 4'
+					player.chooseControl(['修改','删除','取消']).set('prompt','请选择要对所选武将当前游戏模式胜负记录进行的操作').set('ai',function(){
+						return '取消';
+					});
+					'step 5'
+					if(result.control=='取消') event.finish();
+					else if(result.control=='删除'){
+						let mode=get.statusModeInfo(true),cgn=get.sfConfigName(),num=0;
+						if(cgn.length>1){
+							for(let i of cgn){
+								if(confirm('您确定要删除这'+event.names.length+'个武将'+mode+get.identityInfo(i)+'胜负记录吗？')){
+									for(let name of event.names){
+										if(lib.config[i][name]){
+											delete lib.config[i][name];
+											num++;
+										}
+									}
+									game.saveConfig(i,lib.config[i]);
+								}
+							}
+							if(num) alert('成功清除'+num+'条胜负记录');
+						}
+						else if(confirm('您确定要删除这'+event.names.length+'个武将'+lib.translate[get.mode()]+'模式'+mode+'胜负记录吗？')){
+							for(let name of event.names){
+								if(lib.config[i][name]){
+									delete lib.config[cgn[0]][name];
+									num++;
+								}
+							}
+							game.saveConfig(cgn[0],{});
+							if(num) alert('成功清除'+num+'条胜负记录');
+						}
+						event.finish();
+					}
+					else event.cgns=get.sfConfigName();
+					'step 6'
+					if(event.cgns.length>1){
+						let trans=[];
+						for(let i=0;i<event.cgns.length;i++){
+							trans.push(get.identityInfo(event.cgns[i]));
+						}
+						trans.push('取消');
+						player.chooseControl(trans).set('prompt','请选择要修改的胜负记录类型').set('ai',function(){
+							return '取消';
+						});
+					}
+					else if(!event.cgns.length) event.finish();
+					else event._result={index:0,control:get.identityInfo(event.cgns[0])};
+					'step 7'
+					if(result.control=='取消') event.finish();
+					else{
+						event.cgn=event.cgns[result.index];
+						event.num=0;
+					}
+					'step 8'
+					if(!lib.config[event.cgn][event.names[event.num]]) lib.config[event.cgn][event.names[event.num]]={win:0,lose:0};
+					event.prese=lib.config[event.cgn][event.names[event.num]].win;
+					'step 9'
+					let as=['+10'],sm=get.statusModeInfo(true);
+					if(event.prese>=10) as.push('-10');
+					as.push('+1');
+					if(event.prese) as.push('-1');
+					as.push('确定修改');
+					as.push('不修改');
+					player.chooseControl(as).set('prompt','获胜场数：<font color=#00FFFF>'+event.prese+'</font>').set('prompt2','<center>修改<font color=#FFFF00>'+lib.translate[event.names[event.num]]+'</font>'+sm+'<font color=#00FF00>'+get.identityInfo(event.cgn)+'</font>获胜场数记录</center><br><center>原获胜场数：<font color=#FF3300>'+lib.config[event.cgn][event.names[event.num]].win+'</font></center>').set('ai',function(){
+						return '不修改';
+					});
+					'step 10'
+					if(result.control=='确定修改'){
+						lib.config[event.cgn][event.names[event.num]].win=event.prese;
+						game.saveConfig(event.cgn,lib.config[event.cgn]);
+					}
+					else if(result.control=='不修改'){
+						if(lib.config[event.cgn][event.names[event.num]].win+lib.config[event.cgn][event.names[event.num]].lose==0) delete lib.config[event.cgn][event.names[event.num]];
+					}
+					else{
+						if(result.control=='+1') event.prese++;
+						else if(result.control=='-1') event.prese--;
+						else if(result.control=='+10') event.prese+=10;
+						else if(result.control=='-10') event.prese-=10;
+						event.goto(9);
+					}
+					'step 11'
+					if(!lib.config[event.cgn][event.names[event.num]]) lib.config[event.cgn][event.names[event.num]]={win:0,lose:0};
+					event.prese=lib.config[event.cgn][event.names[event.num]].lose;
+					'step 12'
+					let bs=['+10'],sd=get.statusModeInfo(true);
+					if(event.prese>=10) bs.push('-10');
+					bs.push('+1');
+					if(event.prese) bs.push('-1');
+					bs.push('确定修改');
+					bs.push('不修改');
+					player.chooseControl(bs).set('prompt','失败场数：<font color=#FF3300>'+event.prese+'</font>').set('prompt2','<center>修改<font color=#FFFF00>'+lib.translate[event.names[event.num]]+'</font>'+sd+'<font color=#00FF00>'+get.identityInfo(event.cgn)+'</font>失败场数记录</center><br><center>原失败场数：<font color=#00FFFF>'+lib.config[event.cgn][event.names[event.num]].lose+'</font></center>').set('ai',function(){
+						return '不修改';
+					});
+					'step 13'
+					if(result.control=='确定修改'){
+						lib.config[event.cgn][event.names[event.num]].lose=event.prese;
+						game.saveConfig(event.cgn,lib.config[event.cgn]);
+					}
+					else if(result.control=='不修改'){
+						if(lib.config[event.cgn][event.names[event.num]].win+lib.config[event.cgn][event.names[event.num]].lose==0) delete lib.config[event.cgn][event.names[event.num]];
+					}
+					else{
+						if(result.control=='+1') event.prese++;
+						else if(result.control=='-1') event.prese--;
+						else if(result.control=='+10') event.prese+=10;
+						else if(result.control=='-10') event.prese-=10;
+						event.goto(12);
+					}
+					'step 14'
+					event.num++;
+					if(event.num<event.names.length) event.goto(8);
+					'step 15'
+					event.cgns.remove(event.cgn);
+					if(event.cgns.length) event.goto(6);
+				},
+				ai:{
+					result:{
+						target:0
+					}
+				}
+			};
 			lib.translate._aiyh_neiKey = '<font color=#8DD8FF>亮明身份</font>';
 			lib.translate._aiyh_fixQz = '<font color=#FFFF00>修改权重</font>';
 			lib.translate._aiyh_fixCf = '<font color=#FF3300>修改威胁度</font>';
 			lib.translate._aiyh_fixWj = '<font color=#00FFFF>伪禁</font>';
+			lib.translate._sftj_operateJl='<font color=#00FFFF>记录操作</font>';
 
 			/*AI优化*/
 			if (lib.config.extension_AI优化_sfjAi) {//身份局AI
@@ -986,6 +1146,14 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 									else if (rank1 == 'legend') base1 = 1.95;
 									else if (rank1 == 'junk') base1 = 0.8;
 								}
+								else if (lib.config.extension_AI优化_ckQz == 'sl') {
+									let sfc = get.purifySFConfig(lib.config[get.sfConfigName(i.identity)], lib.config.extension_AI优化_min)[i.name],
+										sl = 0.4;
+									if (sfc&&typeof sfc.sl==='number') sl = sfc.sl;
+									if (sl<0.4) base1 = 0.6+sl;
+									else if (sl<0.8) base1 = 2*sl+0.2;
+									else base1 = 3*sl-0.6;
+								}
 								if (i.name2 != undefined) {
 									if (typeof lib.config.extension_AI优化_qz[i.name2] == 'number') base2 = lib.config.extension_AI优化_qz[i.name2];
 									else if (lib.config.extension_AI优化_ckQz == 'pj') {
@@ -995,6 +1163,14 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 										else if (rank2 == 'epic') base2 = 1.57;
 										else if (rank2 == 'legend') base2 = 1.95;
 										else if (rank2 == 'junk') base2 = 0.8;
+									}
+									else if (lib.config.extension_AI优化_ckQz == 'sl') {
+										let sfc = get.purifySFConfig(lib.config[get.sfConfigName(i.identity)], lib.config.extension_AI优化_min)[i.name2],
+											sl = 0.5;
+										if (sfc&&typeof sfc.sl==='number') sl = sfc.sl;
+										if (sl<0.4) base1 = 0.6+sl;
+										else if (sl<0.8) base1 = 2*sl+0.2;
+										else base1 = 3*sl-0.6;
 									}
 								}
 								if (base2) base1 = (base1 + base2) / 2;
@@ -1011,9 +1187,9 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 							else all += sym * temp;
 						}
 						if (Math.abs(all) < mine && game.zhu.hp > 2 && zs.length > 1) player.addSkill('gjcx_neiJiang');
-						else if (all > 0) {
-							if (all > 0.618 * mine) player.addSkill('gjcx_neiFan');
-							else if (zs.length == 1) player.addSkill('gjcx_neiZhong');
+						else if (all > -0.06) {
+							if (all > 0.36 * mine) player.addSkill('gjcx_neiFan');
+							else if (fs.length - zs.length > 1) player.addSkill('gjcx_neiZhong');
 							else player.addSkill('gjcx_neiJiang');
 						} else player.addSkill('gjcx_neiZhong');
 					},
@@ -1275,6 +1451,129 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					banList.delete();
 				});
 			};
+			lib.get.statusModeInfo=function(sf){//获取当前游戏模式名称
+				let info=lib.translate[get.mode()];
+				if(_status.mode&&(!sf||lib.config.extension_AI优化_apart)){
+					let sm;
+					switch(get.mode()){
+						case 'identity':
+							if(_status.mode=='normal') sm='标准';
+							else if(_status.mode=='zhong') sm='明忠';
+							else if(_status.mode=='purple') sm='3v3v2';
+							break;
+						case 'guozhan':
+							if(_status.mode=='normal') sm='势备';
+							else if(_status.mode=='yingbian') sm='应变';
+							else if(_status.mode=='old') sm='怀旧';
+							else if(_status.mode=='free') sm='自由';
+							break;
+						case 'versus':
+							if(_status.mode=='four') sm='对抗';
+							else if(_status.mode=='three') sm='统率';
+							else if(_status.mode=='two') sm='欢乐';
+							else if(_status.mode=='guandu') sm='官渡';
+							else if(_status.mode=='jiange') sm='剑阁';
+							else if(_status.mode=='siguo') sm='四国';
+							else if(_status.mode=='standard') sm='自由';
+							break;
+						case 'doudizhu':
+							if(_status.mode=='normal') sm='休闲';
+							else if(_status.mode=='kaihei') sm='开黑';
+							else if(_status.mode=='huanle') sm='欢乐';
+							else if(_status.mode=='binglin') sm='兵临';
+							else if(_status.mode=='online') sm='智斗';
+							break;
+						case 'single':
+							lib.translate[_status.mode+'2'];
+							break;
+						case 'chess':
+							if(_status.mode=='combat') sm='自由';
+							else if(_status.mode=='three') sm='统率';
+							else if(_status.mode=='leader') sm='君主';
+							break;
+					}
+					if(sm) info+=' - '+sm;
+				}
+				return info+'模式';
+			};
+			lib.get.identityInfo=function(str){
+				/*获取字符串中最后一个'_'后面的身份翻译
+				参数：待清洗字符串
+				*/
+				if(typeof str!='string') return '';
+				let clean=str.split('_');
+				if(get.sfConfigName().length<=1) return '';
+				clean=clean[clean.length-1];
+				if(clean.indexOf('unknown')==0) return '未知';
+				if(isNaN(parseInt(clean[clean.length-1]))) clean+='2';
+				let trans=lib.translate[clean];
+				if(typeof trans!='string') return '';
+				return trans;
+			};
+			lib.get.sfConfigName=function(identity){
+				/*获取当前游戏模式下武将的胜负统计配置名
+				参数：身份
+				有身份 返回当前游戏模式胜负统计对应身份配置名（字符串）
+				无身份 返回所有可能的身份配置名（数组）
+				*/
+				let mode=get.mode(),cgn='extension_AI优化_'+mode,sm='';
+				if(_status.mode&&lib.config.extension_AI优化_apart&&_status.mode!='deck') sm='_'+_status.mode;
+				if(typeof identity!='string'){
+					if(mode=='identity'){
+						if(_status.mode=='purple') return [cgn+sm+'_rZhu',cgn+sm+'_rZhong',cgn+sm+'_rNei',cgn+sm+'_rYe'];
+						let configs=[];
+						configs.addArray([cgn+sm+'_zhu',cgn+sm+'_zhong',cgn+sm+'_fan',cgn+sm+'_nei']);
+						if(_status.mode=='zhong') configs.push(cgn+sm+'_mingzhong');
+						return configs;
+					}
+					if(mode=='doudizhu'||mode=='single') return [cgn+sm+'_zhu',cgn+sm+'_fan'];
+					return [cgn+sm];
+				}
+				if(mode=='identity'&&_status.mode=='purple') return cgn+sm+'_r'+identity.slice(1);
+				if(mode=='identity'||mode=='doudizhu'||mode=='single') return cgn+sm+'_'+identity;
+				return cgn+sm;
+			};
+			lib.get.purifySFConfig=function(config,min){//筛选至少min场的胜负记录
+				if(Object.prototype.toString.call(config)!=='[object Object]') return {};
+				if(typeof min!='number'||isNaN(min)) min=0;
+				let result={},judge=false;
+				for(let i in config){
+					if(!judge){
+						if(Object.prototype.toString.call(config[i])!=='[object Object]') return config;
+						judge=true;
+					}
+					if(config[i].win+config[i].lose>=min) result[i]=config[i];
+				}
+				return result;
+			};
+			lib.get.sfInit=function(sf,now){//初始化
+				let cgn;
+				if(typeof sf!='string') cgn=get.sfConfigName();
+				else cgn=[sf];
+				for(let sf of cgn){
+					if(Object.prototype.toString.call(lib.config[sf])!=='[object Object]'){
+						let sftj = sf.replace('AI优化','胜负统计');
+						if(Object.prototype.toString.call(lib.config[sftj])==='[object Object]'&&Object.entries(lib.config[sftj]).length){
+							game.saveConfig(sf,lib.config[sftj]);
+							alert('成功导入《胜负统计》中当前模式下'+get.identityInfo(sf)+'的统计数据');
+						}
+						else lib.config[sf]={};
+					}
+					for(let i in lib.config[sf]){
+						let all=lib.config[sf][i].win+lib.config[sf][i].lose;
+						if(all) lib.config[sf][i].sl=lib.config[sf][i].win/all;
+						else lib.config[sf][i].sl=0;
+						if(!now&&lib.config.extension_AI优化_display!='off'){
+							if(lib.characterTitle[i]==undefined) lib.characterTitle[i]='';
+							else lib.characterTitle[i]+='<br>';
+							lib.characterTitle[i]+=get.identityInfo(sf)+'<br>';
+							if(lib.config.extension_AI优化_display!='sf') lib.characterTitle[i]+='总场数：'+all+' 胜率：'+Math.round(10000*lib.config[sf][i].sl)/100+'%<br>';
+							if(lib.config.extension_AI优化_display!='sl') lib.characterTitle[i]+=lib.config[sf][i].win+'胜 '+lib.config[sf][i].lose+'负<br>';
+						}
+					}
+					game.saveConfig(sf,lib.config[sf]);
+				}
+			};
 			{//本体版本检测
 				let noname = lib.version.split('.').slice(2), min = ['4'], len = Math.min(noname.length, min.length), status = false;
 				if (lib.version.slice(0, 5) === '1.10.') for (let i = 0; i < len; i++) {
@@ -1299,9 +1598,11 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			}
 			if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 				let str = [
-					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>1</font>月<font color=fire>30</font>日</center>',
-					'◆删除已加入本体的杀测试ai，曹髦〖潜龙〗，神甘宁〖劫营〗等',
-					'◆重写刘焉两个技能ai'
+					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>2</font>月<font color=fire>2</font>日</center>',
+					'◆添加胜率统计一系列功能并适配本扩展内奸AI策略',
+					'◆删除［显示隐藏武将］、［同名武将筛选］功能',
+					'◆移除实用性太低的最大点数记录',
+					'◆调整内奸跳身份ai，进一步降低内奸摆烂可能'
 				];
 				let ul = document.createElement('ul');
 				ul.style.textAlign = 'left';
@@ -1343,10 +1644,6 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				if (!Array.isArray(lib.config.extension_AI优化_nei)) game.saveExtensionConfig('AI优化', 'nei', []);
 				if (!Array.isArray(lib.config.extension_AI优化_dizhu)) game.saveExtensionConfig('AI优化', 'dizhu', []);
 				if (!Array.isArray(lib.config.extension_AI优化_nongmin)) game.saveExtensionConfig('AI优化', 'nongmin', []);
-				if(Object.prototype.toString.call(lib.config.extension_AI优化_sameName) !== '[object Object]') lib.config.extension_AI优化_sameName={};
-				if(!Array.isArray(lib.config.extension_AI优化_sameName[get.mode()])) lib.config.extension_AI优化_sameName[get.mode()]=[];
-				lib.config.forbidai.addArray(lib.config.extension_AI优化_sameName[get.mode()]);
-				game.saveExtensionConfig('AI优化','sameName',lib.config.extension_AI优化_sameName);
 				let sortedKeys, sortedObj;
 				/*权重初始化*/
 				if (Object.prototype.toString.call(lib.config.extension_AI优化_qz) !== '[object Object]') lib.config.extension_AI优化_qz = {};
@@ -1375,9 +1672,6 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					cf += '<option value=' + i + '>' + i + ' | ' + (lib.translate[i] || '无') + '：' + lib.config.extension_AI优化_cf[i] + '</option>';
 				}
 				lib.extensionMenu.extension_AI优化.chooseCf.name = '<span style="font-family: xinwei">请选择要删除的技能威胁度</span><br><select id="AI优化_chooseCf" size="1" style="width:180px">' + cf + '</select>';
-				for (let i in lib.character) {//显示隐藏武将
-					if (lib.config.extension_AI优化_seen && lib.character[i] && lib.character[i][4] && lib.character[i][4].includes('unseen')) lib.character[i][4].remove('unseen');
-				}
 				if (lib.config.extension_AI优化_viewAtt) {//火眼金睛
 					ui.create.system('查看态度', function () {
 						var STR = '';
@@ -1736,6 +2030,152 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 						delete lib.skill.qiaosi.usable;
 					}
 				}
+				if(!lib.config.extension_AI优化_apart) get.sfInit();
+				lib.onover.push(function(result){
+					if(!lib.config.extension_AI优化_record) return;
+					let curs = game.filterPlayer2(true, null, true),
+					wins = [],
+					can = true,
+					id = [],
+					mode = get.mode();
+					if (mode == 'identity') {
+						if (_status.mode == 'purple') {
+							if (result || lib.config.extension_AI优化_sw) id = game.me.identity;
+							else if (game.hasPlayer(function (current) {
+								if (current.identity.indexOf('Zhu') == 1){
+									id = current.identity;
+									return true;
+								}
+								return false;
+							}));
+							else if (!game.hasPlayer(function (current) {
+								return current.identity.indexOf('Ye') != 1;
+							})) id = 'rYe';
+							else id = 'none';
+							switch (id) {
+								case 'rZhu':
+								case 'rZhong':
+								case 'bNei':
+									wins = game.filterPlayer2(function (target) {
+										return ['rZhu', 'rZhong', 'bNei'].contains(target.identity);
+									}, null, true);
+									break;
+								case 'bZhu':
+								case 'bZhong':
+								case 'rNei':
+									wins = game.filterPlayer2(function (target) {
+										return ['bZhu', 'bZhong', 'rNei'].contains(target.identity);
+									}, null, true);
+									break;
+								case 'rYe':
+								case 'bYe':
+									wins = game.filterPlayer2(function (target) {
+										return ['rYe', 'bYe'].contains(target.identity);
+									}, null, true);
+									break;
+							}
+						}
+						else {
+							if (result || lib.config.extension_AI优化_sw) id = game.me.identity;
+							else if (game.players.length == 1) id = game.players[0].identity;
+							else if (game.zhu.isDead()) id = 'fan';
+							else id = 'zhu';
+							switch (id) {
+								case 'fan':
+									wins = game.filterPlayer2(function (target) {
+										return target.identity == 'fan';
+									}, null, true);
+									break;
+								case 'nei':
+									wins = game.players;
+									break;
+								default:
+									wins = game.filterPlayer2(function (target) {
+										return ['zhu', 'zhong', 'mingzhong'].contains(target.identity);
+									}, null, true);
+							}
+						}
+					}
+					else if (mode == 'guozhan') {
+						if (result || lib.config.extension_AI优化_sw) {
+							if (game.me.identity == 'ye') wins = [game.me];
+							else {
+								id = lib.character[game.me.name1][1];
+								wins = game.filterPlayer2(function (target) {
+									return target.identity != 'ye' && lib.character[target.name1][1] == id;
+								}, null, true);
+							}
+						}
+						else if (game.countPlayer(function (current) {
+							if (current.identity == 'ye') return true;
+							let g = lib.character[current.name1][1];
+							if (!id.contains(g)) {
+								id.add(g);
+								return true;
+							}
+							return false;
+						}) > 1) can = false;
+						else if (game.players[0].identity == 'ye') wins = game.players;
+						else {
+							id = lib.character[game.players[0].name1][1];
+							wins = game.filterPlayer2(function (target) {
+								return target.identity != 'ye' && lib.character[target.name1][1] == id;
+							}, null, true);
+						}
+					}
+					else if (mode == 'doudizhu' || mode == 'single' || mode == 'boss') {
+						if (game.zhu&&game.zhu.isDead()||game.boss&&game.boss.isDead()) wins = game.filterPlayer2(function (target){
+							return target.identity != 'zhu' && target.identity != 'zhong';
+						}, null, true);
+						else wins = game.filterPlayer2(function (target) {
+							return target.identity == 'zhu' || target.identity == 'zhong';
+						}, null, true);
+					}
+					else {
+						if (result || lib.config.extension_AI优化_sw) wins = game.filterPlayer2(function (target) {
+							return target.side == game.me.side;
+						}, null, true);
+						else if (game.countPlayer(function (current) {
+							for (let s of id) {
+								if (s.side == current.side) return false;
+							}
+							id.add(current);
+							return true;
+						}) > 1) can = false;
+						else wins = game.filterPlayer2(function (target) {
+							return target.side == game.players[0].side;
+						}, null, true);
+					}
+					for (let i of curs) {
+						if ((!can || !lib.config.extension_AI优化_tryAll) && game.me != i || mode == 'boss' && i.identity == 'zhong') continue;
+						let bool;
+						if (lib.config.extension_AI优化_sw) {
+							if (wins.contains(i)) bool = result;
+							else bool = !result;
+						}
+						else if (wins.contains(i)) bool = true;
+						else bool = false;
+						let cgn = get.sfConfigName(i.identity||'unknown'), names=[];
+						if(i.storage.sftj&&i.name1!=i.storage.sftj.cg1){
+							if(lib.config.extension_AI优化_change=='pre'&&i.storage.sftj.cg1!=undefined) names.push(i.storage.sftj.cg1);
+							else if(lib.config.extension_AI优化_change=='nxt'&&i.name1!=undefined) names.push(i.name1);
+						}
+						else if(i.name1!=undefined) names.push(i.name1);
+						if(i.storage.sftj&&i.name2!=i.storage.sftj.cg2){
+							if(lib.config.extension_AI优化_change=='pre'&&i.storage.sftj.cg2!=undefined) names.push(i.storage.sftj.cg2);
+							else if(lib.config.extension_AI优化_change=='nxt'&&i.name2!=undefined) names.push(i.name2);
+						}
+						else if(i.name2!=undefined) names.push(i.name2);
+						for(let j of names){
+							if (lib.config[cgn][j] == undefined) lib.config[cgn][j] = {win: 0, lose: 0};
+							if (bool == true) lib.config[cgn][j].win++;
+							else lib.config[cgn][j].lose++;
+						}
+					}
+					for(let i of get.sfConfigName()){
+						game.saveConfig(i, lib.config[i]);
+					}
+				});
 			});
 			if (lib.config.extension_AI优化_wjAi) lib.arenaReady.push(function () {//武将AI
 				if (game.aiyh_skillOptEnabled('xinfu_tushe')) lib.skill.xinfu_tushe={
@@ -2183,16 +2623,16 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 							return get.number(b) - get.number(a);
 						});
 						var a = get.number(hs[0]) - 1;
-						if (player.hp > 1) return 2.5 * Math.pow((a / _status.aiyh_MAXNUM), target.countCards('h')) - 2.5;
-						return 4.2 * Math.pow(a / _status.aiyh_MAXNUM, target.countCards('h')) - 4.2;
+						if (player.hp > 1) return 2.5 * Math.pow((a / 13), target.countCards('h')) - 2.5;
+						return 4.2 * Math.pow(a / 13, target.countCards('h')) - 4.2;
 					},
 					target: function (player, target) {
 						var hs = player.getCards('h').sort(function (a, b) {
 							return get.number(b) - get.number(a);
 						});
 						var a = get.number(hs[0]) - 1;
-						if (player.hp > 1) return -2 - 0.7 * Math.pow((a / _status.aiyh_MAXNUM), target.countCards('h'));
-						return -1.7 - Math.pow((a / _status.aiyh_MAXNUM), target.countCards('h'));
+						if (player.hp > 1) return -2 - 0.7 * Math.pow((a / 13), target.countCards('h'));
+						return -1.7 - Math.pow((a / 13), target.countCards('h'));
 					}
 				};
 				//nsp
@@ -2242,6 +2682,10 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				};
 				if (lib.config.extension_AI优化_dev) {
 					if (lib.card.tiesuo&&lib.card.tiesuo.ai&&lib.card.tiesuo.ai.basic) lib.card.tiesuo.ai.basic.order=7.3;
+					if (lib.card.sha&&lib.card.sha.ai) lib.card.sha.ai.order=function(item,player){
+						if(player.hasSkillTag('presha',true,null,true)) return 10;
+						return 3.05;
+					};
 				}
 				if (lib.card.nanman) lib.card.nanman.ai = {
 					wuxie: function (target, card, player, viewer, status) {
@@ -2675,7 +3119,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 						<br>●鼓励拥有reverseEquip标签的角色刷装备，大幅降低已被废除的装备栏对应副类别的牌的价值`;
 				}
 			},
-			bd1: {
+			tip1: {
 				name: '<br><hr>可通过<font color=fire>无名杀频道</font>、<font color=#FFFF00>无名杀扩展交流</font>、<font color=#00FFFF>Q群</font>或<font color=#00FFFF>下方链接</font><font color=#00FFB0>获取</font>本扩展最新版本',
 				clear: true
 			},
@@ -2747,9 +3191,11 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					document.body.removeChild(textarea);
 				}
 			},
-			bd2: {
+			tip2: {
 				clear: true,
-				name: '<hr><center><font color=#00FFB0>以下大部分选项长按有提示！</font></center><br><center>AI相关</center>',
+				name: `<hr><center><font color=#00FFB0>以下大部分选项长按有提示！</center>
+					<center>行楷字体选项均<font color=#FF3300>即时生效</font>！</center>
+					<br><center>AI相关</center>`,
 				nopointer: true
 			},
 			kpAi: {
@@ -2795,7 +3241,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				intro: '目前包括以下前瞻AI优化：<br>【杀】<br>【铁索连环】',
 				init: true
 			},
-			bd3: {
+			bd1: {
 				clear: true,
 				name: '<center>常用功能</center>',
 				nopointer: true
@@ -2809,16 +3255,6 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				name: '去除本体官将小游戏',
 				intro: '去除手杀马钧〖巧思〗、手杀孙寒华〖冲虚〗、手杀南华老仙〖御风〗、手杀庞德公〖评才〗、手杀郑玄〖整经〗的小游戏，重启生效。（注意：若有其他拓展修改了小游戏可能会报错，关闭此选项即可）',
 				init: false
-			},
-			seen: {
-				name: '显示隐藏武将',
-				intro: '开启后，会显示本体隐藏武将',
-				init: false
-			},
-			filterSameName:{
-				name:"<span style='font-family: xingkai'>同名武将筛选</span>",
-				intro:'开启后，玩家可于出牌阶段选择场上的武将，系统会给出所有与其id后缀相同的武将，玩家自行选择在当前模式启用或禁用这些武将',
-				init:false
 			},
 			exportPz: {
 				name: '复制本扩展配置',
@@ -2906,13 +3342,13 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					}
 				}
 			},
-			bd4: {
+			bd2: {
 				clear: true,
 				name: '<center>身份局相关功能</center>',
 				nopointer: true
 			},
 			findZhong: {
-				name: '<span style="font-family: xingkai">慧眼识忠</span>',
+				name: '慧眼识忠',
 				intro: '主公开局知道一名忠臣身份',
 				init: false
 			},
@@ -2931,7 +3367,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				intro: '将四人身份局改为1主（加体力上限）1内2反，游戏开始时忠臣改为明反',
 				init: false
 			},
-			bd5: {
+			bd3: {
 				clear: true,
 				name: '<center>伪禁相关</center>'
 			},
@@ -3057,7 +3493,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					}
 				}
 			},
-			tip1: {
+			tip3: {
 				name: '以下功能为<font color=#00FFFF>伪禁</font>衍生功能，<font color=#FFFF00>如需使用请开启〔伪玩家可选ai禁选〕</font>',
 				clear: true
 			},
@@ -3145,18 +3581,280 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					game.aiyh_configBanList('nongmin','农民');
 				}
 			},
-			bd6: {
+			bd4: {
+				clear: true,
+				name: '<center>胜负统计相关</center>'
+			},
+			apart: {
+				name: '<span style="font-family: xingkai">区分当前游戏模式</font>',
+				intro: '开启后，武将胜负统计将<font color=#FF0000>区分开当前游戏模式</font>（即按照菜单->开始->模式->游戏模式分开统计）',
+				init: false,
+				onclick: function (item) {
+					game.saveExtensionConfig('AI优化','apart',item);
+					alert('为避免调整此配置后继续使用本扩展功能可能带来的冲突，即将自动重启游戏');
+					game.reload();
+				}
+			},
+			display: {
+				name: '胜负场数相关显示',
+				intro: '调整武将信息上方的胜率、胜负场数相关显示',
+				init: 'all',
+				item: {
+					all: '都显示',
+					sf: '显示胜负场数',
+					sl: '显示胜率',
+					off: '不显示'
+				},
+				onclick: function (item) {
+					game.saveExtensionConfig('AI优化','display',item);
+				}
+			},
+			record: {
+				name: '<span style="font-family: xingkai">武将胜负记录</span>',
+				intro: '开启后，游戏结束将根据玩家胜负记录玩家所使用的武将胜负',
+				init: false,
+				onclick: function (item) {
+					game.saveExtensionConfig('AI优化','record',item);
+				}
+			},
+			tryAll: {
+				name: '<span style="font-family: xingkai">尝试记录全场武将</span>',
+				intro: '开启后，游戏结束将记录根据玩家胜负可以推测出来胜负的角色所使用的武将胜负',
+				init: false,
+				onclick: function (item) {
+					game.saveExtensionConfig('AI优化','tryAll',item);
+				}
+			},
+			sw: {
+				name: '<span style="font-family: xingkai">其他阵营视为同一阵营</span>',
+				intro: '开启后，游戏结束进行记录时其他阵营将视为同一阵营，即玩家方赢、其余方均输，玩家方没赢，其余方均赢',
+				init: false,
+				onclick: function (item) {
+					game.saveExtensionConfig('AI优化','sw',item);
+				}
+			},
+			change: {
+				name: '<span style="font-family: xingkai">更换武将角色</font>',
+				intro: '如果一个角色在游戏结束时用的武将和游戏开始时不同，可以选择记录游戏开始时的（最初的）或者记录游戏结束时的（最后的）',
+				init: 'off',
+				item: {
+					off: '不记录',
+					pre: '记录最初的',
+					nxt: '记录最后的'
+				},
+				onclick: function (item) {
+					game.saveExtensionConfig('AI优化','change',item);
+				}
+			},
+			operateJl: {
+				name: '<span style="font-family: xingkai">出牌阶段可修改胜负记录</font>',
+				intro: '开启后，出牌阶段可以对场上武将或所有武将当前游戏模式的胜负记录进行批量删除或修改操作',
+				init: false,
+				onclick: function (item) {
+					game.saveExtensionConfig('AI优化','operateJl',item);
+				}
+			},
+			slRank: {
+				name: '当前模式胜率排行榜',
+				clear: true,
+				onclick: function () {
+					let mode=get.statusModeInfo(true),cgn=get.sfConfigName(),num=0;
+					for(let i of cgn){
+						get.sfInit(i,true);
+						let rankNum = parseInt(lib.config.extension_AI优化_rankNum), sortedKeys = Object.entries(get.purifySFConfig(lib.config[i], lib.config.extension_AI优化_min)).sort(function(a, b){
+							let res = Math.round(100000*a[1].sl) - Math.round(100000*b[1].sl);
+							if(rankNum>0) res = -res;
+							if(res==0) return b[1].win+b[1].lose-a[1].win-a[1].lose;
+							return res;
+						}).slice(0, Math.abs(rankNum)).map(entry => entry[0]);
+						if(!sortedKeys.length) continue;
+						let txt=mode+'武将'+get.identityInfo(i)+'胜率排行榜（'+(rankNum>0?'正序':'倒序')+'）';
+						for(let j=0;j<sortedKeys.length;j++){
+							txt+='\n   第'+(j+1)+'名   '+lib.translate[sortedKeys[j]]+'|'+sortedKeys[j]+'\n                     '+lib.config[i][sortedKeys[j]].win+'胜'+lib.config[i][sortedKeys[j]].lose+'负      胜率：'+Math.round(100000*lib.config[i][sortedKeys[j]].sl)/1000+'%';
+						}
+						num++;
+						alert(txt);
+					}
+					if(!num) alert('当前模式暂无符合条件的记录');
+				}
+			},
+			rankNum: {
+				name: '排行榜展示：',
+				intro: '和选项连起来读',
+				init: '10',
+				item: {
+					'10': '前十名',
+					'5': '前五名',
+					'15': '前十五名',
+					'20': '前二十名',
+					'50': '前五十名',
+					'-10': '最后十名',
+					'-5': '最后五名',
+					'-15': '最后十五名',
+					'-20': '最后二十名',
+					'-50': '最后五十名',
+				},
+				onclick: function (item) {
+					game.saveExtensionConfig('AI优化','rankNum',item);
+				}
+			},
+			min: {
+				name: '<span style="font-family: xingkai">只筛选总场数不少于（单位：场，回车修改）</font>',
+				intro: `在展示当前游戏模式武将胜率排行榜时，只在符合本配置条件的记录中筛选
+					<br>此外如果您在［第二权重参考］中选择了〔胜率〕，那么内奸AI参考第二权重时将只采用符合本配置数值的数据`,
+				init: '10',
+				input: true,
+				onblur: function(e){
+					let text=e.target,
+						num=Number(text.innerText);
+					if(isNaN(num)) num=10;
+					else if(num<0) num=0;
+					else if(!Number.isInteger(num)) num=Math.round(num);
+					text.innerText = num;
+					game.saveExtensionConfig('AI优化','min',num);
+				}
+			},
+			loadSf:{
+				name:"载入当前模式武将胜负记录",
+				clear:true,
+				onclick:function(){
+					let container=ui.create.div('.popup-container.editor');
+					let editorpage=ui.create.div(container);
+					let node=container;
+					let map=get.sfConfigName();
+					let str='';
+					for(let i of map){
+						str+='_status.'+i+' = {\r	//请在此大括号内填写'+get.statusModeInfo(true)+'你想载入的武将'+get.identityInfo(i)+'胜负记录\r};\r';
+					}
+					str+='//请在{}内进行编辑，务必使用英文标点符号！';
+					node.code=str;
+					ui.window.classList.add('shortcutpaused');
+					ui.window.classList.add('systempaused');
+					let saveInput=function(){
+						let code;
+						if(container.editor) code=container.editor.getValue();
+						else if(container.textarea) code=container.textarea.value;
+						try{
+							eval(code);
+							for(let i of map){
+								if(_status[i]&&Object.prototype.toString.call(_status[i])!=='[object Object]') throw('typeError');
+							}
+						}
+						catch(e){
+							if(e==='typeError') alert('类型错误');
+							else alert('代码语法有错误，请仔细检查（'+e+'）');
+							return;
+						}
+						for(let i of map){
+							if(_status[i]) for(let name in _status[i]){
+								lib.config[i][name] = _status[i][name];
+							}
+							game.saveConfig(i,lib.config[i]);
+						}
+						ui.window.classList.remove('shortcutpaused');
+						ui.window.classList.remove('systempaused');
+						container.delete();
+						container.code=code;
+						delete window.saveNonameInput;
+					};
+					window.saveNonameInput=saveInput;
+					let editor=ui.create.editor(container,saveInput);
+					if(node.aced){
+						ui.window.appendChild(node);
+						node.editor.setValue(node.code,1);
+					}
+					else if(lib.device=='ios'){
+						ui.window.appendChild(node);
+						if(!node.textarea){
+							let textarea=document.createElement('textarea');
+							editor.appendChild(textarea);
+							node.textarea=textarea;
+							lib.setScroll(textarea);
+						}
+						node.textarea.value=node.code;
+					}
+					else{
+						if(!window.CodeMirror){
+							import('../../game/codemirror.js').then(()=>{
+								lib.codeMirrorReady(node,editor);
+							});
+							lib.init.css(lib.assetURL+'layout/default','codemirror');
+						}
+						else lib.codeMirrorReady(node, editor);
+					}
+				}
+			},
+			copySf: {
+				name: '复制当前模式武将胜负记录',
+				clear: true,
+				onclick: function () {
+					let cgn=get.sfConfigName();
+					let mode=get.statusModeInfo(true)+'所有武将';
+					let copy='', show=true;
+					for(let i of cgn){
+						show=true;
+						if(!confirm(copy+'是否复制'+mode+get.identityInfo(i)+'胜负记录？')){
+							copy='';
+							continue;
+						}
+						let map = lib.config[i] || {}, txt = '	//'+mode+get.identityInfo(i)+'胜负记录\r';
+						get.sfInit(i,true);
+						for (let name in map) {
+							txt += '\r	"' + name + '":{\r		win: ' + map[name].win + ',\r		lose: ' + map[name].lose + ',\r	},';
+						}
+						let textarea = document.createElement('textarea');
+						textarea.setAttribute('readonly', 'readonly');
+						textarea.value = txt;
+						document.body.appendChild(textarea);
+						textarea.select();
+						if (document.execCommand('copy')) {
+							document.execCommand('copy');
+							copy = mode+get.identityInfo(i)+'胜负记录已成功复制到剪切板，建议您先粘贴到其他地方再进行后续操作。\n';
+						}
+						else copy = mode+get.identityInfo(i)+'胜负记录复制失败。\n';
+						document.body.removeChild(textarea);
+						show=false;
+					}
+					if(!show){
+						if(copy.includes('失败')) alert(copy.split('。')[0]);
+						else alert(copy.split('，')[0]);
+					}
+				}
+			},
+			deleteSf: {
+				name: '删除当前模式武将胜负记录',
+				clear: true,
+				onclick: function () {
+					let mode=get.statusModeInfo(true),cgn=get.sfConfigName();
+					if(cgn.length>1){
+						let num=0;
+						for(let i of cgn){
+							if(confirm('您确定要清空'+mode+'所有武将'+get.identityInfo(i)+'胜负记录吗？')){
+								num++;
+								game.saveConfig(i,{});
+							}
+						}
+						if(num) alert('成功清除'+num+'项');
+					}
+					else if(confirm('您确定要清空'+lib.translate[get.mode()]+'模式'+mode+'所有武将的胜负记录吗？')){
+						game.saveConfig(cgn[0],{});
+						alert('清除成功');
+					}
+				}
+			},
+			bd5: {
 				clear: true,
 				name: '<center>杂项</center>',
 				nopointer: true
 			},
-			tip2: {
+			tip4: {
 				name: '<font color=#FF3300>注意！</font>通过以下功能设置的权重将<font color=#FFFF00>优先</font>作为<font color=#00FFFF>内奸AI</font>判断场上角色实力的参考',
 				clear: true
 			},
 			fixQz: {
 				name: '<span style="font-family: xingkai">出牌可修改武将权重</span>',
-				intro: '出牌阶段可以设置/修改场上武将的权重，以此影响内奸AI策略',
+				intro: `出牌阶段可以设置/修改场上武将的权重，以此影响内奸AI策略
+					<br><font color=#FF3300>注意！</font>凡涉及影响权重的功能均需开启［身份局AI优化］方才有实际效果！`,
 				init: false
 			},
 			applyQz: {
@@ -3166,12 +3864,15 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			},
 			ckQz: {
 				name: '<span style="font-family: xingkai">第二权重参考</span>',
-				intro: '开启后，针对没有设置权重的武将，〔评级〕会根据武将评级为这些武将分配正相关的权重[0.8,1.95]，单机时可通过〈千幻聆音〉等扩展修改武将评级以影响对应武将权重；［威胁度］会将武将威胁度作为其对应的权重',
+				intro: `开启后，针对没有设置权重的武将，〔评级〕会根据武将评级为这些武将分配正相关的权重[0.8,1.95]，单机时可通过〈千幻聆音〉等扩展修改武将评级以影响对应武将权重；
+					〔威胁度〕会将武将威胁度作为其对应的权重；
+					〔胜率〕则采用本扩展胜负统计相应功能统计的符合［只筛选总场数不少于X场］配置的胜率数据`,
 				init: 'off',
 				item: {
 					off: '不设置',
 					pj: '评级',
-					cf: '威胁度'
+					cf: '威胁度',
+					sl: '胜率'
 				}
 			},
 			qzCf: {
@@ -3306,7 +4007,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					}
 				}
 			},
-			tip3: {
+			tip5: {
 				name: `<br><font color=#FF3300>注意！</font>通过以下功能修改的技能威胁度会<font color=#00FFFF>覆盖</font>技能原有的威胁度
 					<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp由于威胁度一般会与卡牌收益作积，为避免新手胡乱设置可能引起的错乱ai，故部分功能不允许将威胁度设为<font color=#FFFF00>非正数</font>`,
 				clear: true
@@ -3454,7 +4155,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					}
 				}
 			},
-			bd7: {
+			bd6: {
 				name: '<hr>',
 				clear: true
 			},
@@ -3474,18 +4175,18 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				skill: {},
 				translate: {}
 			},
-			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 1</font>月<font color=#FFFF00>31</font>日<font color=fire>14</font>时
+			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 2</font>月<font color=#FFFF00> 2</font>日<font color=fire>16</font>时
 				<br><font color=#00FFFF>建立者</font>：
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157
 				<br><font color=#00FFFF>现更者</font>：157
-				<br><font color=#00FFB0>当前版本号</font>：<font color=#FFFF00>1.4</font>
+				<br><font color=#00FFB0>当前版本号</font>：<font color=#FFFF00>1.5</font>
 				<br><font color=#00FFB0>支持本体最低版本号</font>：<font color=#FFFF00>1.10.6</font>
 				<br><font color=#00FFB0>最佳适配本体版本号</font>：<font color=#FFFF00>1.10.7</font>`,
 			diskURL: '',
 			forumURL: '',
-			version: '1.4.0.3'
+			version: '1.5'
 		},
 		files: { character: [], card: [], skill: [] }
 	}
