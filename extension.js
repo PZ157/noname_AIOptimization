@@ -3146,7 +3146,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				onclick: function () {
 					const textarea = document.createElement('textarea');
 					textarea.setAttribute('readonly', 'readonly');
-					textarea.value = 'https://pan.baidu.com/s/1hsVJjfx-wZi87JlaOpIBIw?pwd=h4go';
+					textarea.value = 'https://pan.baidu.com/s/1jSwziUyRhKwKPplzQt_r4w?pwd=aiyh';
 					document.body.appendChild(textarea);
 					textarea.select();
 					if (document.execCommand('copy')) {
@@ -4175,7 +4175,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				skill: {},
 				translate: {}
 			},
-			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 2</font>月<font color=#FFFF00> 2</font>日<font color=fire>16</font>时
+			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 2</font>月<font color=#FFFF00> 2</font>日<font color=fire>17</font>时
 				<br><font color=#00FFFF>建立者</font>：
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子
