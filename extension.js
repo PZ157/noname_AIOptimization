@@ -666,46 +666,19 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 						for (let i in lib.characterPack) {
 							if (Object.prototype.toString.call(lib.characterPack[i]) === '[object Object]') {
 								event.sorts.push(lib.characterPack[i]);
-								ts.push(lib.translate[i + '_character_config']);
+								ts.push([ts.length,lib.translate[i + '_character_config']]);
 							}
 						}
-						if (!ts.length) event.finish();
-						else {
-							event.videoId = lib.status.videoId++;
-							let func = function (player, list, id) {
-								let choiceList = ui.create.dialog('请选择要移动的武将所在的武将包');
-								choiceList.videoId = id;
-								for (let i = 0; i < list.length; i++) {
-									let str = '<div class="popup text" style="width:calc(100% - 10px);display:inline-block">' + list[i] + '</div>';
-									let next = choiceList.add(str);
-									next.firstChild.addEventListener(lib.config.touchscreen ? 'touchend' : 'click', ui.click.button);
-									next.firstChild.link = i;
-									for (let j in lib.element.button) {
-										next[j] = lib.element.button[j];
-									}
-									choiceList.buttons.add(next.firstChild);
-								}
-								return choiceList;
-							};
-							if (game.me.isOnline2()) game.me.send(func, game.me, ts, event.videoId);
-							event.dialog = func(game.me, ts, event.videoId);
-							if (_status.auto) event.dialog.style.display = 'none';
-							let next = game.me.chooseButton();
-							next.set('dialog', event.videoId);
-							next.set('forced', true);
-							next.set('ai', function (button) {
-								return 1;
-							});
-							next.set('selectButton', [0, ts.length]);
-						}
+						if (ts.length) player.chooseButton([
+							'请选择要移动的武将所在的武将包',
+							[ts,'textbutton'],
+						],true,[1,ts.length]).set('dialog',event.videoId).set('ai',button=>0);
+						else event.finish();
 					}
 					'step 1'
-					if (game.me.isOnline2()) game.me.send('closeDialog', event.videoId);
-					event.dialog.close();
 					if (result.links && result.links.length) {
-						let nums = result.links.sort();
 						event.names = [];
-						for (let num of nums) {
+						for (let num of result.links) {
 							for (let i in event.sorts[num]) {
 								event.names.push(i);
 							}
@@ -857,46 +830,19 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 						for(let i in lib.characterPack){
 							if(Object.prototype.toString.call(lib.characterPack[i])==='[object Object]'){
 								event.sorts.push(lib.characterPack[i]);
-								ts.push(lib.translate[i+'_character_config']);
+								ts.push([ts.length,lib.translate[i+'_character_config']]);
 							}
 						}
-						if(!ts.length) event.finish();
-						else{
-							event.videoId=lib.status.videoId++;
-							let func=function(player,list,id){
-								let choiceList=ui.create.dialog('请选择要做记录操作的武将所在的武将包');
-								choiceList.videoId=id;
-								for(let i=0;i<list.length;i++){
-									let str='<div class="popup text" style="width:calc(100% - 10px);display:inline-block">'+list[i]+'</div>';
-									let next=choiceList.add(str);
-									next.firstChild.addEventListener(lib.config.touchscreen?'touchend':'click',ui.click.button);
-									next.firstChild.link=i;
-									for(let j in lib.element.button){
-										next[j]=lib.element.button[j];
-									}
-									choiceList.buttons.add(next.firstChild);
-								}
-								return choiceList;
-							};
-							if(game.me.isOnline2()) game.me.send(func,game.me,ts,event.videoId);
-							event.dialog=func(game.me,ts,event.videoId);
-							if(_status.auto) event.dialog.style.display='none';
-							let next=game.me.chooseButton();
-							next.set('dialog',event.videoId);
-							next.set('forced',true);
-							next.set('ai',function(button){
-								return 1;
-							});
-							next.set('selectButton',[0,ts.length]);
-						}
+						if(ts.length) player.chooseButton([
+							'请选择要做记录操作的武将所在的武将包',
+							[ts,'textbutton'],
+						],true,[1,ts.length]).set('dialog',event.videoId).set('ai',button=>0);
+						else event.finish();
 					}
 					'step 1'
-					if(game.me.isOnline2()) game.me.send('closeDialog',event.videoId);
-					event.dialog.close();
 					if(result.links&&result.links.length){
-						let nums=result.links.sort();
 						event.names=[];
-						for(let num of nums){
+						for(let num of result.links){
 							for(let i in event.sorts[num]){
 								event.names.push(i);
 							}
@@ -1599,10 +1545,10 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 				let str = [
 					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>2</font>月<font color=fire>2</font>日</center>',
-					'◆添加胜率统计一系列功能并适配本扩展内奸AI策略',
-					'◆删除［显示隐藏武将］、［同名武将筛选］功能',
-					'◆移除实用性太低的最大点数记录',
-					'◆调整内奸跳身份ai，进一步降低内奸摆烂可能'
+					'◆增加【杀】测试ai：统一使用优先级',
+					'◆更新百度网盘链接',
+					'◆修复〖伪禁〗和〖胜负记录操作〗操作武将包报错的bug',
+					'◆修复提示显示问题'
 				];
 				let ul = document.createElement('ul');
 				ul.style.textAlign = 'left';
@@ -3193,8 +3139,8 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			},
 			tip2: {
 				clear: true,
-				name: `<hr><center><font color=#00FFB0>以下大部分选项长按有提示！</center>
-					<center>行楷字体选项均<font color=#FF3300>即时生效</font>！</center>
+				name: `<hr><center><font color=#00FFB0>以下大部分选项长按有提示</font>！</center>
+					<center><span style='font-family: xingkai'>行楷字体选项</span>均<font color=#FF3300>即时生效</font>！</center>
 					<br><center>AI相关</center>`,
 				nopointer: true
 			},
@@ -4175,18 +4121,18 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				skill: {},
 				translate: {}
 			},
-			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 2</font>月<font color=#FFFF00> 2</font>日<font color=fire>17</font>时
+			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 2</font>月<font color=#FFFF00> 2</font>日<font color=fire>18</font>时
 				<br><font color=#00FFFF>建立者</font>：
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157
 				<br><font color=#00FFFF>现更者</font>：157
-				<br><font color=#00FFB0>当前版本号</font>：<font color=#FFFF00>1.5</font>
+				<br><font color=#00FFB0>当前版本号</font>：<font color=#FFFF00>1.5.0.1</font>
 				<br><font color=#00FFB0>支持本体最低版本号</font>：<font color=#FFFF00>1.10.6</font>
 				<br><font color=#00FFB0>最佳适配本体版本号</font>：<font color=#FFFF00>1.10.7</font>`,
 			diskURL: '',
 			forumURL: '',
-			version: '1.5'
+			version: '1.5.0.1'
 		},
 		files: { character: [], card: [], skill: [] }
 	}
