@@ -2132,7 +2132,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 								if(player.countCards('h',{type:'basic'})) return num/10;
 								return num*10;
 							}
-							if(get.type(card)==='basic') return num+6;
+							if(get.type(card)==='basic') return num+10;
 						},
 						aiValue(player,card,num){
 							if(card.name==='zhangba'){
@@ -2189,6 +2189,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 									if(evt&&evt.card==card) targets.addArray(evt.targets);
 									if(targets.length) return [1,targets.length];
 									if(get.tag(card,'multitarget')) return [1,game.players.length-1];
+									return [1,1];
 								}
 							}
 						}
@@ -3140,7 +3141,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			tip2: {
 				clear: true,
 				name: `<hr><center><font color=#00FFB0>以下大部分选项长按有提示</font>！</center>
-					<center><span style='font-family: xingkai'>行楷字体选项</span>均<font color=#FF3300>即时生效</font>！</center>
+					<center><span style='font-family: xingkai'>行楷字体选项</span>均<font color=#FFFF00>即时生效</font>！</center>
 					<br><center>AI相关</center>`,
 				nopointer: true
 			},
