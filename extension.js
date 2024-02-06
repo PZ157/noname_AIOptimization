@@ -1382,7 +1382,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				var w = document.body.offsetWidth;
 				var lists = lib.config['extension_AI优化_'+identity] || [];
 				//改自手杀ui和群英荟萃
-				var SRr = "<html><head><meta charset='utf-8'><style type='text/css'>body {background-image: url('" + lib.assetURL + "extension/AI优化/beijing.png');background-size: 100% 100%;background-position: center;--w: 560px;--h: calc(var(--w) * 610/1058);width: var(--w);height: var(--h);background-repeat: no-repeat;background-attachment: fixed;}h1{text-shadow:1px 1px 1PX #000000,1px -1px 1PX #000000,-1px 1px 1PX #000000,-1px -1px 1PX #000000;font-size:20px}div {width: 160vmin;height: 63vmin;border: 0px solid black;border-radius: 9px;padding: 35px;margin-top: 5.5vmin;margin-bottom: 5.5vmin;margin-left: 10.5vmin;margin-right: 10.5vmin;position: center;}div.ex1 {width: 160vmin;height: 63vmin;overflow: auto;}</style></head><body><div class='ex1'>";
+				var SRr = "<html><head><meta charset='utf-8'><style type='text/css'>body {background-image: url('" + lib.assetURL + "extension/AI优化/img/beijing.png');background-size: 100% 100%;background-position: center;--w: 560px;--h: calc(var(--w) * 610/1058);width: var(--w);height: var(--h);background-repeat: no-repeat;background-attachment: fixed;}h1{text-shadow:1px 1px 1PX #000000,1px -1px 1PX #000000,-1px 1px 1PX #000000,-1px -1px 1PX #000000;font-size:20px}div {width: 160vmin;height: 63vmin;border: 0px solid black;border-radius: 9px;padding: 35px;margin-top: 5.5vmin;margin-bottom: 5.5vmin;margin-left: 10.5vmin;margin-right: 10.5vmin;position: center;}div.ex1 {width: 160vmin;height: 63vmin;overflow: auto;}</style></head><body><div class='ex1'>";
 				if (lists && lists.length > 0) {
 					for (let i = 0; i < lists.length; i++) {
 						SRr += '〖';
@@ -1544,11 +1544,10 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			}
 			if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 				let str = [
-					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>2</font>月<font color=fire>2</font>日</center>',
-					'◆增加【杀】测试ai：统一使用优先级',
-					'◆更新百度网盘链接',
-					'◆修复〖伪禁〗和〖胜负记录操作〗操作武将包报错的bug',
-					'◆修复提示显示问题'
+					'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>2</font>月<font color=fire>6</font>日</center>',
+					'◆调整扩展设置界面',
+					'◆微调刘焉ai',
+					'◆增加公众号、频道和网盘二维码'
 				];
 				let ul = document.createElement('ul');
 				ul.style.textAlign = 'left';
@@ -3036,19 +3035,23 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 			});
 		},
 		config: {
+			bd1: {
+				name: '<br><hr>',
+				clear: true
+			},
 			kzjs: {
 				name: '<font color=#00FFFF>扩展介绍</font>',
 				init: 'jieshao',
 				unfrequent: true,
 				item: {
-					jieshao: '点击查看'
+					jieshao: '点击查看',
 				},
 				textMenu: function (node, link) {
 					lib.setScroll(node.parentNode);
 					node.parentNode.style.transform = 'translateY(-100px)';
 					node.parentNode.style.height = '300px';
 					node.parentNode.style.width = '300px';
-					if(link === 'jieshao') node.innerHTML = `本扩展以『云将』『官将重修』中部分功能为基础，@柚子丶奶茶丶猫以及面具 退圈前已许可修改，现由@翩翩浊世许公子 和 @157 整理，@157负责主要后续维护，与原作者无关
+					if(link === 'jieshao') node.innerHTML = `<hr>本扩展以『云将』『官将重修』中部分功能为基础，@柚子丶奶茶丶猫以及面具 退圈前已许可修改，现由@翩翩浊世许公子 和 @157 整理，暂无后续维护者，与原作者无关
 						<br><br><font color=#FF3300>注意！</font>本扩展与其他有AI功能的扩展同时打开可能会导致AI错乱。若下面涉及到的本体武将或卡牌出现bug建议关闭本扩展后测试
 						<br><br><br><li><font color=#FFFF00>本体武将优化相关</font>：<br>刘焉〖图射〗〖立牧〗<br>神马超〖狩骊〗〖横骛〗<br>夏侯紫萼〖血偿〗
 						<br><br><br><li><font color=#00FFFF>本体卡牌AI相关</font>：<br>●<span style="font-family: xingkai">南蛮入侵</span>
@@ -3066,25 +3069,23 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 						<br>●鼓励拥有reverseEquip标签的角色刷装备，大幅降低已被废除的装备栏对应副类别的牌的价值`;
 				}
 			},
-			tip1: {
-				name: '<br><hr>可通过<font color=fire>无名杀频道</font>、<font color=#FFFF00>无名杀扩展交流</font>、<font color=#00FFFF>Q群</font>或<font color=#00FFFF>下方链接</font><font color=#00FFB0>获取</font>本扩展最新版本',
-				clear: true
-			},
-			copyQg: {
-				name: "<span style='color: #00FFFF; font-family: yuanli'>Q群</span>：<span style='font-family: suits'>715181494</span> (<font color=#FFFF00>点我复制</font>)",
-				clear: true,
-				onclick: function () {
-					const textarea = document.createElement('textarea');
-					textarea.setAttribute('readonly', 'readonly');
-					textarea.value = '715181494';
-					document.body.appendChild(textarea);
-					textarea.select();
-					if (document.execCommand('copy')) {
-						document.execCommand('copy');
-						alert('群号已复制到剪贴板');
-					}
-					else alert('复制失败');
-					document.body.removeChild(textarea);
+			yqlj: {
+				name: '<font color=#00FFFF>友情链接</font>',
+				init: 'share',
+				unfrequent: true,
+				item: {
+					share: '点击查看',
+				},
+				textMenu: function (node, link) {
+					lib.setScroll(node.parentNode);
+					node.parentNode.style.transform = 'translateY(-100px)';
+					node.parentNode.style.height = '300px';
+					node.parentNode.style.width = '300px';
+					if(link === 'share') node.innerHTML = "<hr>关注微信公众号“无名杀扩展交流”，获取更多扩展最新动态：<br><img style=width:280px src=" +
+						lib.assetURL + "extension/AI优化/img/wx.jpg><br><br>无名杀QQ频道：<br><img style=width:280px src=" +
+						lib.assetURL + "extension/AI优化/img/qq.jpg><br><br>DoDo无名杀超级群：<br><img style=width:280px src=" +
+						lib.assetURL + "extension/AI优化/img/dodo.jpg><br><br>AI优化百度网盘二维码：<br><img style=width:280px src=" +
+						lib.assetURL + "extension/AI优化/img/aiyh.png>";
 				}
 			},
 			copyWp: {
@@ -3138,7 +3139,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					document.body.removeChild(textarea);
 				}
 			},
-			tip2: {
+			tip1: {
 				clear: true,
 				name: `<hr><center><font color=#00FFB0>以下大部分选项长按有提示</font>！</center>
 					<center><span style='font-family: xingkai'>行楷字体选项</span>均<font color=#FFFF00>即时生效</font>！</center>
@@ -3188,7 +3189,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				intro: '目前包括以下前瞻AI优化：<br>【杀】<br>【铁索连环】',
 				init: true
 			},
-			bd1: {
+			bd2: {
 				clear: true,
 				name: '<center>常用功能</center>',
 				nopointer: true
@@ -3289,7 +3290,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					}
 				}
 			},
-			bd2: {
+			bd3: {
 				clear: true,
 				name: '<center>身份局相关功能</center>',
 				nopointer: true
@@ -3314,7 +3315,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				intro: '将四人身份局改为1主（加体力上限）1内2反，游戏开始时忠臣改为明反',
 				init: false
 			},
-			bd3: {
+			bd4: {
 				clear: true,
 				name: '<center>伪禁相关</center>'
 			},
@@ -3440,7 +3441,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					}
 				}
 			},
-			tip3: {
+			tip2: {
 				name: '以下功能为<font color=#00FFFF>伪禁</font>衍生功能，<font color=#FFFF00>如需使用请开启〔伪玩家可选ai禁选〕</font>',
 				clear: true
 			},
@@ -3528,7 +3529,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					game.aiyh_configBanList('nongmin','农民');
 				}
 			},
-			bd4: {
+			bd5: {
 				clear: true,
 				name: '<center>胜负统计相关</center>'
 			},
@@ -3789,12 +3790,12 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					}
 				}
 			},
-			bd5: {
+			bd6: {
 				clear: true,
 				name: '<center>杂项</center>',
 				nopointer: true
 			},
-			tip4: {
+			tip3: {
 				name: '<font color=#FF3300>注意！</font>通过以下功能设置的权重将<font color=#FFFF00>优先</font>作为<font color=#00FFFF>内奸AI</font>判断场上角色实力的参考',
 				clear: true
 			},
@@ -3954,7 +3955,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					}
 				}
 			},
-			tip5: {
+			tip4: {
 				name: `<br><font color=#FF3300>注意！</font>通过以下功能修改的技能威胁度会<font color=#00FFFF>覆盖</font>技能原有的威胁度
 					<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp由于威胁度一般会与卡牌收益作积，为避免新手胡乱设置可能引起的错乱ai，故部分功能不允许将威胁度设为<font color=#FFFF00>非正数</font>`,
 				clear: true
@@ -4102,7 +4103,7 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 					}
 				}
 			},
-			bd6: {
+			bd7: {
 				name: '<hr>',
 				clear: true
 			},
@@ -4122,18 +4123,18 @@ game.import('extension', function (lib, game, ui, get, ai, _status) {
 				skill: {},
 				translate: {}
 			},
-			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 2</font>月<font color=#FFFF00> 2</font>日<font color=fire>18</font>时
+			intro: `<font color=#00FFFF>更新日期</font>：24年<font color=#00FFB0> 2</font>月<font color=#FFFF00> 6</font>日<font color=fire>14</font>时
 				<br><font color=#00FFFF>建立者</font>：
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp柚子丶奶茶丶猫以及面具
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp翩翩浊世许公子
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp157
-				<br><font color=#00FFFF>现更者</font>：157
-				<br><font color=#00FFB0>当前版本号</font>：<font color=#FFFF00>1.5.0.1</font>
+				<br><font color=#00FFFF>现更者</font>：<暂无>
+				<br><font color=#00FFB0>当前版本号</font>：<font color=#FFFF00>1.5.0.2</font>
 				<br><font color=#00FFB0>支持本体最低版本号</font>：<font color=#FFFF00>1.10.6</font>
 				<br><font color=#00FFB0>最佳适配本体版本号</font>：<font color=#FFFF00>1.10.7</font>`,
 			diskURL: '',
 			forumURL: '',
-			version: '1.5.0.1'
+			version: '1.5.0.2'
 		},
 		files: { character: [], card: [], skill: [] }
 	}
