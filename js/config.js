@@ -1,5 +1,5 @@
-import { lib, game, ui, get, ai, _status } from '../../../noname.js'
-export default {
+import { lib, game, ui, get, ai, _status } from './noname.js'
+export let config = {
 	bd1: {
 		name: '<br><hr>',
 		clear: true
@@ -45,8 +45,7 @@ export default {
 			if (link === 'share') node.innerHTML = "<hr>关注微信公众号“无名杀扩展交流”，获取更多扩展最新动态：<br><img style=width:280px src=" +
 				lib.assetURL + "extension/AI优化/img/wx.jpg><br><br>无名杀QQ频道：<br><img style=width:280px src=" +
 				lib.assetURL + "extension/AI优化/img/qq.jpg><br><br>DoDo无名杀超级群：<br><img style=width:280px src=" +
-				lib.assetURL + "extension/AI优化/img/dodo.jpg><br><br>无名杀小白鼠群：<br><img style=width:280px src=" +
-				lib.assetURL + "extension/AI优化/img/ceshi.jpg><br><br>AI优化百度网盘二维码：<br><img style=width:280px src=" +
+				lib.assetURL + "extension/AI优化/img/dodo.jpg><br><br>AI优化百度网盘二维码：<br><img style=width:280px src=" +
 				lib.assetURL + "extension/AI优化/img/aiyh.png>";
 		}
 	},
@@ -245,7 +244,7 @@ export default {
 			}
 			else {
 				if (!window.CodeMirror) {
-					import('../../game/codemirror.js').then(() => {
+					import('../../../game/codemirror.js').then(() => {
 						lib.codeMirrorReady(node, editor);
 					});
 					lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
@@ -365,7 +364,7 @@ export default {
 			}
 			else {
 				if (!window.CodeMirror) {
-					import('../../game/codemirror.js').then(() => {
+					import('../../../game/codemirror.js').then(() => {
 						lib.codeMirrorReady(node, editor);
 					});
 					lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
@@ -687,7 +686,7 @@ export default {
 			}
 			else {
 				if (!window.CodeMirror) {
-					import('../../game/codemirror.js').then(() => {
+					import('../../../game/codemirror.js').then(() => {
 						lib.codeMirrorReady(node, editor);
 					});
 					lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
@@ -875,7 +874,7 @@ export default {
 			}
 			else {
 				if (!window.CodeMirror) {
-					import('../../game/codemirror.js').then(() => {
+					import('../../../game/codemirror.js').then(() => {
 						lib.codeMirrorReady(node, editor);
 					});
 					lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
@@ -1023,7 +1022,7 @@ export default {
 			}
 			else {
 				if (!window.CodeMirror) {
-					import('../../game/codemirror.js').then(() => {
+					import('../../../game/codemirror.js').then(() => {
 						lib.codeMirrorReady(node, editor);
 					});
 					lib.init.css(lib.assetURL + 'layout/default', 'codemirror');

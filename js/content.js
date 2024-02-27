@@ -1,4 +1,4 @@
-import { lib, game, ui, get, ai, _status } from '../../../noname.js'
+import { lib, game, ui, get, ai, _status } from './noname.js'
 
 export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以及面具 提供的《云将》相关部分AI优化的修复代码
 
