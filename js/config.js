@@ -43,10 +43,11 @@ export let config = {
 			node.parentNode.style.height = '300px';
 			node.parentNode.style.width = '300px';
 			if (link === 'share') node.innerHTML = "<hr>关注微信公众号“无名杀扩展交流”，获取更多扩展最新动态：<br><img style=width:280px src=" +
-				lib.assetURL + "extension/AI优化/img/wx.jpg><br><br>无名杀QQ频道：<br><img style=width:280px src=" +
-				lib.assetURL + "extension/AI优化/img/qq.jpg><br><br>DoDo无名杀超级群：<br><img style=width:280px src=" +
-				lib.assetURL + "extension/AI优化/img/dodo.jpg><br><br>AI优化百度网盘二维码：<br><img style=width:280px src=" +
-				lib.assetURL + "extension/AI优化/img/aiyh.png>";
+				lib.assetURL + "extension/AI优化/img/promotion/wx.jpg><br><br>无名杀QQ频道：<br><img style=width:280px src=" +
+				lib.assetURL + "extension/AI优化/img/promotion/qq.jpg><br><br>DoDo无名杀超级群：<br><img style=width:280px src=" +
+				lib.assetURL + "extension/AI优化/img/promotion/dodo.jpg><br><br>无名杀小白鼠群：<br><img style=width:280px src=" +
+				lib.assetURL + "extension/AI优化/img/promotion/ceshi.jpg><br><br>AI优化百度网盘二维码：<br><img style=width:280px src=" +
+				lib.assetURL + "extension/AI优化/img/promotion/aiyh.png>";
 		}
 	},
 	copyWp: {
@@ -167,6 +168,20 @@ export let config = {
 		intro: '去除手杀马钧〖巧思〗、手杀孙寒华〖冲虚〗、手杀南华老仙〖御风〗、手杀庞德公〖评才〗、手杀郑玄〖整经〗的小游戏，重启生效。（注意：若有其他拓展修改了小游戏可能会报错，关闭此选项即可）',
 		init: false
 	},
+	/*rank: {
+		name: '修改武将评级显示',
+		intro: '开启后，将修改武将栏界面中的武将评级显示内容',
+		init: 'off',
+		item: {
+			wr: '稀有度',
+			wh: '大写数字',
+			wp: '九品制',
+			tg: '官方评级',
+			tq: '七佬设计',
+			tz: '字母评级',
+			off: '关闭'
+		}
+	},*/
 	exportPz: {
 		name: '复制本扩展配置',
 		clear: true,

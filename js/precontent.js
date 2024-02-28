@@ -218,9 +218,9 @@ export function precontent(config, pack) {
 	}
 	if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 		let str = [
-			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>2</font>月<font color=fire>27</font>日</center>',
-			'◆修复扩展设置中一些涉及编辑的功能瘫痪的严重bug',
-			'◆代码顺序微调'
+			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>2</font>月<font color=fire>28</font>日</center>',
+			//'◆新增功能［修改武将评级显示］',
+			'◆bug修复'
 		];
 		let ul = document.createElement('ul');
 		ul.style.textAlign = 'left';

@@ -2,6 +2,75 @@ import { lib, game, ui, get, ai, _status } from './noname.js'
 
 export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以及面具 提供的《云将》相关部分AI优化的修复代码
 
+	/*ui.create.rarity = function (button) {
+		let config = lib.config.extension_AI优化_rank;
+		if (typeof config !== 'string' || config === 'off') return;
+		let rarity, intro = button.node.intro;
+		intro.classList.add('showintro');
+		if (lib.rank.bp.includes(button.link)) rarity = 5;
+		else if (lib.rank.b.includes(button.link)) rarity = 4;
+		else if (lib.rank.am.includes(button.link)) rarity = 6;
+		else if (lib.rank.a.includes(button.link)) rarity = 7;
+		else if (lib.rank.ap.includes(button.link)) rarity = 8;
+		else if (lib.rank.bm.includes(button.link)) rarity = 3;
+		else if (lib.rank.c.includes(button.link)) rarity = 2;
+		else if (lib.rank.s.includes(button.link)) rarity = 9;
+		else if (lib.rank.d.includes(button.link)) rarity = 1;
+		else {
+			intro.style.fontSize = '16px';
+			intro.style.bottom = '6px';
+			intro.style.left = '6px';
+			intro.style.fontFamily = 'shousha';
+			intro.innerHTML = '未知';
+			return;
+		}
+		let five = Math.ceil(rarity / 2);
+		if (config[0] === 't') {
+			intro.classList.add('rarity');
+			if (intro.innerText) intro.innerText = '';
+			intro.style.left='20px';
+			intro.style.bottom='6px';
+			intro.style.width='45px';
+			intro.style.height='45px';
+			intro.style['background-size']='100% 100%';
+			intro.style.backgroundImage = 'url("' + lib.assetURL + 'extension/AI优化/img/rarity/' + config[1] + '/' + (config[1] === 'q' ? rarity : five) + '.png")';
+			return;
+		}
+		intro.style.fontSize = '16px';
+		intro.style.bottom = '6px';
+		intro.style.left = '6px';
+		if (five === 3) intro.dataset.nature = 'thunderm';
+		else if (five === 2) intro.dataset.nature = 'waterm';
+		else if (five === 4) intro.dataset.nature = 'metalm';
+		else if (five === 1) intro.dataset.nature = 'woodm';
+		else intro.dataset.nature = 'orangem';
+		if (config[1] === 'r') {
+			intro.style.fontFamily = 'yuanli';
+			if (five === 3) intro.innerHTML = '史诗';
+			else if (five === 2) intro.innerHTML = '稀有';
+			else if (five === 4) intro.innerHTML = '传说';
+			else if (five === 1) intro.innerHTML = '普通';
+			else intro.innerHTML = '限定';
+		}
+		else if (config[1] === 'h') {
+			intro.style.fontFamily = 'xinwei';
+			if (rarity === 5) intro.innerHTML = '伍';
+			else if (rarity === 4) intro.innerHTML = '肆';
+			else if (rarity === 6) intro.innerHTML = '陆';
+			else if (rarity === 7) intro.innerHTML = '柒';
+			else if (rarity === 8) intro.innerHTML = '捌';
+			else if (rarity === 3) intro.innerHTML = '叁';
+			else if (rarity === 2) intro.innerHTML = '贰';
+			else if (rarity === 9) intro.innerHTML = '玖';
+			else intro.innerHTML = '壹';
+		}
+		else if(config[1] === 'p') {
+			let pin = ['下', '中', '上'];
+			intro.style.fontFamily = 'xingkai';
+			intro.innerHTML = pin[Math.floor(rarity / 3)] + pin[rarity % 3];
+		}
+	};*/
+
 	/*全局技*/
 	lib.skill._aiyh_firstKs = {
 		trigger: { global: 'gameStart' },
