@@ -2,7 +2,7 @@ import { lib, game, ui, get, ai, _status } from './noname.js'
 
 export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以及面具 提供的《云将》相关部分AI优化的修复代码
 
-	/*ui.create.rarity = function (button) {
+	ui.create.rarity = function (button) {
 		let config = lib.config.extension_AI优化_rank;
 		if (typeof config !== 'string' || config === 'off') return;
 		let rarity, intro = button.node.intro;
@@ -28,11 +28,11 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 		if (config[0] === 't') {
 			intro.classList.add('rarity');
 			if (intro.innerText) intro.innerText = '';
-			intro.style.left='20px';
-			intro.style.bottom='6px';
-			intro.style.width='45px';
-			intro.style.height='45px';
-			intro.style['background-size']='100% 100%';
+			intro.style.left = '20px';
+			intro.style.bottom = '6px';
+			intro.style.width = '45px';
+			intro.style.height = '45px';
+			intro.style['background-size'] = '100% 100%';
 			intro.style.backgroundImage = 'url("' + lib.assetURL + 'extension/AI优化/img/rarity/' + config[1] + '/' + (config[1] === 'q' ? rarity : five) + '.png")';
 			return;
 		}
@@ -46,14 +46,18 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 		else intro.dataset.nature = 'orangem';
 		if (config[1] === 'r') {
 			intro.style.fontFamily = 'yuanli';
-			if (five === 3) intro.innerHTML = '史诗';
-			else if (five === 2) intro.innerHTML = '稀有';
-			else if (five === 4) intro.innerHTML = '传说';
-			else if (five === 1) intro.innerHTML = '普通';
-			else intro.innerHTML = '限定';
+			if (five === 3) intro.innerHTML = '稀有';
+			else if (five === 2) intro.innerHTML = '普通';
+			else if (five === 4) intro.innerHTML = '史诗';
+			else if (five === 1) intro.innerHTML = '免费';
+			else intro.innerHTML = '传说';
 		}
-		else if (config[1] === 'h') {
-			intro.style.fontFamily = 'xinwei';
+		else if (config[1] === 'x') {
+			intro.style.fontFamily = 'xingkai';
+			intro.innerHTML = get.cnNumber(rarity);
+		}
+		else if (config[1] === 'd') {
+			intro.style.fontFamily = 'xingkai';
 			if (rarity === 5) intro.innerHTML = '伍';
 			else if (rarity === 4) intro.innerHTML = '肆';
 			else if (rarity === 6) intro.innerHTML = '陆';
@@ -64,12 +68,12 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 			else if (rarity === 9) intro.innerHTML = '玖';
 			else intro.innerHTML = '壹';
 		}
-		else if(config[1] === 'p') {
+		else if (config[1] === 'p') {
 			let pin = ['下', '中', '上'];
 			intro.style.fontFamily = 'xingkai';
-			intro.innerHTML = pin[Math.floor(rarity / 3)] + pin[rarity % 3];
+			intro.innerHTML = pin[Math.floor(--rarity / 3)] + pin[rarity % 3];
 		}
-	};*/
+	};
 
 	/*全局技*/
 	lib.skill._aiyh_firstKs = {
@@ -88,6 +92,44 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 					else lib.skill[i].ai.threaten = lib.config.extension_AI优化_cf[i];
 				}
 				if (lib.config.extension_AI优化_applyCf == 'pj') {//威胁度补充
+					let list, rank = lib.rank;
+					if (_status.connectMode) list = get.charactersOL();
+					else list = get.gainableCharacters();
+					for (let i = 0; i < list.length; i++) {
+						let info = lib.character[list[i]];
+						if (!info || info.length < 4) continue;
+						let all,
+							skills = [],
+							th;
+						if (rank.bp.includes(list[i])) all = 1.4;
+						else if (rank.b.includes(list[i])) all = 1.2;
+						else if (rank.am.includes(list[i])) all = 1.8;
+						else if (rank.a.includes(list[i])) all = 2.4;
+						else if (rank.ap.includes(list[i])) all = 2.7;
+						else if (rank.bm.includes(list[i])) continue;
+						else if (rank.c.includes(list[i])) all = 0.8;
+						else if (rank.s.includes(list[i])) all = 3.2;
+						else if (rank.d.includes(list[i])) all = 0.6;
+						else continue;
+						for (let j of info[3]) {
+							if (lib.skill[j] && lib.skill[j].juexingji) continue;
+							skills.push(j);
+						}
+						if (skills.length) {
+							th = Math.pow(all, 1 / skills.length);
+							for (let j = 0; j < skills.length; j++) {
+								let info = lib.skill[skills[j]];
+								if (!info) lib.skill[skills[j]] = { ai: { threaten: th } };
+								else if (!info.ai) lib.skill[skills[j]].ai = { threaten: th };
+								else if (typeof info.ai.threaten == 'undefined') {
+									if (info.ai.maixie_defend) lib.skill[skills[j]].ai.threaten = 0.8 * th;
+									else lib.skill[skills[j]].ai.threaten = th;
+								}
+							}
+						}
+					}
+				}
+				else if (lib.config.extension_AI优化_applyCf == 'pz') {
 					let list;
 					if (_status.connectMode) list = get.charactersOL();
 					else list = get.gainableCharacters();
@@ -99,7 +141,7 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 							skills = [],
 							th;
 						if (rarity == 'rare') all = 1.2;
-						else if (rarity == 'epic') all = 2;
+						else if (rarity == 'epic') all = 1.8;
 						else if (rarity == 'legend') all = 2.4;
 						else if (rarity == 'junk') all = 0.8;
 						else continue;
@@ -155,8 +197,11 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 				target: function (card, player, target) {
 					if (!lib.config.extension_AI优化_qzCf || get.itemtype(target) != 'player') return;
 					let base1 = 1;
-					if (typeof lib.config.extension_AI优化_qz[target.name] == 'number') base1 = lib.config.extension_AI优化_qz[target.name];
-					if (target.name2 != undefined && typeof lib.config.extension_AI优化_qz[target.name2] == 'number') return base1 + lib.config.extension_AI优化_qz[target.name2];
+					if (typeof lib.aiyh.qz[target.name] === 'number') base1 = lib.aiyh.qz[target.name];
+					else if (typeof lib.config.extension_AI优化_qz[target.name] == 'number') base1 = lib.config.extension_AI优化_qz[target.name];
+					if (target.name2 === undefined) return base1;
+					if (typeof lib.aiyh.qz[target.name2] === 'number') return base1 + lib.aiyh.qz[target.name2];
+					if (typeof lib.config.extension_AI优化_qz[target.name2] == 'number') return base1 + lib.config.extension_AI优化_qz[target.name2];
 					return base1;
 				}
 			}
@@ -804,11 +849,11 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 			});
 		},
 		content: function () {
-			var list = [];
-			for (var i = 0; i < game.players.length; i++) {
+			let list = [];
+			for (let i = 0; i < game.players.length; i++) {
 				if (game.players[i].identity == 'zhong') list.push(game.players[i]);
 			}
-			var target = list.randomGet();
+			let target = list.randomGet();
 			player.storage.dongcha = target;
 			if (!_status.connectMode) {
 				if (player == game.me) {
@@ -1149,26 +1194,61 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 					else if (fs.includes(i)) sym = -1;
 					else continue;
 					if (i.hp > 0) {
-						if (typeof lib.config.extension_AI优化_qz[i.name] == 'number') base1 = lib.config.extension_AI优化_qz[i.name];
-						else if (lib.config.extension_AI优化_ckQz == 'cf') base1 = get.threaten(i, player);
-						else if (lib.config.extension_AI优化_ckQz == 'pj') {
+						if (typeof lib.aiyh.qz[i.name] === 'number') base1 = lib.aiyh.qz[i.name];
+						if (lib.config.extension_AI优化_tackQz) {
+							let sfc = get.purifySFConfig(lib.config[get.sfConfigName(i.identity)],
+								lib.config.extension_AI优化_min)[i.name],
+								sl = 0.5;
+							if (sfc && typeof sfc.sl === 'number') sl = sfc.sl;
+							if (sl < 0.4) base1 = 0.6 + sl;
+							else if (sl < 0.8) base1 = 2 * sl + 0.2;
+							else base1 = 3 * sl - 0.6;
+						}
+						else if (typeof lib.config.extension_AI优化_qz[i.name] === 'number') base1 = lib.config.extension_AI优化_qz[i.name];
+						else if (lib.config.extension_AI优化_ckQz === 'cf') base1 = get.threaten(i, player);
+						else if (lib.config.extension_AI优化_ckQz === 'pj') {
+							let rank = lib.rank;
+							if (rank.bp.includes(i.name)) base1 = 1.4;
+							else if (rank.b.includes(i.name)) base1 = 1.2;
+							else if (rank.am.includes(i.name)) base1 = 1.8;
+							else if (rank.a.includes(i.name)) base1 = 2.4;
+							else if (rank.ap.includes(i.name)) base1 = 2.7;
+							else if (rank.c.includes(i.name)) base1 = 0.8;
+							else if (rank.s.includes(i.name)) base1 = 3.2;
+							else if (rank.d.includes(i.name)) base1 = 0.6;
+						}
+						else if (lib.config.extension_AI优化_ckQz === 'pz') {
 							let rank1 = game.getRarity(i.name);
 							if (rank1 == 'rare') base1 = 1.1;
 							else if (rank1 == 'epic') base1 = 1.57;
 							else if (rank1 == 'legend') base1 = 1.95;
 							else if (rank1 == 'junk') base1 = 0.8;
 						}
-						else if (lib.config.extension_AI优化_ckQz == 'sl') {
-							let sfc = get.purifySFConfig(lib.config[get.sfConfigName(i.identity)], lib.config.extension_AI优化_min)[i.name],
-								sl = 0.4;
-							if (sfc && typeof sfc.sl === 'number') sl = sfc.sl;
-							if (sl < 0.4) base1 = 0.6 + sl;
-							else if (sl < 0.8) base1 = 2 * sl + 0.2;
-							else base1 = 3 * sl - 0.6;
-						}
+						lib.aiyh.qz[i.name] = base1;
 						if (i.name2 != undefined) {
-							if (typeof lib.config.extension_AI优化_qz[i.name2] == 'number') base2 = lib.config.extension_AI优化_qz[i.name2];
-							else if (lib.config.extension_AI优化_ckQz == 'pj') {
+							if (typeof lib.aiyh.qz[i.name2] === 'number') base2 = lib.aiyh.qz[i.name2];
+							if (lib.config.extension_AI优化_tackQz) {
+								let sfc = get.purifySFConfig(lib.config[get.sfConfigName(i.identity)],
+									lib.config.extension_AI优化_min)[i.name2],
+									sl = 0.5;
+								if (sfc && typeof sfc.sl === 'number') sl = sfc.sl;
+								if (sl < 0.4) base2 = 0.6 + sl;
+								else if (sl < 0.8) base2 = 2 * sl + 0.2;
+								else base2 = 3 * sl - 0.6;
+							}
+							else if (typeof lib.config.extension_AI优化_qz[i.name2] == 'number') base2 = lib.config.extension_AI优化_qz[i.name2];
+							else if (lib.config.extension_AI优化_ckQz === 'pj') {
+								let rank = lib.rank;
+								if (rank.bp.includes(i.name2)) base2 = 1.4;
+								else if (rank.b.includes(i.name2)) base2 = 1.2;
+								else if (rank.am.includes(i.name2)) base2 = 1.8;
+								else if (rank.a.includes(i.name2)) base2 = 2.4;
+								else if (rank.ap.includes(i.name2)) base2 = 2.7;
+								else if (rank.c.includes(i.name2)) base2 = 0.8;
+								else if (rank.s.includes(i.name2)) base2 = 3.2;
+								else if (rank.d.includes(i.name2)) base2 = 0.6;
+							}
+							else if (lib.config.extension_AI优化_ckQz === 'pz') {
 								let rank2 = game.getRarity(i.name2);
 								base2 = 1;
 								if (rank2 == 'rare') base2 = 1.1;
@@ -1176,14 +1256,7 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 								else if (rank2 == 'legend') base2 = 1.95;
 								else if (rank2 == 'junk') base2 = 0.8;
 							}
-							else if (lib.config.extension_AI优化_ckQz == 'sl') {
-								let sfc = get.purifySFConfig(lib.config[get.sfConfigName(i.identity)], lib.config.extension_AI优化_min)[i.name2],
-									sl = 0.5;
-								if (sfc && typeof sfc.sl === 'number') sl = sfc.sl;
-								if (sl < 0.4) base1 = 0.6 + sl;
-								else if (sl < 0.8) base1 = 2 * sl + 0.2;
-								else base1 = 3 * sl - 0.6;
-							}
+							lib.aiyh.qz[i.name2] = base2;
 						}
 						if (base2) base1 = (base1 + base2) / 2;
 						if (i.isTurnedOver()) base1 -= 0.28;
@@ -1205,7 +1278,23 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 					else player.addSkill('gjcx_neiJiang');
 				} else player.addSkill('gjcx_neiZhong');
 			},
+			group: 'gjcx_neiAi_clear',
 			subSkill: {
+				clear: {
+					trigger: {
+						global: ['zhuUpdate', 'changeIdentity']
+					},
+					silent: true,
+					charlotte: true,
+					superCharlotte: true,
+					content: function () {
+						lib.aiyh.qz = {};
+						var next = game.createEvent('gjcx_neiAi_update');
+						next.player = player;
+						next.setContent(lib.skill.gjcx_neiAi.content);
+					},
+					sub: true
+				},
 				damage: {
 					mode: ['identity'],
 					trigger: { player: 'useCard1' },
@@ -1369,8 +1458,12 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 						if (typeof card != 'object' || get.itemtype(target) != 'player' || target.ai.shown < 0.95 || player == target) return 1;
 						if (target.identity == 'nei' && !player.getFriends().length && (player.identity == 'fan' || player == game.zhu) && game.countPlayer(function (current) {
 							let num = 1;
-							if (typeof lib.config.extension_AI优化_qz[current.name] == 'number') num = lib.config.extension_AI优化_qz[current.name];
-							if (current.name2 != undefined && typeof lib.config.extension_AI优化_qz[current.name2] == 'number') num = (num + lib.config.extension_AI优化_qz[current.name2]) / 2;
+							if (typeof lib.aiyh.qz[current.name] === 'number') num = lib.aiyh.qz[current.name];
+							else if (typeof lib.config.extension_AI优化_qz[current.name] == 'number') num = lib.config.extension_AI优化_qz[current.name];
+							if (current.name2 !== undefined) {
+								if (typeof lib.aiyh.qz[current.name2] === 'number') num = (num + lib.aiyh.qz[current.name2]) / 2;
+								else if (typeof lib.config.extension_AI优化_qz[current.name2] == 'number') num = (num + lib.config.extension_AI优化_qz[current.name2]) / 2;
+							}
 							if (current.isTurnedOver()) num -= 0.28;
 							if (current.storage.gjcx_neiAi && current.storage.gjcx_neiAi != current.maxHp) {
 								if (current.maxHp > current.storage.gjcx_neiAi) {

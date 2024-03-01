@@ -218,9 +218,15 @@ export function precontent(config, pack) {
 	}
 	if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 		let str = [
-			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>2</font>月<font color=fire>28</font>日</center>',
-			//'◆新增功能［修改武将评级显示］',
-			'◆bug修复'
+			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>3</font>月<font color=fire>1</font>日</center>',
+			'◆新增功能［修改武将评级显示］［胜率代替权重］',
+			'◆［第二权重参考］增加〔品质〕（为原有〔评级〕）',
+			'◆移除［第二权重参考］〔胜率〕选项',
+			'◆调整权重调取逻辑，大幅提高内奸思考速度',
+			'◆［威胁度补充］区分〔按评级自动补充〕〔按品质自动补充〕',
+			'◆修复［去除本体官将小游戏］中〖御风〗结算流程并提高收益期望',
+			'◆提高［去除本体官将小游戏］中〖整经〗收益期望',
+			'◆其他细节修复'
 		];
 		let ul = document.createElement('ul');
 		ul.style.textAlign = 'left';
@@ -253,7 +259,7 @@ export function precontent(config, pack) {
 	};
 	lib.arenaReady.push(function () {//杂项
 		if (!lib.aiyh) lib.aiyh = {};
-		if (!lib.aiyh.ai) lib.aiyh.ai = {};
+		if (!lib.aiyh.qz) lib.aiyh.qz = {};
 		if (!lib.aiyh.skillModify) lib.aiyh.skillModify = {};
 		if (!Array.isArray(lib.config.extension_AI优化_wj)) game.saveExtensionConfig('AI优化', 'wj', []);
 		if (!Array.isArray(lib.config.extension_AI优化_zhu)) game.saveExtensionConfig('AI优化', 'zhu', []);
@@ -394,41 +400,46 @@ export function precontent(config, pack) {
 				lib.skill.yufeng.content = function () {
 					'step 0'
 					let rand = Math.random();
-					if (rand > 0.81 || get.isLuckyStar(player)) event.result = 3;
-					else if (rand > 0.21) event.result = 2;
-					else if (rand > 0.1) event.result = 1;
-					else event.result = 0;
-					'step 1'
-					if (event.result == 3) game.log(player, '御风飞行', '#g成功');
-					else {
-						game.log(player, '御风飞行', '#g失败');
-						player.popup('杯具');
+					if (rand > 0.81 || get.isLuckyStar(player)) {
+						event.num = 3;
+						event.result = true;
 					}
-					game.log(player, '获得了', '#y' + event.result + '分');
-					if (event.result < 3) {
-						if (event.result) player.draw(event.result);
+					else if (rand > 0.36) event.num = 2;
+					else if (rand > 0.15) event.num = 1;
+					else {
+						event.num = 0;
+						event.result = false;
+					}
+					if (typeof event.result !== 'boolean') {
+						if (Math.random() > 0.42) event.result = true;
+						else event.result = false;
+					}
+					'step 1'
+					game.log(player, '御风飞行', (event.result ? '#g成功' : '#g失败'));
+					player.popup(get.cnNumber(event.num) + '分');
+					game.log(player, '获得了', '#y' + event.num + '分');
+					if (event.result) player.chooseTarget('请选择【御风】的目标', [1, event.num], (card, player, target) => {
+						return target != player && !target.hasSkill('yufeng2');
+					}).set('ai', target => {
+						let player = _status.event.player, att = -get.attitude(player, target), attx = att * 2;
+						if (att <= 0 || target.hasSkill('xinfu_pdgyingshi')) return 0;
+						if (target.hasJudge('lebu')) attx -= att;
+						if (target.hasJudge('bingliang')) attx -= att;
+						return attx / Math.max(2.25, Math.sqrt(target.countCards('h') + 1));
+					});
+					else {
+						if (event.num) player.draw(event.num);
 						event.finish();
-					} else {
-						event.score = event.result;
-						player.chooseTarget('请选择【御风】的目标', [1, event.result], function (card, player, target) {
-							return target != player && !target.hasSkill('yufeng2');
-						}).set('ai', function (target) {
-							var player = _status.event.player;
-							var att = -get.attitude(player, target), attx = att * 2;
-							if (att <= 0 || target.hasSkill('xinfu_pdgyingshi')) return 0;
-							if (target.hasJudge('lebu')) attx -= att;
-							if (target.hasJudge('bingliang')) attx -= att;
-							return attx / Math.max(2.25, Math.sqrt(target.countCards('h') + 1));
-						});
 					}
 					'step 2'
 					if (result.bool) {
 						result.targets.sortBySeat();
 						player.line(result.targets, 'green');
 						game.log(result.targets, '获得了', '#y“御风”', '效果');
-						for (var i of result.targets) i.addSkill('yufeng2');
-						if (event.score > result.targets.length) player.draw(event.score - result.targets.length);
-					} else player.draw(event.score);
+						for (let i of result.targets) i.addSkill('yufeng2');
+						if (event.num > result.targets.length) player.draw(event.num - result.targets.length);
+					}
+					else player.draw(event.num);
 				};
 				delete lib.skill.yufeng.usable;
 				lib.skill.yufeng.ai = {
@@ -451,17 +462,17 @@ export function precontent(config, pack) {
 					var names = [];
 					if (get.isLuckyStar(player)) num = 5;
 					else if (game.players.length + game.dead.length > 3) {
-						if (rand > 0.72) num = 5;
-						else if (rand > 0.36) num = 4;
+						if (rand > 0.45) num = 5;
+						else if (rand > 0.3) num = 4;
 						else if (rand > 0.21) num = 3;
 						else if (rand > 0.12) num = 2;
-						else if (rand > 0.06) num = 1;
+						else if (rand > 0.09) num = 1;
 						else num = 0;
 					}
 					else {
 						if (rand > 0.21) num = 3;
 						else if (rand > 0.12) num = 2;
-						else if (rand > 0.06) num = 1;
+						else if (rand > 0.09) num = 1;
 						else num = 0;
 					}
 					while (cards.length < num) {
