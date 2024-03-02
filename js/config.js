@@ -117,7 +117,8 @@ export let config = {
 		name: '武将技能优化',
 		intro: `重启生效。具体优化技能：
 			<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp神马超〖狩骊〗〖横骛〗
-			<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp夏侯紫萼〖血偿〗`,
+			<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp夏侯紫萼〖血偿〗
+			<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspTW张昭〖纯刚〗`,
 		init: true
 	},
 	sfjAi: {

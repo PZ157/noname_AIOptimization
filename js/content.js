@@ -8,11 +8,11 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 		let rarity, intro = button.node.intro;
 		intro.classList.add('showintro');
 		if (lib.rank.bp.includes(button.link)) rarity = 5;
-		else if (lib.rank.b.includes(button.link)) rarity = 4;
 		else if (lib.rank.am.includes(button.link)) rarity = 6;
+		else if (lib.rank.b.includes(button.link)) rarity = 4;
 		else if (lib.rank.a.includes(button.link)) rarity = 7;
-		else if (lib.rank.ap.includes(button.link)) rarity = 8;
 		else if (lib.rank.bm.includes(button.link)) rarity = 3;
+		else if (lib.rank.ap.includes(button.link)) rarity = 8;
 		else if (lib.rank.c.includes(button.link)) rarity = 2;
 		else if (lib.rank.s.includes(button.link)) rarity = 9;
 		else if (lib.rank.d.includes(button.link)) rarity = 1;
@@ -21,6 +21,7 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 			intro.style.bottom = '6px';
 			intro.style.left = '6px';
 			intro.style.fontFamily = 'shousha';
+			intro.dataset.nature = 'graym';
 			intro.innerHTML = '未知';
 			return;
 		}
@@ -54,7 +55,7 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 		}
 		else if (config[1] === 'x') {
 			intro.style.fontFamily = 'xingkai';
-			intro.innerHTML = get.cnNumber(rarity);
+			intro.innerHTML = get.cnNumber(rarity, true);
 		}
 		else if (config[1] === 'd') {
 			intro.style.fontFamily = 'xingkai';
@@ -102,11 +103,11 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 							skills = [],
 							th;
 						if (rank.bp.includes(list[i])) all = 1.4;
-						else if (rank.b.includes(list[i])) all = 1.2;
 						else if (rank.am.includes(list[i])) all = 1.8;
+						else if (rank.b.includes(list[i])) all = 1.2;
 						else if (rank.a.includes(list[i])) all = 2.4;
-						else if (rank.ap.includes(list[i])) all = 2.7;
 						else if (rank.bm.includes(list[i])) continue;
+						else if (rank.ap.includes(list[i])) all = 2.7;
 						else if (rank.c.includes(list[i])) all = 0.8;
 						else if (rank.s.includes(list[i])) all = 3.2;
 						else if (rank.d.includes(list[i])) all = 0.6;
@@ -1147,7 +1148,7 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 				});
 			},
 			trigger: {
-				global: ['phaseUseBegin', 'changeHp', 'dieAfter']
+				global: ['phaseUseBegin', 'changeHp', 'dieAfter', 'zhuUpdate', 'changeIdentity']
 			},
 			silent: true,
 			forced: true,
@@ -1209,8 +1210,8 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 						else if (lib.config.extension_AI优化_ckQz === 'pj') {
 							let rank = lib.rank;
 							if (rank.bp.includes(i.name)) base1 = 1.4;
-							else if (rank.b.includes(i.name)) base1 = 1.2;
 							else if (rank.am.includes(i.name)) base1 = 1.8;
+							else if (rank.b.includes(i.name)) base1 = 1.2;
 							else if (rank.a.includes(i.name)) base1 = 2.4;
 							else if (rank.ap.includes(i.name)) base1 = 2.7;
 							else if (rank.c.includes(i.name)) base1 = 0.8;
@@ -1240,8 +1241,8 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 							else if (lib.config.extension_AI优化_ckQz === 'pj') {
 								let rank = lib.rank;
 								if (rank.bp.includes(i.name2)) base2 = 1.4;
-								else if (rank.b.includes(i.name2)) base2 = 1.2;
 								else if (rank.am.includes(i.name2)) base2 = 1.8;
+								else if (rank.b.includes(i.name2)) base2 = 1.2;
 								else if (rank.a.includes(i.name2)) base2 = 2.4;
 								else if (rank.ap.includes(i.name2)) base2 = 2.7;
 								else if (rank.c.includes(i.name2)) base2 = 0.8;
@@ -1285,13 +1286,11 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 						global: ['zhuUpdate', 'changeIdentity']
 					},
 					silent: true,
+					firstDo: true,
 					charlotte: true,
 					superCharlotte: true,
 					content: function () {
 						lib.aiyh.qz = {};
-						var next = game.createEvent('gjcx_neiAi_update');
-						next.player = player;
-						next.setContent(lib.skill.gjcx_neiAi.content);
 					},
 					sub: true
 				},

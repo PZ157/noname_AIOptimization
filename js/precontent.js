@@ -218,15 +218,9 @@ export function precontent(config, pack) {
 	}
 	if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 		let str = [
-			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>3</font>月<font color=fire>1</font>日</center>',
-			'◆新增功能［修改武将评级显示］［胜率代替权重］',
-			'◆［第二权重参考］增加〔品质〕（为原有〔评级〕）',
-			'◆移除［第二权重参考］〔胜率〕选项',
-			'◆调整权重调取逻辑，大幅提高内奸思考速度',
-			'◆［威胁度补充］区分〔按评级自动补充〕〔按品质自动补充〕',
-			'◆修复［去除本体官将小游戏］中〖御风〗结算流程并提高收益期望',
-			'◆提高［去除本体官将小游戏］中〖整经〗收益期望',
-			'◆其他细节修复'
+			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>3</font>月<font color=fire>2</font>日</center>',
+			'◆优化TW张昭〖纯刚〗ai',
+			'◆修复上个版本内奸ai的一个严重bug'
 		];
 		let ul = document.createElement('ul');
 		ul.style.textAlign = 'left';
@@ -1116,6 +1110,42 @@ export function precontent(config, pack) {
 				return -1.7 - Math.pow((a / 13), target.countCards('h'));
 			}
 		};
+		if (lib.skill.twchungang && game.aiyh_skillOptEnabled('twchungang', '增加〖纯刚〗全局ai', 'twchungang_global')) {
+			lib.skill.twchungang.init = player => {
+				game.addGlobalSkill('twchungang_global');
+			};
+			lib.skill.twchungang.onremove = player => {
+				if (!game.hasPlayer(i => {
+					return player !== i && i.hasSkill('twchungang');
+				}, true)) game.removeGlobalSkill('twchungang_global');
+			};
+			lib.skill.twchungang_global = {
+				trigger: {
+					player: 'dieAfter'
+				},
+				filter(event, player) {
+					return !game.hasPlayer(i => i.hasSkill('twchungang'), true)
+				},
+				silent: true,
+				forceDie: true,
+				charlotte: true,
+				content() {
+					game.removeGlobalSkill('twchungang_global');
+				},
+				ai: {
+					effect: {
+						target(card, player, target) {
+							if ((get.tag(card, 'gain') || 0) < 2 && (get.tag(card, 'draw') || 0) < 2) return;
+							let evt = _status.event.getParent('phaseDraw'), dis = game.countPlayer(i => {
+								return target !== i && i.hasSkill('twchungang');
+							});
+							if (!dis || evt && evt.player === target) return;
+							return [1, -dis];
+						}
+					}
+				}
+			};
+		}
 		//nsp
 		if (lib.config.extension_AI优化_dev) { }
 		//over
@@ -1556,9 +1586,9 @@ export function precontent(config, pack) {
 					}
 				},
 				tag: {
-					draw: 1,
-					loseCard: 1,
-					discard: 1,
+					draw: 2,
+					loseCard: 2,
+					discard: 2,
 					multitarget: true,
 					norepeat: 1
 				}
