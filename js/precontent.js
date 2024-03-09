@@ -218,9 +218,9 @@ export function precontent(config, pack) {
 	}
 	if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 		let str = [
-			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>3</font>月<font color=fire>2</font>日</center>',
-			'◆优化TW张昭〖纯刚〗ai',
-			'◆修复上个版本内奸ai的一个严重bug'
+			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>3</font>月<font color=fire>8</font>日</center>',
+			'◆［修改武将评级显示］增加临时选项〔混合评级〕',
+			'◆部分素材更换为更清晰的版本'
 		];
 		let ul = document.createElement('ul');
 		ul.style.textAlign = 'left';
@@ -1123,18 +1123,18 @@ export function precontent(config, pack) {
 				trigger: {
 					player: 'dieAfter'
 				},
-				filter(event, player) {
+				filter (event, player) {
 					return !game.hasPlayer(i => i.hasSkill('twchungang'), true)
 				},
 				silent: true,
 				forceDie: true,
 				charlotte: true,
-				content() {
+				content () {
 					game.removeGlobalSkill('twchungang_global');
 				},
 				ai: {
 					effect: {
-						target(card, player, target) {
+						target (card, player, target) {
 							if ((get.tag(card, 'gain') || 0) < 2 && (get.tag(card, 'draw') || 0) < 2) return;
 							let evt = _status.event.getParent('phaseDraw'), dis = game.countPlayer(i => {
 								return target !== i && i.hasSkill('twchungang');

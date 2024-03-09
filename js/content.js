@@ -55,7 +55,7 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 		}
 		else if (config[1] === 'x') {
 			intro.style.fontFamily = 'xingkai';
-			intro.innerHTML = get.cnNumber(rarity, true);
+			intro.innerHTML = get.cnNumber(rarity,true);
 		}
 		else if (config[1] === 'd') {
 			intro.style.fontFamily = 'xingkai';
