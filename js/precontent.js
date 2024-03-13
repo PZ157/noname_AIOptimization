@@ -195,9 +195,9 @@ export function precontent(config, pack) {
 		}
 	};
 	{//本体版本检测
-		let noname = lib.version.split('.').slice(2), min = ['4'], len = Math.min(noname.length, min.length), status = false;
+		let noname = lib.version.split('.').slice(2), min = [4], len = Math.min(noname.length, min.length), status = false;
 		if (lib.version.slice(0, 5) === '1.10.') for (let i = 0; i < len; i++) {
-			if (noname[i] < min[i]) {
+			if (Number(noname[i]) < min[i]) {
 				status = '您的无名杀版本太低';
 				break;
 			}
@@ -218,9 +218,8 @@ export function precontent(config, pack) {
 	}
 	if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 		let str = [
-			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>3</font>月<font color=fire>8</font>日</center>',
-			'◆［修改武将评级显示］增加临时选项〔混合评级〕',
-			'◆部分素材更换为更清晰的版本'
+			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>3</font>月<font color=fire>13</font>日</center>',
+			'◆修复版本检测问题'
 		];
 		let ul = document.createElement('ul');
 		ul.style.textAlign = 'left';
