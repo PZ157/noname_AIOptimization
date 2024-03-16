@@ -218,8 +218,9 @@ export function precontent(config, pack) {
 	}
 	if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 		let str = [
-			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>3</font>月<font color=fire>13</font>日</center>',
-			'◆修复版本检测问题'
+			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>3</font>月<font color=fire>16</font>日</center>',
+			'◆新增【杀】测试AI',
+			'◆删除耗时的神马超〖狩骊〗〖横骛〗、夏侯紫萼〖血偿〗优化ai'
 		];
 		let ul = document.createElement('ul');
 		ul.style.textAlign = 'left';
@@ -800,315 +801,6 @@ export function precontent(config, pack) {
 		});
 	});
 	if (lib.config.extension_AI优化_wjAi) lib.arenaReady.push(function () {//武将AI
-		if (lib.skill.shouli && game.aiyh_skillOptEnabled('shouli')) lib.skill.shouli.ai = {
-			respondSha: true,
-			respondShan: true,
-			skillTagFilter: function (player, tag) {
-				var subtype = tag == 'respondSha' ? 'equip4' : 'equip3';
-				return game.hasPlayer(function (current) {
-					return current.getEquip(subtype);
-				});
-			},
-			order: function (item, player) {
-				for (var i = 0; i < game.players.length; i++) {
-					var current = game.players[i], trans = get.translation(_status.event);
-					if (_status.currentPhase != player && get.attitude(player, _status.currentPhase) < 0) {
-						if (trans === '杀') {
-							if (_status.currentPhase.getEquip('guanshi') && _status.currentPhase.countCards('hes') > 4 ||
-								_status.currentPhase.getEquip('qinglong') && _status.currentPhase.countCards('h', { name: 'sha' }) >
-								player.countCards('h', { name: 'shan' }) + current.countCards('e', function (card) {
-									return get.subtype(card) == 'equip3';
-								}) || _status.currentPhase.getEquip('zhuge') && _status.currentPhase.countCards('h', { name: 'sha' }) >
-								player.countCards('h', { name: 'shan' }) + current.countCards('e', function (card) {
-									return get.subtype(card) == 'equip3';
-								})) return 0;
-						}
-						else if (trans === '决斗') {
-							if (_status.currentPhase.countCards('h', { name: 'sha' }) > player.countCards('h', { name: 'sha' }) + current.countCards('e', function (card) {
-								return get.subtype(card) == 'equip4';
-							})) return 0;
-							return 1;
-						}
-					}
-					if (trans !== '决斗' && _status.currentPhase == player && !player.hasCard('wuzhong') && !player.hasCard(function (card) {
-						return get.type(card) == 'trick' && player.hasUseTarget(card) && !get.tag(card, 'damage') && get.name(card) != 'wugu' && get.name(card) != 'wuxie';
-					})) return 45;
-					return 1;
-				}
-			},
-			result: {
-				player: function (player, target) {
-					var att = get.attitude(player, target);
-					var eff = Math.max(0, get.effect(target, get.autoViewAs({ name: 'sha' }, get.subtypes('equip4')), player, player));
-					if (_status.event.type != 'phase') return 11 - att;
-					if (!player.hasValueTarget(new lib.element.VCard({ name: 'sha' }))) return 0;
-					if (_status.event.type == 'phase') {
-						if (player.hasValueTarget(new lib.element.VCard({ name: 'sha' })) && game.hasPlayer(function (current) {
-							return get.attitude(player, current) < 0 && current.hp <= 2 && current.hasSkill('shouli_thunder') && !player.hasCard(function (card) {
-								return get.tag(card, 'damage') && player.hasUseTarget(card);
-							});
-						})) return 15 - att + 3 * eff;
-						return 9 - att + 3 * eff;
-					}
-				}
-			}
-		};
-		if (lib.skill.hengwu && game.aiyh_skillOptEnabled('hengwu')) lib.skill.hengwu.mod = {
-			aiUseful: function (player, card, num) {
-				var suit = get.suit(card);
-				var es = game.countPlayer(function (current) {
-					return current.countCards('e', function (cardx) {
-						return cardx != card && get.suit(cardx, current) == suit;
-					});
-				});
-				var hs = player.getCards('h');
-				if (player.hp > 2) {
-					//杀
-					for (var i = 0; i < hs.length; i++) {
-						if (!game.hasPlayer(function (current) {
-							return current.hasCard(function (cardx) {
-								return cardx != card && get.suit(cardx, current) == get.suit(hs[i]);
-							}, 'e');
-						})) continue;
-						if (get.name(hs[i]) !== 'sha') continue;
-						var shu = game.countPlayer(function (current) {
-							return current.countCards('e', function (cardx) {
-								return cardx != card && get.suit(cardx, current) == get.suit(hs[i]);
-							});
-						});
-						var max = 0;
-						var list = [];
-						for (var j = 1; j < shu.length; j++) {
-							if (shu[j] > max) max = shu[j];
-						}
-						if (game.countPlayer(function (current) {
-							return current.countCards('e', function (cardx) {
-								return cardx != card && get.suit(cardx, current) == get.suit(hs[i]);
-							});
-						}) == max) list.add(i);
-						var list = list.sort(function (a, b) {
-							return get.number(b) - get.number(a);
-						});
-						var ka = list[0];
-						if (card == ka) return num + 5 * es;
-						if (player.hasCard(ka) && card.name == 'sha' && get.suit(ka) == suit && card != ka) return num - 20;
-					}
-					//闪
-					for (var i = 0; i < hs.length; i++) {
-						if (!game.hasPlayer(function (current) {
-							return current.hasCard(function (cardx) {
-								return cardx != card && get.suit(cardx, current) == get.suit(hs[i]);
-							}, 'e');
-						})) continue;
-						if (get.name(hs[i]) != 'shan') continue;
-						var shu = game.countPlayer(function (current) {
-							return current.countCards('e', function (cardx) {
-								return cardx != card && get.suit(cardx, current) == get.suit(hs[i]);
-							});
-						});
-						var max = 0;
-						var list = [];
-						for (var j = 1; j < shu.length; j++) {
-							if (shu[j] > max) max = shu[j];
-						}
-						if (game.countPlayer(function (current) {
-							return current.countCards('e', function (cardx) {
-								return cardx != card && get.suit(cardx, current) == get.suit(hs[i]);
-							});
-						}) == max) list.add(i);
-						var list = list.sort(function (a, b) {
-							return get.number(b) - get.number(a);
-						});
-						var ka = list[0];
-						if (card == ka) return num + 3 * es;
-						if (player.hasCard(ka) && card.name == 'shan' && get.suit(ka) == suit && card != ka) return num - 20;
-					}
-					//桃
-					for (var i = 0; i < hs.length; i++) {
-						if (!game.hasPlayer(function (current) {
-							return current.hasCard(function (cardx) {
-								return cardx != card && get.suit(cardx, current) == get.suit(hs[i]);
-							}, 'e');
-						})) continue;
-						if (get.name(hs[i]) != 'tao') continue;
-						var shu = game.countPlayer(function (current) {
-							return current.countCards('e', function (cardx) {
-								return cardx != card && get.suit(cardx, current) == get.suit(hs[i]);
-							});
-						});
-						var max = 0;
-						var list = [];
-						for (var j = 1; j < shu.length; j++) {
-							if (shu[j] > max) max = shu[j];
-						}
-						if (game.countPlayer(function (current) {
-							return current.countCards('e', function (cardx) {
-								return cardx != card && get.suit(cardx, current) == get.suit(hs[i]);
-							});
-						}) == max) list.add(i);
-						var list = list.sort(function (a, b) {
-							return get.number(b) - get.number(a);
-						});
-						var ka = list[0];
-						if (card == ka) return num + 4 * es;
-						if (player.hasCard(ka) && card.name == 'tao' && get.suit(ka) == suit && card != ka && !game.hasPlayer(function (current) {
-							return current != player && get.attitude(player, current) > 0 && current.hp < 3;
-						})) return num - 20;
-						if (player.hasCard(ka) && card.name == 'tao' && get.suit(ka) == suit && card != ka && game.hasPlayer(function (current) {
-							return current != player && get.attitude(player, current) > 0 && current.hp < 3;
-						})) return num + 10;
-					}
-					//酒
-					for (var i = 0; i < hs.length; i++) {
-						if (!game.hasPlayer(function (current) {
-							return current.hasCard(function (cardx) {
-								return cardx != card && get.suit(cardx, current) == get.suit(hs[i]);
-							}, 'e');
-						})) continue;
-						if (get.name(hs[i]) != 'jiu') continue;
-						var shu = game.countPlayer(function (current) {
-							return current.countCards('e', function (cardx) {
-								return cardx != card && get.suit(cardx, current) == get.suit(hs[i]);
-							});
-						});
-						var max = 0;
-						var list = [];
-						for (var j = 1; j < shu.length; j++) {
-							if (shu[j] > max) max = shu[j];
-						}
-						if (game.countPlayer(function (current) {
-							return current.countCards('e', function (cardx) {
-								return cardx != card && get.suit(cardx, current) == get.suit(hs[i]);
-							});
-						}) == max) list.add(i);
-						var list = list.sort(function (a, b) {
-							return get.number(b) - get.number(a);
-						});
-						var ka = list[0];
-						if (card == ka) return num + 4 * es;
-						if (player.hasCard(ka) && card.name == 'jiu' && get.suit(ka) == suit && card != ka) return num - 20;
-					}
-					//无懈
-					for (var i = 0; i < hs.length; i++) {
-						if (!game.hasPlayer(function (current) {
-							return current.hasCard(function (cardx) {
-								return cardx != card && get.suit(cardx, current) == get.suit(hs[i]);
-							}, 'e');
-						})) continue;
-						if (get.name(hs[i]) != 'wuxie') continue;
-						var shu = game.countPlayer(function (current) {
-							return current.countCards('e', function (cardx) {
-								return cardx != card && get.suit(cardx, current) == get.suit(hs[i]);
-							});
-						});
-						var max = 0;
-						var list = [];
-						for (var j = 1; j < shu.length; j++) {
-							if (shu[j] > max) max = shu[j];
-						}
-						if (game.countPlayer(function (current) {
-							return current.countCards('e', function (cardx) {
-								return cardx != card && get.suit(cardx, current) == get.suit(hs[i]);
-							});
-						}) == max) list.add(i);
-						var list = list.sort(function (a, b) {
-							return get.number(b) - get.number(a);
-						});
-						var ka = list[0];
-						if (card == ka) return num + 4 * es;
-						if (player.hasCard(ka) && card.name == 'wuxie' && get.suit(ka) == suit && card != ka) return num - 20;
-					}
-				}
-			},
-			aiOrder: function (player, card, num) {
-				var suit = get.suit(card);
-				var hs = player.countCards('h', function (cardx) {
-					return get.suit(cardx) == suit;
-				});
-				var es = game.countPlayer(function (current) {
-					return current.countCards('e', function (cardx) {
-						return cardx != card && get.suit(cardx, current) == suit;
-					});
-				});
-				var canusek = player.getCards('h', function (cardx) {
-					return get.type(cardx) == 'trick' || get.type(cardx) == 'delay';
-				});
-				if (get.type(card) == 'equip') {
-					var stp = get.subtype(card);
-					if (!player.getEquip(stp)) return num + 50;
-				}
-				if (game.hasPlayer(function (current) {
-					return current.hasCard(function (cardx) {
-						return cardx != card && get.suit(cardx, current) == suit;
-					}, 'e');
-				})) {
-					if (hs == 1) {
-						if (get.name(card) == 'sha') {
-							if (player.getEquip('zhuge') || player.getEquip('qinglong')) return num + 2 * es;
-							return num + 0.1;
-						}
-						if (get.name(card) != 'sha' || get.name(card) != 'jiu') return num + 7 * es;
-					}
-					if (get.name(card) == 'jiu') {
-						if (hs == 1) return num + 3 * es;
-						if (player.hasCard('sha')) return get.order({ name: 'sha' }) + 0.4;
-					}
-					if (!['tao', 'shan', 'wuxie', 'jiu', 'sha'].includes(card.name)) {
-						if (
-							player.hasCard(function (cardx) {
-								return;
-								cardx != card && get.suit(cardx) == suit && get.name(cardx) != 'tao' && get.name(cardx) != 'shan' && get.name(cardx) != 'wuxie';
-							}, 'h')
-						) {
-							if (
-								player.countCards('h', function (cardx) {
-									return cardx != card && get.suit(cardx) == suit && get.name(cardx) == 'jiu';
-								}) == 0 ||
-								(player.countCards('h', function (cardx) {
-									return cardx != card && get.suit(cardx) == suit && get.name(cardx) == 'jiu';
-								}) == 1 &&
-									player.countUsed('jiu', true) == 0) ||
-								player.countCards('h', function (cardx) {
-									return cardx != card && get.suit(cardx) == suit && get.name(cardx) == 'sha';
-								}) == 0 ||
-								(player.countCards('h', function (cardx) {
-									return cardx != card && get.suit(cardx) == suit && get.name(cardx) == 'sha';
-								}) == 1 &&
-									player.countUsed('sha', true) == 0)
-							) {
-								if (
-									get.effect(target, card, player, player) >= 0 &&
-									!player.hasCard(function (cardx) {
-										return cardx != card && get.suit(cardx) == suit && get.effect(target, cardx, player, player) < 0;
-									}, 'h')
-								) {
-									if (get.type(card) == 'equip') return num + (15 * es) / hs;
-									return num + (7 * es) / hs;
-								}
-							}
-						}
-					}
-				}
-			}
-		};
-		if (lib.skill.twxuechang && lib.skill.twxuechang.ai && game.aiyh_skillOptEnabled('twxuechang')) lib.skill.twxuechang.ai.result = {
-			player: function (player, target) {
-				var hs = player.getCards('h').sort(function (a, b) {
-					return get.number(b) - get.number(a);
-				});
-				var a = get.number(hs[0]) - 1;
-				if (player.hp > 1) return 2.5 * Math.pow((a / 13), target.countCards('h')) - 2.5;
-				return 4.2 * Math.pow(a / 13, target.countCards('h')) - 4.2;
-			},
-			target: function (player, target) {
-				var hs = player.getCards('h').sort(function (a, b) {
-					return get.number(b) - get.number(a);
-				});
-				var a = get.number(hs[0]) - 1;
-				if (player.hp > 1) return -2 - 0.7 * Math.pow((a / 13), target.countCards('h'));
-				return -1.7 - Math.pow((a / 13), target.countCards('h'));
-			}
-		};
 		if (lib.skill.twchungang && game.aiyh_skillOptEnabled('twchungang', '增加〖纯刚〗全局ai', 'twchungang_global')) {
 			lib.skill.twchungang.init = player => {
 				game.addGlobalSkill('twchungang_global');
@@ -1122,18 +814,18 @@ export function precontent(config, pack) {
 				trigger: {
 					player: 'dieAfter'
 				},
-				filter (event, player) {
+				filter(event, player) {
 					return !game.hasPlayer(i => i.hasSkill('twchungang'), true)
 				},
 				silent: true,
 				forceDie: true,
 				charlotte: true,
-				content () {
+				content() {
 					game.removeGlobalSkill('twchungang_global');
 				},
 				ai: {
 					effect: {
-						target (card, player, target) {
+						target(card, player, target) {
 							if ((get.tag(card, 'gain') || 0) < 2 && (get.tag(card, 'draw') || 0) < 2) return;
 							let evt = _status.event.getParent('phaseDraw'), dis = game.countPlayer(i => {
 								return target !== i && i.hasSkill('twchungang');
@@ -1192,8 +884,16 @@ export function precontent(config, pack) {
 		};
 		if (lib.config.extension_AI优化_dev) {
 			if (lib.card.sha && lib.card.sha.ai) lib.card.sha.ai.order = function (item, player) {
-				if (player.hasSkillTag('presha', true, null, true)) return 10;
-				return 3.05;
+				let res = 3.2;
+				if (player.hasSkillTag('presha', true, null, true)) res = 10;
+				if (typeof item !== 'object' || !game.hasNature(item, 'linked') || game.countPlayer(cur => cur.isLinked()) < 2) return res;
+				//let used = player.getCardUsable('sha') - 1.5, natures = ['thunder', 'fire', 'ice', 'kami'];
+				let uv = player.getUseValue(item, true);
+				if (uv <= 0) return res;
+				let temp = player.getUseValue('sha', true) - uv;
+				if (temp < 0) return res + 0.15;
+				if (temp > 0) return res - 0.15;
+				return res;
 			};
 		}
 		if (lib.card.nanman) lib.card.nanman.ai = {

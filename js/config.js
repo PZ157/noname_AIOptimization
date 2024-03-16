@@ -116,8 +116,6 @@ export let config = {
 	wjAi: {
 		name: '武将技能优化',
 		intro: `重启生效。具体优化技能：
-			<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp神马超〖狩骊〗〖横骛〗
-			<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp夏侯紫萼〖血偿〗
 			<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspTW张昭〖纯刚〗`,
 		init: true
 	},
@@ -170,7 +168,7 @@ export let config = {
 		init: false
 	},
 	rank: {
-		name: '<span style="font-family: xingkai">修改武将评级显示</span>',
+		name: '修改武将评级显示',
 		intro: '开启后，将修改武将栏界面中的武将评级显示内容',
 		init: 'off',
 		item: {

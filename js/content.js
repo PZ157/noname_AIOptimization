@@ -2,10 +2,10 @@ import { lib, game, ui, get, ai, _status } from './noname.js'
 
 export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以及面具 提供的《云将》相关部分AI优化的修复代码
 
-	ui.create.rarity = function (button) {
+	if (lib.config.extension_AI优化_rank !== 'off') ui.create.rarity = function (button) {
 		let config = lib.config.extension_AI优化_rank;
 		if (typeof config !== 'string' || config === 'off') return;
-		let rarity, intro = button.node.intro;
+		let rarity, five, intro = button.node.intro;
 		intro.classList.add('showintro');
 		if (lib.rank.bp.includes(button.link)) rarity = 5;
 		else if (lib.rank.am.includes(button.link)) rarity = 6;
@@ -16,6 +16,14 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 		else if (lib.rank.c.includes(button.link)) rarity = 2;
 		else if (lib.rank.s.includes(button.link)) rarity = 9;
 		else if (lib.rank.d.includes(button.link)) rarity = 1;
+		else if (config[1] === 'r' || config[1] === 'g' || config[1] === 'z') {
+			if (lib.rank.rarity.rare.includes(button.link)) five = 3;
+			else if (lib.rank.rarity.epic.includes(button.link)) five = 4;
+			else if (lib.rank.rarity.legend.includes(button.link)) five = 5;
+			else if (lib.rank.rarity.junk.includes(button.link)) five = 1;
+			else five = 2;
+		}
+		else if (lib.rank.rarity.legend.includes(button.link)) rarity = 9;
 		else {
 			intro.style.fontSize = '16px';
 			intro.style.bottom = '6px';
@@ -25,7 +33,7 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 			intro.innerHTML = '未知';
 			return;
 		}
-		let five = Math.ceil(rarity / 2);
+		if (!five) five = Math.ceil(rarity / 2);
 		if (config[0] === 't') {
 			intro.classList.add('rarity');
 			if (intro.innerText) intro.innerText = '';

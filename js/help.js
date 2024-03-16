@@ -2,7 +2,7 @@ import { lib, game, ui, get, ai, _status } from './noname.js'
 
 export let help = {
 	'AI优化': `<center><font color=#FFFF00>本体武将优化相关</font></center>
-	<br>神马超〖狩骊〗〖横骛〗<br>夏侯紫萼〖血偿〗<br>TW张昭〖纯刚〗
+	<br>TW张昭〖纯刚〗
 	<br><br>
 	<br><center><font color=#00FFFF>本体卡牌AI相关</font></center>
 	<br><span style='font-family: xingkai'>南蛮入侵</span>
