@@ -218,9 +218,9 @@ export function precontent(config, pack) {
 	}
 	if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 		let str = [
-			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>3</font>月<font color=fire>16</font>日</center>',
-			'◆新增【杀】测试AI',
-			'◆删除耗时的神马超〖狩骊〗〖横骛〗、夏侯紫萼〖血偿〗优化ai'
+			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>3</font>月<font color=fire>17</font>日</center>',
+			'◆修复【南蛮入侵】【万箭齐发】优化ai的一些bug',
+			'◆更新并优化【南蛮入侵】【万箭齐发】ai'
 		];
 		let ul = document.createElement('ul');
 		ul.style.textAlign = 'left';
@@ -897,24 +897,24 @@ export function precontent(config, pack) {
 			};
 		}
 		if (lib.card.nanman) lib.card.nanman.ai = {
-			wuxie: function (target, card, player, viewer, status) {
+			wuxie(target, card, player, viewer, status) {
 				let att = get.attitude(viewer, target), eff = get.effect(target, card, player, target);
 				if (Math.abs(att) < 1 || status * eff * att >= 0) return 0;
 				let evt = _status.event.getParent('useCard'), pri = 1, bonus = player.hasSkillTag('damageBonus', true, {
 					target: target,
 					card: card
-				}), damage = 1, canSha = function (tar, blur) {
-					if (tar == viewer || viewer.hasSkillTag('viewHandcard', null, tar, true)) {
-						if (tar.hasCard(function (card) {
-							let name = get.name(card, tar);
-							return (name == 'sha' || name == 'hufu' || name == 'yuchanqian') && lib.filter.cardRespondable(card, tar);
-						}, 'hs')) return true;
-					}
-					else if (blur && tar.countCards('hs') > 2.67 + 2 * Math.random()) return true;
-					if (!blur) return false;
+				}), damage = 1, isZhu = function (tar) {
+					return tar.isZhu || tar === game.boss || tar === game.trueZhu || tar === game.falseZhu;
+				}, canSha = function (tar, blur) {
+					let known = tar.getKnownCards(viewer);
+					if (!blur) return known.some(card => {
+						let name = get.name(card, tar);
+						return (name === 'sha' || name === 'hufu' || name === 'yuchanqian') && lib.filter.cardRespondable(card, tar);
+					});
+					if (tar.countCards('hs', i => !known.includes(i)) > 4.67 - 2 * tar.hp / tar.maxHp) return true;
 					if (!tar.hasSkillTag('respondSha', true, 'respond', true)) return false;
 					if (tar.hp <= damage) return false;
-					if (tar.hp <= damage + 1) return !tar.isZhu && tar != game.boss && tar != game.trueZhu && tar != game.falseZhu;
+					if (tar.hp <= damage + 1) return isZhu(tar);
 					return true;
 				}, self = false;
 				if (canSha(target)) return 0;
@@ -922,16 +922,16 @@ export function precontent(config, pack) {
 					player: player,
 					card: card
 				})) damage = 2;
-				if ((viewer.hp <= damage || viewer.hp <= damage + 1 && (viewer.isZhu || viewer == game.boss || viewer == game.trueZhu || viewer == game.falseZhu)) && !canSha(viewer)) {
-					if (viewer == target) return status;
+				if ((viewer.hp <= damage || viewer.hp <= damage + 1 && isZhu(viewer)) && !canSha(viewer)) {
+					if (viewer === target) return status;
 					let fv = true;
 					if (evt && evt.targets) for (let i of evt.targets) {
 						if (fv) {
-							if (target == i) fv = false;
+							if (target === i) fv = false;
 							continue;
 						}
 						if (viewer == i) {
-							if (viewer.isZhu || viewer == game.boss || viewer == game.trueZhu || viewer == game.falseZhu) return 0;
+							if (isZhu(viewer)) return 0;
 							self = true;
 							break;
 						}
@@ -943,7 +943,7 @@ export function precontent(config, pack) {
 					card: card
 				})) damage = 2;
 				else damage = 1;
-				if (target.isZhu || target == game.boss || target == game.trueZhu || target == game.falseZhu) {
+				if (isZhu(target)) {
 					if (eff < 0) {
 						if (target.hp <= damage + 1 || !maySha && target.hp <= damage + 2) return 1;
 						if (maySha && target.hp > damage + 2) return 0;
@@ -965,7 +965,7 @@ export function precontent(config, pack) {
 				let find = false;
 				if (evt && evt.targets) for (let i = 0; i < evt.targets.length; i++) {
 					if (!find) {
-						if (evt.targets[i] == target) find = true;
+						if (evt.targets[i] === target) find = true;
 						continue;
 					}
 					let att1 = get.attitude(viewer, evt.targets[i]), eff1 = get.effect(evt.targets[i], card, player, evt.targets[i]), temp = 1;
@@ -976,8 +976,8 @@ export function precontent(config, pack) {
 						card: card
 					})) damage = 2;
 					else damage = 1;
-					if (evt.targets[i].isZhu || evt.targets[i] == game.boss || evt.targets[i] == game.trueZhu || evt.targets[i] == game.falseZhu) {
-						if (eff < 0) {
+					if (isZhu(evt.targets[i])) {
+						if (eff1 < 0) {
 							if (evt.targets[i].hp <= damage + 1 || !maySha && evt.targets[i].hp <= damage + 2) return 0;
 							if (maySha && evt.targets[i].hp > damage + 2) continue;
 							if (maySha || evt.targets[i].hp > damage + 2) temp = 3;
@@ -986,7 +986,7 @@ export function precontent(config, pack) {
 						else if (evt.targets[i].hp > damage + 1) temp = 2;
 						else continue;
 					}
-					else if (eff < 0) {
+					else if (eff1 < 0) {
 						if (!maySha && evt.targets[i].hp <= damage) temp = 5;
 						else if (maySha) continue;
 						else if (evt.targets[i].hp > damage + 1) temp = 2;
@@ -1004,7 +1004,7 @@ export function precontent(config, pack) {
 				value: 5.7
 			},
 			result: {
-				player: function (player, target) {
+				player(player, target) {
 					if (player._nanman_temp || player.hasSkillTag('jueqing', false, target)) return 0;
 					player._nanman_temp = true;
 					let eff = get.effect(target, new lib.element.VCard({ name: 'nanman' }), player, target);
@@ -1012,48 +1012,47 @@ export function precontent(config, pack) {
 					if (eff >= 0) return 0;
 					if (target.hp > 2 || target.hp > 1 && !target.isZhu && target != game.boss && target != game.trueZhu && target != game.falseZhu) return 0;
 					if (target.hp > 1 && target.hasSkillTag('respondSha', true, 'respond', true)) return 0;
-					if (player.hasSkillTag('viewHandcard', null, target, true) && (target.hasCard(function (card) {
+					let known = target.getKnownCards(player);
+					if (known.some(card => {
 						let name = get.name(card, target);
-						return (name == 'sha' || name == 'hufu' || name == 'yuchanqian') && lib.filter.cardRespondable(card, target);
-					}, 'h') || target.hasCard(function (card) {
-						return get.name(card) == 'wuxie' && lib.filter.cardEnabled(card, target, 'forceEnable');
-					}, 'h'))) return 0;
-					if (target.hp > 1 && target.countCards('hs') > 2.67 + 2 * Math.random()) return 0;
-					let res = 0, att = get.sgn(get.attitude(player, target));
+						if (name === 'sha' || name === 'hufu' || name === 'yuchanqian') return lib.filter.cardRespondable(card, target);
+						if (name === 'wuxie') return lib.filter.cardEnabled(card, target, 'forceEnable');
+					})) return 0;
+					if (target.hp > 1 || target.countCards('hs', i => !known.includes(i)) > 4.67 - 2 * target.hp / target.maxHp) return 0;
+					let res = 0, att = get.sgnAttitude(player, target);
 					res -= att * (0.8 * target.countCards('hs') + 0.6 * target.countCards('e') + 3.6);
-					if (get.mode() == 'identity' && target.identity == 'fan') res += 2.4;
-					if (get.mode() == 'guozhan' && player.identity != 'ye' && player.identity == target.identity || get.mode() == 'identity' && player.identity == 'zhu' && (target.identity == 'zhong' || target.identity == 'mingzhong')) res -= 0.8 * player.countCards('he');
+					if (get.mode() === 'identity' && target.identity === 'fan') res += 2.4;
+					if (get.mode() === 'guozhan' && player.identity !== 'ye' && player.identity === target.identity ||
+						get.mode() === 'identity' && player.identity === 'zhu' && (target.identity === 'zhong' || target.identity === 'mingzhong')) res -= 0.8 * player.countCards('he');
 					return res;
 				},
-				target: function (player, target) {
-					let nh = target.countCards('hs'),
-						zhu = (get.mode() == 'identity' && target.isZhu) || target.identity == 'zhu';
+				target(player, target) {
+					let zhu = (get.mode() === 'identity' && target.isZhu) || target.identity === 'zhu';
 					if (!lib.filter.cardRespondable({ name: 'sha' }, target)) {
 						if (zhu) {
 							if (target.hp < 2) return -99;
-							if (target.hp == 2) return -3.6;
+							if (target.hp === 2) return -3.6;
 						}
 						return -2;
 					}
-					if (player.hasSkillTag('viewHandcard', null, target, true)) {
-						if (target.hasCard(function (card) {
-							return get.name(card, target) == 'sha' && lib.filter.cardRespondable(card, target);
-						}, 'h') || target.hasCard(function (card) {
-							return get.name(card) == 'wuxie' && lib.filter.cardEnabled(card, target, 'forceEnable');
-						}, 'h')) return -1.2;
-						if (zhu && target.hp <= 1) return -99;
-					}
+					let known = target.getKnownCards(player);
+					if (known.some(card => {
+						let name = get.name(card, target);
+						if (name === 'sha' || name === 'hufu' || name === 'yuchanqian') return lib.filter.cardRespondable(card, target);
+						if (name === 'wuxie') return lib.filter.cardEnabled(card, target, 'forceEnable');
+					})) return -1.2;
+					let nh = target.countCards('hs', i => !known.includes(i));
 					if (zhu && target.hp <= 1) {
-						if (nh == 0) return -99;
-						if (nh == 1) return -60;
-						if (nh == 2) return -36;
-						if (nh == 3) return -12;
-						if (nh == 4) return -8;
+						if (nh === 0) return -99;
+						if (nh === 1) return -60;
+						if (nh === 2) return -36;
+						if (nh === 3) return -12;
+						if (nh === 4) return -8;
 						return -5;
 					}
 					if (target.hasSkillTag('respondSha', true, 'respond', true)) return -1.35;
 					if (!nh) return -2;
-					if (nh == 1) return -1.8;
+					if (nh === 1) return -1.8;
 					return -1.5;
 				}
 			},
@@ -1066,24 +1065,24 @@ export function precontent(config, pack) {
 			}
 		};
 		if (lib.card.wanjian) lib.card.wanjian.ai = {
-			wuxie: function (target, card, player, viewer, status) {
+			wuxie(target, card, player, viewer, status) {
 				let att = get.attitude(viewer, target), eff = get.effect(target, card, player, target);
 				if (Math.abs(att) < 1 || status * eff * att >= 0) return 0;
 				let evt = _status.event.getParent('useCard'), pri = 1, bonus = player.hasSkillTag('damageBonus', true, {
 					target: target,
 					card: card
-				}), damage = 1, canShan = function (tar, blur) {
-					if (tar == viewer || viewer.hasSkillTag('viewHandcard', null, tar, true)) {
-						if (tar.hasCard(function (card) {
-							let name = get.name(card, tar);
-							return (name == 'shan' || name == 'hufu') && lib.filter.cardRespondable(card, tar);
-						}, 'hs')) return true;
-					}
-					else if (blur && tar.countCards('hs') > 1.67 + 2 * Math.random()) return true;
-					if (!blur) return false;
+				}), damage = 1, isZhu = function (tar) {
+					return tar.isZhu || tar === game.boss || tar === game.trueZhu || tar === game.falseZhu;
+				}, canShan = function (tar, blur) {
+					let known = tar.getKnownCards(viewer);
+					if (!blur) return known.some(card => {
+						let name = get.name(card, tar);
+						return (name === 'shan' || name === 'hufu') && lib.filter.cardRespondable(card, tar);
+					});
+					if (tar.countCards('hs', i => !known.includes(i)) > 3.67 - 2 * tar.hp / tar.maxHp) return true;
 					if (!tar.hasSkillTag('respondShan', true, 'respond', true)) return false;
 					if (tar.hp <= damage) return false;
-					if (tar.hp <= damage + 1) return !tar.isZhu && tar != game.boss && tar != game.trueZhu && tar != game.falseZhu;
+					if (tar.hp <= damage + 1) return isZhu(tar);
 					return true;
 				}, self = false;
 				if (canShan(target)) return 0;
@@ -1091,16 +1090,16 @@ export function precontent(config, pack) {
 					player: player,
 					card: card
 				})) damage = 2;
-				if ((viewer.hp <= damage || viewer.hp <= damage + 1 && (viewer.isZhu || viewer == game.boss || viewer == game.trueZhu || viewer == game.falseZhu)) && !canShan(viewer)) {
-					if (viewer == target) return status;
+				if ((viewer.hp <= damage || viewer.hp <= damage + 1 && isZhu(viewer)) && !canShan(viewer)) {
+					if (viewer === target) return status;
 					let fv = true;
 					if (evt && evt.targets) for (let i of evt.targets) {
 						if (fv) {
-							if (target == i) fv = false;
+							if (target === i) fv = false;
 							continue;
 						}
 						if (viewer == i) {
-							if (viewer.isZhu || viewer == game.boss || viewer == game.trueZhu || viewer == game.falseZhu) return 0;
+							if (isZhu(viewer)) return 0;
 							self = true;
 							break;
 						}
@@ -1112,7 +1111,7 @@ export function precontent(config, pack) {
 					card: card
 				})) damage = 2;
 				else damage = 1;
-				if (target.isZhu || target == game.boss || target == game.trueZhu || target == game.falseZhu) {
+				if (isZhu(target)) {
 					if (eff < 0) {
 						if (target.hp <= damage + 1 || !mayShan && target.hp <= damage + 2) return 1;
 						if (mayShan && target.hp > damage + 2) return 0;
@@ -1130,11 +1129,11 @@ export function precontent(config, pack) {
 					else if (target.hp === damage + 1) pri = 3;
 					else pri = 4;
 				}
-				else if (target.hp > damage) return 0;
+				else if (target.hp <= damage) return 0;
 				let find = false;
 				if (evt && evt.targets) for (let i = 0; i < evt.targets.length; i++) {
 					if (!find) {
-						if (evt.targets[i] == target) find = true;
+						if (evt.targets[i] === target) find = true;
 						continue;
 					}
 					let att1 = get.attitude(viewer, evt.targets[i]), eff1 = get.effect(evt.targets[i], card, player, evt.targets[i]), temp = 1;
@@ -1145,8 +1144,8 @@ export function precontent(config, pack) {
 						card: card
 					})) damage = 2;
 					else damage = 1;
-					if (evt.targets[i].isZhu || evt.targets[i] == game.boss || evt.targets[i] == game.trueZhu || evt.targets[i] == game.falseZhu) {
-						if (eff < 0) {
+					if (isZhu(evt.targets[i])) {
+						if (eff1 < 0) {
 							if (evt.targets[i].hp <= damage + 1 || !mayShan && evt.targets[i].hp <= damage + 2) return 0;
 							if (mayShan && evt.targets[i].hp > damage + 2) continue;
 							if (mayShan || evt.targets[i].hp > damage + 2) temp = 3;
@@ -1155,7 +1154,7 @@ export function precontent(config, pack) {
 						else if (evt.targets[i].hp > damage + 1) temp = 2;
 						else continue;
 					}
-					else if (eff < 0) {
+					else if (eff1 < 0) {
 						if (!mayShan && evt.targets[i].hp <= damage) temp = 5;
 						else if (mayShan) continue;
 						else if (evt.targets[i].hp > damage + 1) temp = 2;
@@ -1173,7 +1172,7 @@ export function precontent(config, pack) {
 				value: 5.4
 			},
 			result: {
-				player: function (player, target) {
+				player(player, target) {
 					if (player._wanjian_temp || player.hasSkillTag('jueqing', false, target)) return 0;
 					player._wanjian_temp = true;
 					let eff = get.effect(target, new lib.element.VCard({ name: 'wanjian' }), player, target);
@@ -1181,47 +1180,46 @@ export function precontent(config, pack) {
 					if (eff >= 0) return 0;
 					if (target.hp > 2 || target.hp > 1 && !target.isZhu && target != game.boss && target != game.trueZhu && target != game.falseZhu) return 0;
 					if (target.hp > 1 && target.hasSkillTag('respondShan', true, 'respond', true)) return 0;
-					if (player.hasSkillTag('viewHandcard', null, target, true) && (target.hasCard(function (card) {
+					let known = target.getKnownCards(player);
+					if (known.some(card => {
 						let name = get.name(card, target);
-						return (name == 'shan' || name == 'hufu') && lib.filter.cardRespondable(card, target);
-					}, 'h') || target.hasCard(function (card) {
-						return get.name(card) == 'wuxie' && lib.filter.cardEnabled(card, target, 'forceEnable');
-					}, 'h'))) return 0;
-					if (target.hp > 1 && target.countCards('hs') > 1.67 + 2 * Math.random()) return 0;
-					let res = 0, att = get.sgn(get.attitude(player, target));
+						if (name === 'shan' || name === 'hufu') return lib.filter.cardRespondable(card, target);
+						if (name === 'wuxie') return lib.filter.cardEnabled(card, target, 'forceEnable');
+					})) return 0;
+					if (target.hp > 1 || target.countCards('hs', i => !known.includes(i)) > 3.67 - 2 * target.hp / target.maxHp) return 0;
+					let res = 0, att = get.sgnAttitude(player, target);
 					res -= att * (0.8 * target.countCards('hs') + 0.6 * target.countCards('e') + 3.6);
-					if (get.mode() == 'identity' && target.identity == 'fan') res += 2.4;
-					if (get.mode() == 'guozhan' && player.identity != 'ye' && player.identity == target.identity || get.mode() == 'identity' && player.identity == 'zhu' && (target.identity == 'zhong' || target.identity == 'mingzhong')) res -= 0.8 * player.countCards('he');
+					if (get.mode() === 'identity' && target.identity === 'fan') res += 2.4;
+					if (get.mode() === 'guozhan' && player.identity !== 'ye' && player.identity === target.identity ||
+						get.mode() === 'identity' && player.identity === 'zhu' && (target.identity === 'zhong' || target.identity === 'mingzhong')) res -= 0.8 * player.countCards('he');
 					return res;
 				},
-				target: function (player, target) {
-					let nh = target.countCards('hs'),
-						zhu = (get.mode() == 'identity' && target.isZhu) || target.identity == 'zhu';
+				target(player, target) {
+					let zhu = (get.mode() === 'identity' && target.isZhu) || target.identity === 'zhu';
 					if (!lib.filter.cardRespondable({ name: 'shan' }, target)) {
 						if (zhu) {
 							if (target.hp < 2) return -99;
-							if (target.hp == 2) return -3.6;
+							if (target.hp === 2) return -3.6;
 						}
 						return -2;
 					}
-					if (player.hasSkillTag('viewHandcard', null, target, true)) {
-						if (target.hasCard(function (card) {
-							return get.name(card, target) == 'shan' && lib.filter.cardRespondable(card, target);
-						}, 'h') || target.hasCard(function (card) {
-							return get.name(card) == 'wuxie' && lib.filter.cardEnabled(card, target, 'forceEnable');
-						}, 'h')) return -1.2;
-						if (zhu && target.hp <= 1) return -99;
-					}
+					let known = target.getKnownCards(player);
+					if (known.some(card => {
+						let name = get.name(card, target);
+						if (name === 'shan' || name === 'hufu') return lib.filter.cardRespondable(card, target);
+						if (name === 'wuxie') return lib.filter.cardEnabled(card, target, 'forceEnable');
+					})) return -1.2;
+					let nh = target.countCards('hs', i => !known.includes(i));
 					if (zhu && target.hp <= 1) {
-						if (nh == 0) return -99;
-						if (nh == 1) return -60;
-						if (nh == 2) return -36;
-						if (nh == 3) return -8;
+						if (nh === 0) return -99;
+						if (nh === 1) return -60;
+						if (nh === 2) return -36;
+						if (nh === 3) return -8;
 						return -5;
 					}
-					if (target.mayHaveShan(player, 'respond')) return -1.35;
+					if (target.hasSkillTag('respondShan', true, 'respond', true)) return -1.35;
 					if (!nh) return -2;
-					if (nh == 1) return -1.65;
+					if (nh === 1) return -1.65;
 					return -1.5;
 				}
 			},
@@ -1263,7 +1261,7 @@ export function precontent(config, pack) {
 					value: 3
 				},
 				result: {
-					target: function (player, target) {
+					target(player, target) {
 						let i,
 							add = 0,
 							y = 1,
