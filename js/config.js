@@ -18,8 +18,8 @@ export let config = {
 			node.parentNode.style.width = '300px';
 			if (link === 'jieshao') node.innerHTML = `<br><span style='font-family: xinwei'><center><font color=#00FFFF>扩展简介</font></center></span>
 				<br><span style='font-family: yuanli'>本扩展以『云将』『官将重修』中部分功能为基础，@柚子丶奶茶丶猫以及面具 退圈前已许可修改，现由@翩翩浊世许公子 和 @157 整理，暂无后续维护者，与原作者无关</span>
-				<br><br><span style='font-family: shousha'><font color=#FF3300>注意！</font>本扩展与其他有AI功能的扩展同时打开可能会导致AI错乱。若本扩展涉及到的武将或卡牌出现bug建议关闭本扩展后测试以进一步确定问题所在</span>
-				<br><span style='font-family: xingkai'>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp本扩展主要优化了部分武将技能AI、卡牌AI、身份局AI和其他一些AI。
+				<br><br><span style='font-family: shousha'><font color=#FF3300>注意！</font>本扩展与其他有AI功能的扩展同时打开可能会导致AI错乱。若出现bug建议关闭本扩展后测试以进一步确定问题所在</span>
+				<br><span style='font-family: xingkai'>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp本扩展主要优化了身份局AI和其他一些AI。
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp此外，本扩展还添加了查看态度、去除部分小游戏、（伪）玩家可选AI禁选系列功能、身份局系列功能、胜负统计、技能嘲讽、武将权重等一系列能在一定程度上增加游戏乐趣的功能；
 				同时还支持复制/粘贴一些难以记忆的扩展配置，便于玩家重装游戏时备份相应数据。
 				<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp此外需要解释的就是伪禁、权重、嘲讽（技能威胁度）三者各有何用：
@@ -108,21 +108,15 @@ export let config = {
 			<br><center>AI相关</center>`,
 		nopointer: true
 	},
-	kpAi: {
-		name: '卡牌AI优化',
-		intro: '重启生效。仅优化了【南蛮入侵】【万箭齐发】【以逸待劳】AI',
-		init: true
-	},
-	wjAi: {
-		name: '武将技能优化',
-		intro: `重启生效。具体优化技能：
-			<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbspTW张昭〖纯刚〗`,
-		init: true
-	},
 	sfjAi: {
 		name: '身份局AI优化',
 		intro: '开启后，重启游戏可载入身份局AI策略。可通过［出牌可修改武将权重］、［武将登场补充权重］和［第二权重参考］为内奸AI判断场上角色实力提供参考',
-		init: true
+		init: false
+	},
+	qjAi: {
+		name: '全局AI优化',
+		intro: '开启后，将添加防酒杀ai（透视）；人机拥有多张同名牌时鼓励人机使用点数较小的牌，弃牌时鼓励保留点数较大的牌',
+		init: false
 	},
 	mjAi: {
 		name: '盲狙AI',
@@ -149,8 +143,8 @@ export let config = {
 	},
 	dev: {
 		name: '测试&前瞻AI开关',
-		intro: '目前包括以下前瞻AI优化：<br>【杀】',
-		init: true
+		intro: '目前暂无测试/前瞻AI优化',
+		init: false
 	},
 	bd2: {
 		clear: true,

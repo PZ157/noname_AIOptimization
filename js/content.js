@@ -63,7 +63,7 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 		}
 		else if (config[1] === 'x') {
 			intro.style.fontFamily = 'xingkai';
-			intro.innerHTML = get.cnNumber(rarity,true);
+			intro.innerHTML = get.cnNumber(rarity, true);
 		}
 		else if (config[1] === 'd') {
 			intro.style.fontFamily = 'xingkai';
@@ -84,8 +84,7 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 		}
 	};
 
-	/*全局技*/
-	lib.skill._aiyh_firstKs = {
+	lib.skill._aiyh_firstKs = {//游戏开始处理
 		trigger: { global: 'gameStart' },
 		silent: true,
 		unique: true,
@@ -215,67 +214,6 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 				}
 			}
 		}
-	};
-	lib.skill.aiyh_gjcx_qj = {
-		mod: {
-			aiOrder: (player, card, num) => {
-				if (!player._aiyh_order_temp && num > 0 && get.itemtype(card) === 'card' && get.position(card) !== 'e') {
-					if (get.type(card) === 'equip') {
-						for (let i of get.subtypes(card)) {
-							if (!player.hasEnabledSlot(i)) return num;
-						}
-						player._aiyh_order_temp = true;
-						let sub = get.subtype(card), dis = player.needsToDiscard(), equipValue = get.equipValue(card, player);
-						if (!player.isEmpty(sub) && !player.hasSkillTag('noe')) {
-							let ec = player.getEquips(sub).reduce((val, carde) => {
-								if (lib.filter.canBeReplaced(carde, player)) return Math.min(val, get.equipValue(carde, player));
-							}, 20);
-							if (equipValue - ec <= 1.2 * Math.max(0, 2 - dis)) {
-								delete player._aiyh_order_temp;
-								return 0;
-							}
-							if (card.name !== 'zhuge') num /= 5;
-						}
-					}
-					delete player._aiyh_order_temp;
-					if (get.name(card, player) !== 'sha') return Math.max(0.01, num - ((get.number(card) || 0) - 6) / 200);
-				}
-			},
-			aiUseful: (player, card, num) => {
-				if (num > 0 && get.itemtype(card) === 'card') {
-					if (get.type(card) == 'equip') for (let i of get.subtypes(card)) {
-						if (!player.hasEnabledSlot(i)) return 0;
-					}
-					num += ((get.number(card) || 0) - 6) / 100;
-					if (get.name(card, player) === 'sha') {
-						let nature = get.natureList(card);
-						if (nature.includes('fire')) num += 0.08;
-						if (nature.includes('thunder')) num += 0.05;
-						if (nature.includes('ice')) num += 0.18;
-						if (nature.includes('stab')) num += 0.25;
-					}
-					return Math.max(0.01, num);
-				}
-			},
-			aiValue: (player, card, num) => {
-				if (!player._aiyh_value_temp && num > 0 && get.itemtype(card) === 'card') {
-					if (get.type(card) === 'equip') for (let i of get.subtypes(card)) {
-						if (!player.hasEnabledSlot(i)) return 0.01 * num;
-					}
-					num += ((get.number(card) || 0) - 6) / 50;
-					if (get.name(card, player) === 'sha') {
-						let nature = get.natureList(card);
-						if (nature.includes('fire')) num += 0.18;
-						if (nature.includes('thunder')) num += 0.1;
-						if (nature.includes('ice')) num += 0.36;
-						if (nature.includes('stab')) num += 0.5;
-					}
-					return Math.max(0.01, num);
-				}
-			}
-		},
-		charlotte: true,
-		superCharlotte: true
 	};
 
 	/*功能*/
@@ -1110,6 +1048,108 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 	lib.translate._sftj_operateJl = '<font color=#00FFFF>记录操作</font>';
 
 	/*AI优化*/
+	if (lib.config.extension_AI优化_qjAi) {
+		lib.skill.aiyh_gjcx_qj = {
+			mod: {
+				aiOrder: (player, card, num) => {
+					if (!player._aiyh_order_temp && num > 0 && get.itemtype(card) === 'card' && get.position(card) !== 'e') {
+						if (get.type(card) === 'equip') {
+							for (let i of get.subtypes(card)) {
+								if (!player.hasEnabledSlot(i)) return num;
+							}
+							player._aiyh_order_temp = true;
+							let sub = get.subtype(card), dis = player.needsToDiscard(), equipValue = get.equipValue(card, player);
+							if (!player.isEmpty(sub) && !player.hasSkillTag('noe')) {
+								let ec = player.getEquips(sub).reduce((val, carde) => {
+									if (lib.filter.canBeReplaced(carde, player)) return Math.min(val, get.equipValue(carde, player));
+								}, 20);
+								if (equipValue - ec <= 1.2 * Math.max(0, 2 - dis)) {
+									delete player._aiyh_order_temp;
+									return 0;
+								}
+								if (card.name !== 'zhuge') num /= 5;
+							}
+						}
+						delete player._aiyh_order_temp;
+						if (get.name(card, player) !== 'sha') return Math.max(0.01, num - ((get.number(card) || 0) - 6) / 200);
+					}
+				},
+				aiUseful: (player, card, num) => {
+					if (num > 0 && get.itemtype(card) === 'card') {
+						if (get.type(card) == 'equip') for (let i of get.subtypes(card)) {
+							if (!player.hasEnabledSlot(i)) return 0;
+						}
+						num += ((get.number(card) || 0) - 6) / 100;
+						if (get.name(card, player) === 'sha') {
+							let nature = get.natureList(card);
+							if (nature.includes('fire')) num += 0.08;
+							if (nature.includes('thunder')) num += 0.05;
+							if (nature.includes('ice')) num += 0.18;
+							if (nature.includes('stab')) num += 0.25;
+						}
+						return Math.max(0.01, num);
+					}
+				},
+				aiValue: (player, card, num) => {
+					if (!player._aiyh_value_temp && num > 0 && get.itemtype(card) === 'card') {
+						if (get.type(card) === 'equip') for (let i of get.subtypes(card)) {
+							if (!player.hasEnabledSlot(i)) return 0.01 * num;
+						}
+						num += ((get.number(card) || 0) - 6) / 50;
+						if (get.name(card, player) === 'sha') {
+							let nature = get.natureList(card);
+							if (nature.includes('fire')) num += 0.18;
+							if (nature.includes('thunder')) num += 0.1;
+							if (nature.includes('ice')) num += 0.36;
+							if (nature.includes('stab')) num += 0.5;
+						}
+						return Math.max(0.01, num);
+					}
+				}
+			},
+			charlotte: true,
+			superCharlotte: true
+		};
+		lib.skill._aiyh_reserved_shan = {//防酒杀ai，透视酒
+			silent: true,
+			locked: true,
+			unique: true,
+			charlotte: true,
+			superCharlotte: true,
+			ai: {
+				effect: {
+					player: (card, player, target) => {
+						if (typeof card !== 'object' || player.hp <= 1 || get.name(card, player) !== 'shan' || player.countCards('hs', card => {
+							let name = get.name(card, player);
+							return (name === 'shan' || name === 'hufu') && lib.filter.cardEnabled(card, player, 'forceEnable');
+						}) !== 1 || (player.hp > 2 || !player.isZhu && player.hp > 1) && player.hasSkillTag('respondShan', true, 'use', true)) return;
+						let par = _status.event.getParent();
+						if (!par || get.itemtype(par.player) !== 'player') par = _status.event.getParent(2);
+						if (!par || get.itemtype(par.player) !== 'player') return;
+						if (typeof par.baseDamage === 'number') {
+							let num = par.baseDamage;
+							if (typeof par.extraDamage === 'number') num += par.extraDamage;
+							if (player.hp <= num) return;
+						}
+						if (par.card && game.hasNature(par.card, 'fire') && player.hasSkill('tengjia2') && !player.hasSkillTag('unequip2') && (!par.player || !par.player.hasSkillTag('unequip', false, {
+							name: par.name || null,
+							target: player,
+							card: par.card,
+							cards: par.cards
+						}))) return;
+						if (!par.player.isPhaseUsing() || par.player.hasSkill('hanbing_skill') || !par.player.getCardUsable('sha') || !par.player.getCardUsable('jiu')) return;
+						if (par.card && player.isLinked() && game.hasNature(par.card) && game.hasPlayer(current => {
+							return player !== current && current.isLinked() && get.damageEffect(current, par.player, player, get.natureList(par.card)) < 0;
+						})) return;
+						let known = par.player.getKnownCards(player);
+						if (par.player.hasCard(i => {
+							return get.name(i) === 'jiu' && par.player.canUse(i, par.player, null, true);
+						}, 'hs') > _status.event.getRand('aiyh_reserved_shan') && par.player.mayHaveSha(player, 'use')) return 'zeroplayertarget';
+					}
+				}
+			}
+		};
+	}
 	if (lib.config.extension_AI优化_sfjAi) {//身份局AI
 		lib.skill.gjcx_zhuAi = {
 			trigger: { global: 'zhuUpdate' },
