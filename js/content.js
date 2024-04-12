@@ -1,5 +1,4 @@
-import { lib, game, ui, get, ai, _status } from './noname.js'
-
+import { lib, game, ui, get, ai, _status } from '../../../noname.js'
 export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以及面具 提供的《云将》相关部分AI优化的修复代码
 
 	if (lib.config.extension_AI优化_rank !== 'off') ui.create.rarity = function (button) {
@@ -838,18 +837,18 @@ export function content(config, pack) {//非常感谢@柚子丶奶茶丶猫以�
 				player: function (card, player, target, current) {
 					let name = get.name(card, player);
 					if (get.tag(card, 'damage') && Math.abs(get.attitude(player, target)) < 0.5) {
-						if (name === 'juedou') return [0.5, player.countCards('hs', 'sha') - target.countCards('h') / 4];
-						if (name == 'huogong') return [0.5, player.countCards('h') / 2 - 1];
+						if (name === 'juedou') return [1, player.countCards('hs') / 400];
+						if (name == 'huogong') return [1, player.countCards('h') / 200];
 						if (name === 'sha' && !game.hasNature(card)) {
 							if ((target.hasSkill('tengjia3') || target.hasSkill('rw_tengjia4')) && !(player.getEquip('qinggang') || player.getEquip('zhuque'))) return 'zeroplayertarget';
 						}
 						if (name == 'sha' && get.color(card) == 'black' && (target.hasSkill('renwang_skill') || target.hasSkill('rw_renwang_skill'))) {
 							if (!player.getEquip('qinggang')) return 'zeroplayertarget';
 						}
-						if (get.attitude(player, target) == 0) return [0.5, 0.5];
+						if (get.attitude(player, target) == 0) return [1, 0.005];
 					}
 					if (name == 'guohe' || name == 'shunshou' || name == 'lebu' || name == 'bingliang' || name == 'caomu' || name == 'zhujinqiyuan' || name == 'caochuanjiejian' || name == 'toulianghuanzhu') {
-						if (get.attitude(player, target) == 0) return [0.5, 0.7];
+						if (get.attitude(player, target) == 0) return [1, 0.01];
 					}
 				}
 			}

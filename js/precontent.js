@@ -1,4 +1,4 @@
-import { lib, game, ui, get, ai, _status } from './noname.js'
+import { lib, game, ui, get, ai, _status } from '../../../noname.js'
 
 export function precontent(config, pack) {
 	game.aiyh_skillOptEnabled = function (skill, info, id) {
@@ -71,7 +71,7 @@ export function precontent(config, pack) {
 			banList.delete();
 		});
 	};
-	lib.get.statusModeInfo = function (sf) {//获取当前游戏模式名称
+	get.statusModeInfo = function (sf) {//获取当前游戏模式名称
 		let info = lib.translate[get.mode()];
 		if (_status.mode && (!sf || lib.config.extension_AI优化_apart)) {
 			let sm;
@@ -116,7 +116,7 @@ export function precontent(config, pack) {
 		}
 		return info + '模式';
 	};
-	lib.get.identityInfo = function (str) {
+	get.identityInfo = function (str) {
 		/*获取字符串中最后一个'_'后面的身份翻译
 		参数：待清洗字符串
 		*/
@@ -130,7 +130,7 @@ export function precontent(config, pack) {
 		if (typeof trans != 'string') return '';
 		return trans;
 	};
-	lib.get.sfConfigName = function (identity) {
+	get.sfConfigName = function (identity) {
 		/*获取当前游戏模式下武将的胜负统计配置名
 		参数：身份
 		有身份 返回当前游戏模式胜负统计对应身份配置名（字符串）
@@ -153,7 +153,7 @@ export function precontent(config, pack) {
 		if (mode == 'identity' || mode == 'doudizhu' || mode == 'single') return cgn + sm + '_' + identity;
 		return cgn + sm;
 	};
-	lib.get.purifySFConfig = function (config, min) {//筛选至少min场的胜负记录
+	get.purifySFConfig = function (config, min) {//筛选至少min场的胜负记录
 		if (Object.prototype.toString.call(config) !== '[object Object]') return {};
 		if (typeof min != 'number' || isNaN(min)) min = 0;
 		let result = {}, judge = false;
@@ -166,7 +166,7 @@ export function precontent(config, pack) {
 		}
 		return result;
 	};
-	lib.get.sfInit = function (sf, now) {//初始化
+	get.sfInit = function (sf, now) {//初始化
 		let cgn;
 		if (typeof sf != 'string') cgn = get.sfConfigName();
 		else cgn = [sf];
@@ -218,10 +218,9 @@ export function precontent(config, pack) {
 	}
 	if (lib.config.extension_AI优化_changelog !== lib.extensionPack.AI优化.version) lib.game.showChangeLog = function () {//更新内容
 		let str = [
-			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>3</font>月<font color=fire>17</font>日</center>',
-			'◆将防酒杀AI和点数AI放入功能［全局AI优化］',
-			'◆移除功能［武将技能优化］和［卡牌AI优化］',
-			'◆防酒杀AI改为透视酒效果'
+			'<center><font color=#00FFFF>更新日期</font>：<font color=#FFFF00>24</font>年<font color=#00FFB0>4</font>月<font color=fire>12</font>日</center>',
+			'◆新版适配',
+			'◆盲狙AI微调'
 		];
 		let ul = document.createElement('ul');
 		ul.style.textAlign = 'left';

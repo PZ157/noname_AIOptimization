@@ -1,4 +1,4 @@
-import { lib, game, ui, get, ai, _status } from './noname.js'
+import { lib, game, ui, get, ai, _status } from '../../../noname.js'
 export let config = {
 	bd1: {
 		name: '<br><hr>',

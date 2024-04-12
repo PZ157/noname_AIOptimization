@@ -1,5 +1,5 @@
 //game.import(name:"AI优化"
-import { lib, game, ui, get, ai, _status } from './js/noname.js'
+import { lib, game, ui, get, ai, _status } from '../../noname.js'
 import { config } from './js/config.js'
 import { precontent } from './js/precontent.js'
 import { content } from './js/content.js'

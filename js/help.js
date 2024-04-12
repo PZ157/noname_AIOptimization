@@ -1,4 +1,4 @@
-import { lib, game, ui, get, ai, _status } from './noname.js'
+import { lib, game, ui, get, ai, _status } from '../../../noname.js'
 
 export let help = {
 	'AI优化': `<center><font color=#00FFB0>身份局相关</font></center>
