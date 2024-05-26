@@ -111,12 +111,12 @@ export let config = {
 	sfjAi: {
 		name: '身份局AI优化',
 		intro: '开启后，重启游戏可载入身份局AI策略。可通过［出牌可修改武将权重］、［武将登场补充权重］和［第二权重参考］为内奸AI判断场上角色实力提供参考',
-		init: false
+		init: true
 	},
 	qjAi: {
 		name: '全局AI优化',
 		intro: '开启后，将添加防酒杀ai（透视）；人机拥有多张同名牌时鼓励人机使用点数较小的牌，弃牌时鼓励保留点数较大的牌',
-		init: false
+		init: true
 	},
 	mjAi: {
 		name: '盲狙AI',
@@ -518,7 +518,7 @@ export let config = {
 	display: {
 		name: '胜负场数相关显示',
 		intro: '调整武将信息上方的胜率、胜负场数相关显示',
-		init: 'all',
+		init: 'off',
 		item: {
 			all: '都显示',
 			sf: '显示胜负场数',

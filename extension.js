@@ -2,13 +2,12 @@
 import { lib, game, ui, get, ai, _status } from '../../noname.js'
 import { config } from './js/config.js'
 import { precontent } from './js/precontent.js'
-import { content } from './js/content.js'
 import { help } from './js/help.js'
 
 const extensionInfo = await lib.init.promises.json(`${lib.assetURL}extension/AI优化/info.json`);
 let extensionPackage = {
 	name: "AI优化",
-	content: content,
+	content: function(){},
 	precontent: precontent,
 	config: config,
 	help: help,
