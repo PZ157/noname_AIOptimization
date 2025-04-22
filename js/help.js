@@ -25,5 +25,6 @@ export let help = {
 		<br><hr><br>无名杀QQ频道：<br><img style=width:240px src=${lib.assetURL}extension/AI优化/img/promotion/qq.jpg>
 		<br><br>DoDo无名杀超级群：<br><img style=width:240px src=${lib.assetURL}extension/AI优化/img/promotion/dodo.jpg>
 		<br><br>无名杀本体更新内测群：392157644
+		<br><br>扩展功能调整意见征集：<br><img style=width:240px src=${lib.assetURL}extension/AI优化/img/promotion/word.png>
 	`,
 };

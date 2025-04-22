@@ -16,7 +16,7 @@ let extensionPackage = {
 };
 
 Object.keys(extensionInfo)
-	.filter((key) => key != 'name')
+	.filter((key) => key !== 'name')
 	.forEach((key) => {
 		extensionPackage.package[key] = extensionInfo[key];
 	});

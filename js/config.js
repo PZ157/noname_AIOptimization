@@ -66,10 +66,11 @@ export let config = {
 			node.parentNode.style.width = '300px';
 			if (link === 'share')
 				node.innerHTML = ui.joint`
-				<hr>无名杀QQ频道：<br><img style=width:280px src=${lib.assetURL}extension/AI优化/img/promotion/qq.jpg>
-				<br><br>DoDo无名杀超级群：<br><img style=width:280px src=${lib.assetURL}extension/AI优化/img/promotion/dodo.jpg>
-				<br><br>无名杀本体更新内测群：392157644
-			`;
+					<hr>无名杀QQ频道：<br><img style=width:280px src=${lib.assetURL}extension/AI优化/img/promotion/qq.jpg>
+					<br><br>DoDo无名杀超级群：<br><img style=width:280px src=${lib.assetURL}extension/AI优化/img/promotion/dodo.jpg>
+					<br><br>无名杀本体更新内测群：392157644
+					<br><br>扩展功能调整意见征集：<br><img style=width:240px src=${lib.assetURL}extension/AI优化/img/promotion/word.png>
+				`;
 		},
 	},
 	copyGit: {
@@ -139,10 +140,11 @@ export let config = {
 		init: false,
 	},
 	removeMini: {
-		name: '去除本体官将小游戏',
+		name: '去除本体武将小游戏',
 		intro: ui.joint`
-			去除手杀马钧〖巧思〗、手杀孙寒华〖冲虚〗、手杀南华老仙〖御风〗、手杀庞德公〖评才〗、手杀郑玄〖整经〗的小游戏，重启生效。
-			（注意：若有其他拓展修改了小游戏可能会报错，关闭此选项即可）
+			去除手杀马钧〖巧思〗、手杀孙寒华〖冲虚〗、手杀南华老仙〖御风〗、手杀庞德公〖评才〗、手杀郑玄〖整经〗、手杀周群〖天算〗、
+				OL蒲元〖神工〗、国崎往人〖控物〗的小游戏，重启生效。
+			（注意：若有其他拓展修改了对应技能小游戏则可能会报错，关闭此选项即可）
 		`,
 		init: false,
 	},
@@ -217,7 +219,7 @@ export let config = {
 			if (node.aced) {
 				ui.window.appendChild(node);
 				node.editor.setValue(node.code, 1);
-			} else if (lib.device == 'ios') {
+			} else if (lib.device === 'ios') {
 				ui.window.appendChild(node);
 				if (!node.textarea) {
 					let textarea = document.createElement('textarea');
@@ -258,11 +260,6 @@ export let config = {
 			must: '暴露也可亮',
 			off: '关闭',
 		},
-	},
-	fixFour: {
-		name: '四人身份局修改',
-		intro: '将四人身份局改为1主（加体力上限）1内2反，游戏开始时忠臣改为明反',
-		init: false,
 	},
 	bd4: {
 		clear: true,
@@ -320,7 +317,7 @@ export let config = {
 					var { disabled } = security.exec2(code);
 					if (!Array.isArray(disabled)) throw 'typeError';
 				} catch (e) {
-					if (e == 'typeError') alert('类型不为[object Array]');
+					if (e === 'typeError') alert('类型不为[object Array]');
 					else alert('代码语法有错误，请仔细检查（' + e + '）');
 					return;
 				}
@@ -336,7 +333,7 @@ export let config = {
 			if (node.aced) {
 				ui.window.appendChild(node);
 				node.editor.setValue(node.code, 1);
-			} else if (lib.device == 'ios') {
+			} else if (lib.device === 'ios') {
 				ui.window.appendChild(node);
 				if (!node.textarea) {
 					let textarea = document.createElement('textarea');
@@ -489,21 +486,10 @@ export let config = {
 		intro: '游戏开始或隐匿武将展示武将牌时会建议玩家为没有设置权重的武将设置权重',
 		init: false,
 	},
-	ckQz: {
-		name: '<span style="font-family: xingkai">第二权重参考</span>',
-		intro: ui.joint`
-			开启后，针对没有设置权重的武将，
-				<br>〔评级〕会根据武将评级为这些武将分配正相关的权重[0.8,1.95]；
-				<br>〔品质〕与〔评级〕相似，区别在于“品质”分五类，“评级”分九类，此外单机时可通过〈千幻聆音〉等扩展修改武将品质以影响对应武将权重；
-				<br>〔威胁度〕会将武将威胁度作为其对应的权重
-		`,
-		init: 'off',
-		item: {
-			off: '不设置',
-			pj: '评级',
-			pz: '品质',
-			cf: '威胁度',
-		},
+	pjQz: {
+		name: '<span style="font-family: xingkai">参考评级补充权重</span>',
+		intro: '开启后，针对没有设置权重的武将，将会根据武将评级为这些武将分配正相关的权重[0.8,1.95]',
+		init: false,
 	},
 	takeQz: {
 		name: '胜率代替权重',
@@ -532,24 +518,6 @@ export let config = {
 			会累乘下面的威胁度相关功能赋值，不推荐同时使用
 		`,
 		init: false,
-	},
-	chooseQz: {
-		name: '<font color=#FF3300>武将权重选项加载失败</font>',
-		clear: true,
-		nopointer: true,
-	},
-	deleteQz: {
-		name: '删除此权重',
-		clear: true,
-		onclick() {
-			let id = document.getElementById('AI优化_chooseQz');
-			let val = id.options[id.selectedIndex].value;
-			if (confirm('确定要删除为' + lib.translate[val] + '设置的权重（' + lib.config.extension_AI优化_qz[val] + '）？')) {
-				delete lib.config.extension_AI优化_qz[val];
-				game.saveExtensionConfig('AI优化', 'qz', lib.config.extension_AI优化_qz);
-				alert('删除成功');
-			}
-		},
 	},
 	editQz: {
 		name: '编辑武将权重',
@@ -601,7 +569,7 @@ export let config = {
 			if (node.aced) {
 				ui.window.appendChild(node);
 				node.editor.setValue(node.code, 1);
-			} else if (lib.device == 'ios') {
+			} else if (lib.device === 'ios') {
 				ui.window.appendChild(node);
 				if (!node.textarea) {
 					let textarea = document.createElement('textarea');
@@ -618,18 +586,6 @@ export let config = {
 					lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
 				} else lib.codeMirrorReady(node, editor);
 			}
-		},
-	},
-	copyQz: {
-		name: '一键复制武将权重',
-		clear: true,
-		onclick() {
-			let map = lib.config.extension_AI优化_qz || {};
-			let txt = '';
-			for (let i in map) {
-				txt += '\r	"' + i + '": ' + map[i] + ',';
-			}
-			game.copy(txt);
 		},
 	},
 	clearQz: {
@@ -680,24 +636,6 @@ export let config = {
 			sd: '手动补充',
 		},
 	},
-	chooseCf: {
-		name: '<font color=#FF3300>技能威胁度选项加载失败</font>',
-		clear: true,
-		nopointer: true,
-	},
-	deleteCf: {
-		name: '删除此修改项',
-		clear: true,
-		onclick() {
-			let id = document.getElementById('AI优化_chooseCf');
-			let val = id.options[id.selectedIndex].value;
-			if (confirm('确定要删除修改的【' + lib.translate[val] + '】威胁度（' + lib.config.extension_AI优化_cf[val] + '）？')) {
-				delete lib.config.extension_AI优化_cf[val];
-				game.saveExtensionConfig('AI优化', 'cf', lib.config.extension_AI优化_cf);
-				alert('删除成功');
-			}
-		},
-	},
 	editCf: {
 		name: '编辑修改的技能威胁度',
 		clear: true,
@@ -733,7 +671,7 @@ export let config = {
 						throw '类型不符';
 					}
 				} catch (e) {
-					if (e == '类型不符') alert(e);
+					if (e === '类型不符') alert(e);
 					else alert('代码语法有错误，请仔细检查（' + e + '）');
 					return;
 				}
@@ -749,7 +687,7 @@ export let config = {
 			if (node.aced) {
 				ui.window.appendChild(node);
 				node.editor.setValue(node.code, 1);
-			} else if (lib.device == 'ios') {
+			} else if (lib.device === 'ios') {
 				ui.window.appendChild(node);
 				if (!node.textarea) {
 					let textarea = document.createElement('textarea');
@@ -766,18 +704,6 @@ export let config = {
 					lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
 				} else lib.codeMirrorReady(node, editor);
 			}
-		},
-	},
-	copyCf: {
-		name: '一键复制修改的技能威胁度',
-		clear: true,
-		onclick() {
-			let map = lib.config.extension_AI优化_cf || {};
-			let txt = '';
-			for (let i in map) {
-				txt += '\r	"' + i + '": ' + map[i] + ',';
-			}
-			game.copy(txt);
 		},
 	},
 	clearCf: {
