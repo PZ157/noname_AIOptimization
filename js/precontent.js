@@ -693,270 +693,6 @@ export function precontent(config, pack) {
 			},
 		},
 	};
-	lib.skill._aiyh_fake_prohibited = {
-		//伪禁
-		trigger: {
-			global: 'gameStart',
-			player: 'fixCharacterEnd',
-		},
-		filter(event, player) {
-			return lib.config.extension_AI优化_Wj && player !== game.me;
-		},
-		silent: true,
-		unique: true,
-		priority: Infinity,
-		charlotte: true,
-		superCharlotte: true,
-		content() {
-			'step 0'
-			if (!_status.aiyhlist) {
-				let list = [];
-				if (_status.connectMode) list = get.charactersOL();
-				else
-					for (let i in lib.character) {
-						if (lib.filter.characterDisabled2(i) || lib.filter.characterDisabled(i)) continue;
-						list.push(i);
-					}
-				game.countPlayer2(function (current) {
-					list.remove(current.name);
-					list.remove(current.name1);
-					list.remove(current.name2);
-				});
-				_status.aiyhlist = list.removeArray(lib.config.extension_AI优化_wj);
-			}
-			if (typeof _status.doubleDraw !== 'function') _status.doubleDraw = lib.game.doubleDraw;
-			event.num = -1;
-			if (player.name1 !== undefined) {
-				if (lib.config.extension_AI优化_wj.includes(player.name1)) event.num = 0;
-				else if (
-					get.mode() === 'identity' &&
-					(((player === game.zhu || player === game.rZhu || player === game.bZhu) &&
-						lib.config.extension_AI优化_zhu.includes(player.name1)) ||
-						(player.identity === 'nei' && lib.config.extension_AI优化_nei.includes(player.name1)) ||
-						((player === game.zhong || player.identity === 'zhong') &&
-							lib.config.extension_AI优化_zhong.includes(player.name1)) ||
-						(player.identity === 'fan' && lib.config.extension_AI优化_fan.includes(player.name1)))
-				)
-					event.num = 0;
-				else if (
-					get.mode() === 'doudizhu' &&
-					((player === game.zhu && lib.config.extension_AI优化_dizhu.includes(player.name1)) ||
-						(player.identity === 'fan' && lib.config.extension_AI优化_nongmin.includes(player.name1)))
-				)
-					event.num = 0;
-			}
-			if (event.num === -1 && player.name2 !== undefined) {
-				if (lib.config.extension_AI优化_wj.includes(player.name2)) event.num = 1;
-				else if (
-					get.mode() === 'identity' &&
-					(((player === game.zhu || player === game.rZhu || player === game.bZhu) &&
-						lib.config.extension_AI优化_zhu.includes(player.name2)) ||
-						(player.identity === 'nei' && lib.config.extension_AI优化_nei.includes(player.name2)) ||
-						((player === game.zhong || player.identity === 'zhong') &&
-							lib.config.extension_AI优化_zhong.includes(player.name2)) ||
-						(player.identity === 'fan' && lib.config.extension_AI优化_fan.includes(player.name2)))
-				)
-					event.num = 1;
-				else if (
-					get.mode() === 'doudizhu' &&
-					((player === game.zhu && lib.config.extension_AI优化_dizhu.includes(player.name2)) ||
-						(player.identity === 'fan' && lib.config.extension_AI优化_nongmin.includes(player.name2)))
-				)
-					event.num = 1;
-			}
-			if (event.num < 0) event.finish();
-			'step 1'
-			let list = [],
-				hx = 6,
-				sd = _status.mode,
-				id = player.identity,
-				str;
-			if (lib.config.extension_AI优化_wjs === 'same')
-				switch (get.mode()) {
-					case 'identity':
-						if (sd === 'zhong') {
-							if (id === 'fan' || id === 'zhong') hx = 6;
-							else hx = 8;
-						} else if (sd === 'purple') {
-							if (id.indexOf('Zhu') === 1) hx = 4;
-							else hx = 5;
-						} else hx = get.config('choice_' + id);
-						break;
-					case 'versus':
-						if (sd === 'two') hx = 7;
-						else if (sd === 'guandu') hx = 4;
-						else hx = 8;
-						break;
-					case 'doudizhu':
-						if (sd === 'normal') hx = get.config('choice_' + id);
-						else if (id === 'zhu') {
-							if (sd === 'kaihei') hx = 5;
-							else if (sd === 'huanle' || sd === 'binglin') hx = 7;
-							else hx = 4;
-						} else {
-							if (sd === 'kaihei') hx = 3;
-							else hx = 4;
-						}
-						break;
-					default:
-						if (typeof get.config('choice_' + id) === 'number') hx = get.config('choice_' + id);
-				}
-			else hx = parseInt(lib.config.extension_AI优化_wjs);
-			_status.aiyhlist.randomSort();
-			for (let i = 0; i < _status.aiyhlist.length; i++) {
-				if (lib.config.extension_AI优化_wj.includes(_status.aiyhlist[i])) continue;
-				if (
-					get.mode() === 'identity' &&
-					(((player === game.zhu || player === game.rZhu || player === game.bZhu) &&
-						lib.config.extension_AI优化_zhu.includes(_status.aiyhlist[i])) ||
-						(player.identity === 'nei' && lib.config.extension_AI优化_nei.includes(_status.aiyhlist[i])) ||
-						((player === game.zhong || player.identity === 'zhong') &&
-							lib.config.extension_AI优化_zhong.includes(_status.aiyhlist[i])) ||
-						(player.identity === 'fan' && lib.config.extension_AI优化_fan.includes(_status.aiyhlist[i])))
-				)
-					continue;
-				if (
-					get.mode() === 'doudizhu' &&
-					((player === game.zhu && lib.config.extension_AI优化_dizhu.includes(_status.aiyhlist[i])) ||
-						(player.identity === 'fan' && lib.config.extension_AI优化_nongmin.includes(_status.aiyhlist[i])))
-				)
-					continue;
-				list.push(_status.aiyhlist[i]);
-				if (list.length >= hx) break;
-			}
-			if (!list.length) {
-				alert('没有可供候选的武将！');
-				event.finish();
-				return;
-			}
-			if (player.name2 === undefined) str = '武将';
-			else if (event.num) str = '副将';
-			else str = '主将';
-			if (list.length === 1) event._result = { links: list };
-			else
-				player.chooseButton(true, ['请选择一张武将牌替换你的' + str, [list, 'character']]).ai = function (button) {
-					return get.rank(button.link);
-				};
-			'step 2'
-			let name = result.links[0],
-				old = player.name1;
-			if (!lib.character[name] || !lib.character[name][4] || !lib.character[name][4].includes('hiddenSkill'))
-				player.showCharacter(event.num, false);
-			_status.aiyhlist.remove(name);
-			lib.game.doubleDraw = function () {};
-			if (event.num) {
-				old = player.name2;
-				_status.aiyhlist.push(player.name2);
-				player.hp += get.infoHp(lib.character[name][2]) - get.infoHp(lib.character[player.name2][2]);
-				player.reinit(player.name2, name, true);
-			} else {
-				_status.aiyhlist.push(player.name1);
-				player.hp += get.infoHp(lib.character[name][2]) - get.infoHp(lib.character[player.name1][2]);
-				player.reinit(player.name1, name, true);
-				player.changeGroup(lib.character[name][1], false);
-			}
-			lib.game.doubleDraw = _status.doubleDraw;
-			'step 3'
-			player.update();
-			event.trigger('fixCharacterEnd');
-		},
-	};
-	lib.skill._aiyh_fixWj = {
-		//伪禁列表
-		enable: 'phaseUse',
-		filter(event, player) {
-			return player === game.me && lib.config.extension_AI优化_fixWj;
-		},
-		filterTarget(card, player, target) {
-			if (target.name.indexOf('unknown') === 0 && (target.name2 === undefined || target.name2.indexOf('unknown') === 0))
-				return false;
-			return true;
-		},
-		selectTarget: [0, Infinity],
-		multitarget: true,
-		multiline: true,
-		prompt: '若选择角色则对这些角色的武将牌进行加入/移出伪禁列表操作，否则从所有武将包选择进行操作',
-		log: false,
-		charlotte: true,
-		superCharlotte: true,
-		content() {
-			'step 0'
-			targets.sortBySeat();
-			if (targets.length) {
-				event.names = [];
-				for (let i of targets) {
-					if (i.name.indexOf('unknown')) event.names.push(i.name);
-					if (i.name2 !== undefined && i.name2.indexOf('unknown')) event.names.push(i.name2);
-				}
-				event.goto(2);
-			} else {
-				let ts = [];
-				event.sorts = [];
-				for (let i in lib.characterPack) {
-					if (Object.prototype.toString.call(lib.characterPack[i]) === '[object Object]') {
-						event.sorts.push(lib.characterPack[i]);
-						ts.push([ts.length, lib.translate[i + '_character_config']]);
-					}
-				}
-				if (ts.length)
-					player
-						.chooseButton(['请选择要移动的武将所在的武将包', [ts, 'textbutton']], true, [1, ts.length])
-						.set('dialog', event.videoId)
-						.set('ai', (button) => 0);
-				else event.finish();
-			}
-			'step 1'
-			if (result.links && result.links.length) {
-				event.names = [];
-				for (let num of result.links) {
-					for (let i in event.sorts[num]) {
-						event.names.push(i);
-					}
-				}
-				if (!event.names.length) {
-					alert('所选武将包不包含武将');
-					event.finish();
-				}
-			} else event.finish();
-			'step 2'
-			event.jr = [];
-			event.yc = [];
-			for (let i of event.names) {
-				if (lib.config.extension_AI优化_wj.includes(i)) event.yc.push(i);
-				else event.jr.push(i);
-			}
-			if (event.jr.length)
-				player.chooseButton(['请选择要加入伪禁列表的武将，直接点“确定”则全部加入', [event.jr, 'character']], [0, Infinity]).ai =
-					function (button) {
-						return 0;
-					};
-			else event.goto(4);
-			'step 3'
-			if (result.bool) {
-				if (result.links && result.links.length) lib.config.extension_AI优化_wj.addArray(result.links);
-				else lib.config.extension_AI优化_wj.addArray(event.jr);
-				game.saveExtensionConfig('AI优化', 'wj', lib.config.extension_AI优化_wj);
-			}
-			'step 4'
-			if (event.yc.length)
-				player.chooseButton(['请选择要移出伪禁列表的武将，直接点“确定”则全部移出', [event.yc, 'character']], [0, Infinity]).ai =
-					function (button) {
-						return 0;
-					};
-			else event.finish();
-			'step 5'
-			if (result.bool) {
-				if (result.links && result.links.length) lib.config.extension_AI优化_wj.removeArray(result.links);
-				else lib.config.extension_AI优化_wj.removeArray(event.yc);
-				game.saveExtensionConfig('AI优化', 'wj', lib.config.extension_AI优化_wj);
-			}
-		},
-		ai: {
-			result: {
-				target: 0,
-			},
-		},
-	};
 	lib.skill._findZhong = {
 		//慧眼识忠
 		trigger: {
@@ -1059,7 +795,6 @@ export function precontent(config, pack) {
 	lib.translate._aiyh_neiKey = '<font color=#8DD8FF>亮明身份</font>';
 	lib.translate._aiyh_fixQz = '<font color=#FFFF00>修改权重</font>';
 	lib.translate._aiyh_fixCf = '<font color=#FF3300>修改威胁度</font>';
-	lib.translate._aiyh_fixWj = '<font color=#00FFFF>伪禁</font>';
 
 	/*AI优化*/
 	if (lib.config.extension_AI优化_qjAi) {
@@ -1635,13 +1370,6 @@ export function precontent(config, pack) {
 		if (!lib.aiyh) lib.aiyh = {};
 		if (!lib.aiyh.qz) lib.aiyh.qz = {};
 		if (!lib.aiyh.skillModify) lib.aiyh.skillModify = {};
-		if (!Array.isArray(lib.config.extension_AI优化_wj)) game.saveExtensionConfig('AI优化', 'wj', []);
-		if (!Array.isArray(lib.config.extension_AI优化_zhu)) game.saveExtensionConfig('AI优化', 'zhu', []);
-		if (!Array.isArray(lib.config.extension_AI优化_zhong)) game.saveExtensionConfig('AI优化', 'zhong', []);
-		if (!Array.isArray(lib.config.extension_AI优化_fan)) game.saveExtensionConfig('AI优化', 'fan', []);
-		if (!Array.isArray(lib.config.extension_AI优化_nei)) game.saveExtensionConfig('AI优化', 'nei', []);
-		if (!Array.isArray(lib.config.extension_AI优化_dizhu)) game.saveExtensionConfig('AI优化', 'dizhu', []);
-		if (!Array.isArray(lib.config.extension_AI优化_nongmin)) game.saveExtensionConfig('AI优化', 'nongmin', []);
 		if (Object.prototype.toString.call(lib.config.extension_AI优化_qz) !== '[object Object]')
 			game.saveExtensionConfig('AI优化', 'qz', {});
 		if (Object.prototype.toString.call(lib.config.extension_AI优化_cf) !== '[object Object]')
@@ -1916,26 +1644,28 @@ export function precontent(config, pack) {
 					for (let i = 0; i < list.length; i++) {
 						list2.push(game.createCard(list[i] + '_card', '', ''));
 					}
-					const result = await player.chooseButton(['请选择要执行的宝物效果', list2], true).set('ai', function (button) {
-						const player = _status.event.player;
-						if (button.link.name === 'xuanjian_card') {
-							if (
-								game.hasPlayer(function (current) {
-									return current.isDamaged() && current.hp < 3 && get.attitude(player, current) > 1;
-								})
-							)
-								return 1 + Math.random();
-							return 1;
-						} else if (button.link.name === 'wolong_card') {
-							if (
-								game.hasPlayer(function (current) {
-									return get.damageEffect(current, player, player, 'fire') > 0;
-								})
-							)
-								return 1.2 + Math.random();
-							return 0.5;
-						} else return 0.6;
-					});
+					const result = await player.chooseButton(['请选择要执行的宝物效果', list2], true)
+						.set('ai', function (button) {
+							const player = _status.event.player;
+							if (button.link.name === 'xuanjian_card') {
+								if (
+									game.hasPlayer(function (current) {
+										return current.isDamaged() && current.hp < 3 && get.attitude(player, current) > 1;
+									})
+								)
+									return 1 + Math.random();
+								return 1;
+							} else if (button.link.name === 'wolong_card') {
+								if (
+									game.hasPlayer(function (current) {
+										return get.damageEffect(current, player, player, 'fire') > 0;
+									})
+								)
+									return 1.2 + Math.random();
+								return 0.5;
+							} else return 0.6;
+						})
+						.forResult();
 					if (!result || !result.links || !result.links.length) return;
 					const card = result.links[0];
 					player.logSkill('pcaudio_' + card.name);
@@ -1944,7 +1674,7 @@ export function precontent(config, pack) {
 						player: player,
 					});
 				};
-				delete lib.skill.xinfu_pingcai.usable;
+				delete lib.skill.xinfu_pingcai.contentx;
 				delete lib.skill.xinfu_pingcai.chooseButton;
 				lib.translate.xinfu_pingcai_info = '出牌阶段限一次，你可以挑选一个宝物执行对应的效果。';
 			}

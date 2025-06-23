@@ -263,210 +263,9 @@ export let config = {
 	},
 	bd4: {
 		clear: true,
-		name: '<center>伪禁相关</center>',
-	},
-	Wj: {
-		name: '<font color=#00FFFF>伪</font>玩家可选ai<font color=#00FFFF>禁</font>选',
-		intro: ui.joint`
-			开启后，游戏开始或隐匿武将展示武将牌时，若场上有ai选择了伪禁列表里包含的ID对应武将，
-			则<font color=#FFFF00>勒令其</font>从未加入游戏且不包含伪禁列表武将的将池里<font color=#FFFF00>再次进行选将</font>
-		`,
-		init: false,
-	},
-	wjs: {
-		name: '伪禁候选武将数',
-		intro: '〔默认〕即游戏开始时每名角色的候选武将数，若为自由选将等特殊情况则默认为6',
-		init: 'same',
-		item: {
-			same: '默认',
-			1: '一',
-			2: '二',
-			3: '三',
-			4: '四',
-			5: '五',
-			6: '六',
-			8: '八',
-			10: '十',
-		},
-	},
-	fixWj: {
-		name: '<span style="font-family: xingkai">出牌阶段可编辑伪禁</font>',
-		intro: '出牌阶段可将场上武将加入/移出伪禁列表，也可以从若干个武将包中选择武将执行此操作',
-		init: false,
-	},
-	editWj: {
-		name: '编辑伪禁列表',
-		clear: true,
-		onclick() {
-			let container = ui.create.div('.popup-container.editor');
-			let node = container;
-			let map = lib.config.extension_AI优化_wj || [];
-			let str = 'disabled = [';
-			for (let i = 0; i < map.length; i++) {
-				str += '\n	"' + map[i] + '",';
-			}
-			str += '\n];\n//请在[]内进行编辑，或借此复制/粘贴内容以备份/还原配置\n//请务必使用英文标点符号！';
-			node.code = str;
-			ui.window.classList.add('shortcutpaused');
-			ui.window.classList.add('systempaused');
-			let saveInput = function () {
-				let code;
-				if (container.editor) code = container.editor.getValue();
-				else if (container.textarea) code = container.textarea.value;
-				try {
-					var { disabled } = security.exec2(code);
-					if (!Array.isArray(disabled)) throw 'typeError';
-				} catch (e) {
-					if (e === 'typeError') alert('类型不为[object Array]');
-					else alert('代码语法有错误，请仔细检查（' + e + '）');
-					return;
-				}
-				game.saveExtensionConfig('AI优化', 'wj', disabled);
-				ui.window.classList.remove('shortcutpaused');
-				ui.window.classList.remove('systempaused');
-				container.delete();
-				container.code = code;
-				delete window.saveNonameInput;
-			};
-			window.saveNonameInput = saveInput;
-			let editor = ui.create.editor(container, saveInput);
-			if (node.aced) {
-				ui.window.appendChild(node);
-				node.editor.setValue(node.code, 1);
-			} else if (lib.device === 'ios') {
-				ui.window.appendChild(node);
-				if (!node.textarea) {
-					let textarea = document.createElement('textarea');
-					editor.appendChild(textarea);
-					node.textarea = textarea;
-					lib.setScroll(textarea);
-				}
-				node.textarea.value = node.code;
-			} else {
-				if (!window.CodeMirror) {
-					import('../../../game/codemirror.js').then(() => {
-						lib.codeMirrorReady(node, editor);
-					});
-					lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
-				} else lib.codeMirrorReady(node, editor);
-			}
-		},
-	},
-	copyWj: {
-		name: '一键复制伪禁列表',
-		clear: true,
-		onclick() {
-			let map = lib.config.extension_AI优化_wj || [];
-			let txt = '';
-			for (let i = 0; i < map.length; i++) {
-				txt += '\r	"' + map[i] + '",';
-			}
-			game.copy(txt, '伪禁列表已成功复制到剪切板');
-		},
-	},
-	clearWj: {
-		name: '清空伪禁列表',
-		clear: true,
-		onclick() {
-			if (confirm('您确定要清空伪玩家可选ai禁选列表（共' + lib.config.extension_AI优化_wj.length + '个伪禁武将）？')) {
-				game.saveExtensionConfig('AI优化', 'wj', []);
-				alert('清除成功');
-			}
-		},
-	},
-	tip2: {
-		name: '以下功能为<font color=#00FFFF>伪禁</font>衍生功能，<font color=#FFFF00>如需使用请开启〔伪玩家可选ai禁选〕</font>',
-		clear: true,
-	},
-	banzhu: {
-		clear: true,
-		name: '<li>主公AI禁将',
-		onclick() {
-			game.aiyh_configBan(this, 'zhu', '主公');
-		},
-	},
-	banzhubiao: {
-		name: '<li>主公AI禁选表(点击查看)',
-		clear: true,
-		onclick() {
-			game.aiyh_configBanList('zhu', '主公');
-		},
-	},
-	banzhong: {
-		clear: true,
-		name: '<li>忠臣AI禁将',
-		onclick() {
-			game.aiyh_configBan(this, 'zhong', '忠臣');
-		},
-	},
-	banzhongbiao: {
-		name: '<li>忠臣AI禁选表(点击查看)',
-		clear: true,
-		onclick() {
-			game.aiyh_configBanList('zhong', '忠臣');
-		},
-	},
-	banfan: {
-		clear: true,
-		name: '<li>反贼AI禁将',
-		onclick() {
-			game.aiyh_configBan(this, 'fan', '反贼');
-		},
-	},
-	banfanbiao: {
-		name: '<li>反贼AI禁选表(点击查看)',
-		clear: true,
-		onclick() {
-			game.aiyh_configBanList('fan', '反贼');
-		},
-	},
-	bannei: {
-		clear: true,
-		name: '<li>内奸AI禁将',
-		onclick() {
-			game.aiyh_configBan(this, 'nei', '内奸');
-		},
-	},
-	banneibiao: {
-		name: '<li>内奸AI禁选表(点击查看)',
-		clear: true,
-		onclick() {
-			game.aiyh_configBanList('nei', '内奸');
-		},
-	},
-	bandizhu: {
-		clear: true,
-		name: '<li>地主AI禁将',
-		onclick() {
-			game.aiyh_configBan(this, 'dizhu', '地主');
-		},
-	},
-	bandizhubiao: {
-		name: '<li>地主AI禁选表(点击查看)',
-		clear: true,
-		onclick() {
-			game.aiyh_configBanList('dizhu', '地主');
-		},
-	},
-	bannongmin: {
-		clear: true,
-		name: '<li>农民AI禁将',
-		onclick() {
-			game.aiyh_configBan(this, 'nongmin', '农民');
-		},
-	},
-	bannongminbiao: {
-		name: '<li>农民AI禁选表(点击查看)',
-		clear: true,
-		onclick() {
-			game.aiyh_configBanList('nongmin', '农民');
-		},
-	},
-	bd5: {
-		clear: true,
 		name: '<center>内奸权重策略</center>',
 	},
-	tip3: {
+	tip2: {
 		name: ui.joint`
 			<font color=#FF3300>注意！</font>
 			通过以下功能设置的权重将<font color=#FFFF00>优先</font>作为<font color=#00FFFF>内奸AI</font>判断场上角色实力的参考
@@ -602,12 +401,12 @@ export let config = {
 			}
 		},
 	},
-	bd6: {
+	bd5: {
 		clear: true,
 		name: '<center>技能威胁度</center>',
 		nopointer: true,
 	},
-	tip4: {
+	tip3: {
 		name: ui.joint`
 			<font color=#FF3300>注意！</font>通过以下功能修改的技能威胁度会<font color=#00FFFF>覆盖</font>技能原有的威胁度
 			<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp由于威胁度一般会与卡牌收益作积，
@@ -720,7 +519,7 @@ export let config = {
 			}
 		},
 	},
-	bd7: {
+	bd6: {
 		name: '<hr>',
 		clear: true,
 	},
