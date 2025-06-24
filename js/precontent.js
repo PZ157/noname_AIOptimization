@@ -18,7 +18,7 @@ export function precontent(config, pack) {
 					if (localStorage.getItem('aiyh_version_check_alerted') !== lib.version) {
 						localStorage.setItem('aiyh_version_check_alerted', lib.version);
 						alert(
-							'为适配最新版本，［载入本扩展配置］［编辑伪禁列表］［编辑武将权重］［编辑修改的技能威胁度］等功能于当前版本无法使用，请及时更新无名杀至1.10.6及以上或使用《AI优化》1.3.5.5版本'
+							'为适配最新版本，［载入本扩展配置］［编辑武将权重］［编辑修改的技能威胁度］等功能于当前版本无法使用，请及时更新无名杀至1.10.6及以上或使用《AI优化》1.3.5.5版本'
 						);
 					}
 					break;
@@ -36,20 +36,23 @@ export function precontent(config, pack) {
 			//更新内容
 			let str = [
 				ui.joint`
-				<center><font color=#00FFFF>更新日期</font>：
-				<font color=#FFFF00>25</font>年<font color=#00FFB0>4</font>月<font color=fire>22</font>日</center>
-			`,
-				'◆添加扩展功能调整意见征集腾讯文档二维码，可于帮助或友情链接内查看',
-				'◆重写［去除本体武将小游戏］功能',
-				'◆移除功能［四人身份局修改］、单独复制、单条删除武将权重和技能威胁度',
-				'◆移除［第二权重参考］中的其余选项，将其改为［参考评级补充权重］',
-				'◆格式化部分代码',
+					<div style="display: flex; justify-content: center">
+						<span style="color: #00FFFF">更新日期</span>：
+						<span style="color: #FFFF00">25</span>年
+						<span style="color: #00FFB0">6</span>月
+						<span style="color: rgb(255, 146, 68)">24</span>日
+					</div>
+				`,
+				'◆移除伪禁功能，规范HTML标签',
+				'◆移除DoDo频道推荐，增加其他推荐渠道',
+				'◆修复［去除本体武将小游戏］功能中的庞德公〖评才〗',
+				'◆更正部分描述',
 			];
 			let ul = document.createElement('ul');
 			ul.style.textAlign = 'left';
 			for (let i = 0; i < str.length; i++) {
 				let li = document.createElement('test');
-				li.innerHTML = str[i] + '<br>';
+				li.innerHTML = str[i] + '<br />';
 				ul.appendChild(li);
 			}
 			game.saveExtensionConfig('AI优化', 'changelog', lib.extensionPack.AI优化.version);
@@ -356,7 +359,7 @@ export function precontent(config, pack) {
 			list.push('设置');
 			player
 				.chooseControl(list)
-				.set('prompt', get.translation(event.name) + '的 权重：<font color=#FFFF00>' + event.qz + '</font>')
+				.set('prompt', get.translation(event.name) + '的 权重：<span style="color: #FFFF00">' + event.qz + '</span>')
 				.set('prompt2', '该值将作为内奸AI判断角色实力的首选')
 				.set('ai', function () {
 					return '暂不设置';
@@ -399,9 +402,9 @@ export function precontent(config, pack) {
 			let con = ['+1', '+0.1', '+0.01'],
 				str = '技能ID：' + event.skill;
 			event.th = Math.round(event.th * 100) / 100;
-			if (event.target.tempSkills[event.skill]) str = '&nbsp&nbsp&nbsp<font color=#FF3300>这是一项临时技能</font>';
-			if (lib.translate[event.skill + '_info']) str += '<br>' + lib.translate[event.skill + '_info'];
-			else str += '<br>暂无技能描述';
+			if (event.target.tempSkills[event.skill]) str = '&nbsp;&nbsp;&nbsp;<span style="color: #FF3300">这是一项临时技能</span>';
+			if (lib.translate[event.skill + '_info']) str += '<br />' + lib.translate[event.skill + '_info'];
+			else str += '<br />暂无技能描述';
 			if (event.th > 1) con.push('-1');
 			if (event.th > 0.1) con.push('-0.1');
 			if (event.th > 0.01) con.push('-0.01');
@@ -411,13 +414,13 @@ export function precontent(config, pack) {
 				.chooseControl(con)
 				.set(
 					'prompt',
-					'<font color=#00FFFF>' +
+					'<span style="color: #00FFFF">' +
 						get.translation(event.target) +
-						'</font>的【<font color=#FFFF00>' +
+						'</span>的【<span style="color: #FFFF00">' +
 						get.translation(event.skill) +
-						'</font>】：当前为<font color=#00FFFF>' +
+						'</span>】：当前为<span style="color: #00FFFF">' +
 						event.th +
-						'</font>'
+						'</span>'
 				)
 				.set('prompt2', str)
 				.set('ai', function () {
@@ -568,8 +571,8 @@ export function precontent(config, pack) {
 			list.push('确认修改');
 			player
 				.chooseControl(list)
-				.set('prompt', get.translation(event.name) + '的 权重：<font color=#FFFF00>' + event.qz + '</font>')
-				.set('prompt2', '武将ID：' + event.name + '<br>该值将作为内奸AI判断角色实力的首选')
+				.set('prompt', get.translation(event.name) + '的 权重：<span style="color: #FFFF00">' + event.qz + '</span>')
+				.set('prompt2', '武将ID：' + event.name + '<br />该值将作为内奸AI判断角色实力的首选')
 				.set('ai', () => '确认修改');
 			'step 3'
 			if (result.control === '确认修改') {
@@ -624,7 +627,7 @@ export function precontent(config, pack) {
 				if (typeof th === 'number') event.ths.push(th);
 				else event.ths.push(1);
 				trans.push(
-					'<font color=#00FF00>' + lib.translate[skills[i]] + '</font> | <font color=#FFFF00>' + skills[i] + '</font>：' + th
+					'<span style="color: #00FF00">' + lib.translate[skills[i]] + '</span> | <span style="color: #FFFF00">' + skills[i] + '</span>：' + th
 				);
 			}
 			if (trans.length > 1)
@@ -643,7 +646,7 @@ export function precontent(config, pack) {
 			let list = ['+1', '+0.1', '+0.01'],
 				str = '技能ID：' + event.skill;
 			event.th = Math.round(event.th * 100) / 100;
-			if (event.target.tempSkills[event.skill]) str = '<font color=#FF3300>这是一项临时技能</font><br>';
+			if (event.target.tempSkills[event.skill]) str = '<span style="color: #FF3300">这是一项临时技能</span><br />';
 			if (lib.translate[event.skill + '_info']) str += lib.translate[event.skill + '_info'];
 			else str += '暂无技能描述';
 			if (event.th > 1) list.push('-1');
@@ -658,9 +661,9 @@ export function precontent(config, pack) {
 					get.translation(event.skill) +
 						'（' +
 						get.translation(target) +
-						'）：当前为<font color=#00FFFF>' +
+						'）：当前为<span style="color: #00FFFF">' +
 						event.th +
-						'</font>'
+						'</span>'
 				)
 				.set('prompt2', str)
 				.set('ai', function () {
@@ -792,9 +795,9 @@ export function precontent(config, pack) {
 			},
 		},
 	};
-	lib.translate._aiyh_neiKey = '<font color=#8DD8FF>亮明身份</font>';
-	lib.translate._aiyh_fixQz = '<font color=#FFFF00>修改权重</font>';
-	lib.translate._aiyh_fixCf = '<font color=#FF3300>修改威胁度</font>';
+	lib.translate._aiyh_neiKey = '<span style="color: #8DD8FF">亮明身份</span>';
+	lib.translate._aiyh_fixQz = '<span style="color: #FFFF00">修改权重</span>';
+	lib.translate._aiyh_fixCf = '<span style="color: #FF3300">修改威胁度</span>';
 
 	/*AI优化*/
 	if (lib.config.extension_AI优化_qjAi) {

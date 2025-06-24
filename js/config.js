@@ -1,80 +1,124 @@
 import { lib, game, ui, get, ai, _status, security } from './utils.js';
 export let config = {
 	bd1: {
-		name: '<br><hr>',
+		name: '<hr aria-hidden="true">',
 		clear: true,
 	},
-	kzjs: {
-		name: '<font color=#00FFFF>扩展简介</font>',
-		init: 'jieshao',
-		unfrequent: true,
-		item: {
-			jieshao: '点击查看',
-		},
-		textMenu(node, link) {
-			lib.setScroll(node.parentNode);
-			node.parentNode.style.transform = 'translateY(-100px)';
-			node.parentNode.style.height = '300px';
-			node.parentNode.style.width = '300px';
-			const xutou = '&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp';
-			if (link === 'jieshao')
-				node.innerHTML = ui.joint`
-				<br><span style='font-family: xinwei'><center><font color=#00FFFF>扩展简介</font></center></span>
-				<br><span style='font-family: yuanli'>
-					本扩展以『云将』『官将重修』中部分功能为基础，
-					@柚子丶奶茶丶猫以及面具 退圈前已许可修改，
-					现由@翩翩浊世许公子 和 @157 整理，
-					暂无后续维护者，后续改动结果与原作者无关
-				</span>
-				<br><br>
-				<span style='font-family: shousha'>
-					<font color=#FF3300>注意！</font>
-					本扩展与其他有AI功能的扩展同时打开可能会导致AI错乱。
-					若出现bug建议关闭本扩展后测试以进一步确定问题所在
-				</span>
-				<br><span style='font-family: xingkai'>
-					${xutou}本扩展主要优化了身份局AI和其他一些AI。
-					<br>${xutou}此外，本扩展还添加了查看态度、去除部分小游戏、（伪）玩家可选AI禁选系列功能、
-						身份局系列功能、胜负统计、技能嘲讽、武将权重等一系列能在一定程度上增加游戏乐趣的功能；
-						同时还支持复制/粘贴一些难以记忆的扩展配置，便于玩家重装游戏时备份相应数据。
-					<br>${xutou}此外需要解释的就是伪禁、权重、嘲讽（技能威胁度）三者各有何用：
-					<br>${xutou}“伪禁”就是在游戏开始时检查人机是否使用你添加到伪禁列表的武将。
-						它们将被系统要求更换武将，以此可以避免人机使用你不希望其使用的武将；
-						与本体的禁将功能的区别就是这些武将仍然会等概率地出现在你的武将候选框内。
-					<br>${xutou}“权重”则是辅助身份局AI优化的，它将帮助内奸AI确定场上形势。
-						因为正常情况下人机只能通过人头数粗略判断局势，显然有些超模武将会严重影响此判定。
-						为此给这些武将添加更高的权重帮助内奸AI及时认清局势。
-					<br>${xutou}“嘲讽”顾名思义，就是此技能拥有者的嘲讽将额外乘以这个技能的嘲讽值，以此煽动AI集火。
-						上面的“权重”也可以附加此效果，选项为［权重参与效益结算］。
-					<br><br>${xutou}顺带一提，身份局和斗地主的“伪禁”可以按身份区分禁将，你可以以此阻止特定身份的人机傻傻地选择不适合该身份的武将。
-				</span>
-				<br><br>${xutou}<span style='font-family: xingkai'>具体AI优化内容参见</span><b>菜单→(选项→)其他→帮助→AI优化</b>
-			`;
+	introduction: {
+		name: '<div style="color: #00FFFF">▶扩展介绍（点击展开）</div>',
+		clear: true,
+		onclick: function () {
+			if (this.config_more === undefined) {
+				const xutou = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+				const more = ui.create.div(
+					'.config_more',
+					ui.joint`
+						<div style="font-size: 14px; text-align: left">
+							<span style="font-family: yuanli">
+								本扩展以『云将』『官将重修』中部分功能为基础，
+								@柚子丶奶茶丶猫以及面具 退圈前已许可修改，
+								现由@翩翩浊世许公子 和 @157 整理，
+								暂无后续维护者，后续改动结果与原作者无关
+							</span>
+							<br /><br /><span style="font-family: shousha">
+								<span style="color: #FF3300">注意！</span>
+								本扩展与其他有AI功能的扩展同时打开可能会导致AI错乱。
+								若出现bug建议关闭本扩展后测试以进一步确定问题所在
+							</span>
+							<br /><span style="font-family: xingkai">
+								${xutou}本扩展主要优化了身份局AI和其他一些AI。
+								<br />${xutou}此外，本扩展还添加了查看态度、去除部分小游戏、（伪）玩家可选AI禁选系列功能、
+									身份局系列功能、胜负统计、技能嘲讽、武将权重等一系列能在一定程度上增加游戏乐趣的功能；
+									同时还支持复制/粘贴一些难以记忆的扩展配置，便于玩家重装游戏时备份相应数据。
+								<br />${xutou}此外需要解释的就是权重、嘲讽（技能威胁度）有何作用：
+								<br />${xutou}“权重”则是辅助身份局AI优化的，它将帮助内奸AI确定场上形势。
+									因为正常情况下人机只能通过人头数粗略判断局势，显然有些超模武将会影响此判定。
+									为此给这些武将添加更高的权重帮助内奸AI及时认清局势。
+								<br />${xutou}“嘲讽”顾名思义，就是此技能拥有者的嘲讽将额外乘以这个技能的嘲讽值，以此煽动AI集火。
+									上面的“权重”也可以附加此效果，选项为［权重参与效益结算］。
+							</span>
+							<br /><br /><span style="font-family: xingkai">${xutou}具体AI优化内容参见</span>
+							<b>菜单→(选项→)其他→帮助→AI优化</b>
+							<br /><br />扩展功能调整意见征集：
+							<br /><img style="width:240px" src="${lib.assetURL}extension/AI优化/img/promotion/word.png">
+						</div>
+					`
+				);
+				this.parentNode.insertBefore(more, this.nextSibling);
+				this.config_more = more;
+				this.innerHTML = '<div style="color: #00FFFF">▼扩展介绍（点击折叠）</div>';
+			} else {
+				this.parentNode.removeChild(this.config_more);
+				delete this.config_more;
+				this.innerHTML = '<div style="color: #00FFFF">▶扩展介绍（点击展开）</div>';
+			}
 		},
 	},
-	yqlj: {
-		name: '<font color=#00FFFF>友情链接</font>',
-		init: 'share',
-		unfrequent: true,
-		item: {
-			share: '点击查看',
-		},
-		textMenu(node, link) {
-			lib.setScroll(node.parentNode);
-			node.parentNode.style.transform = 'translateY(-100px)';
-			node.parentNode.style.height = '300px';
-			node.parentNode.style.width = '300px';
-			if (link === 'share')
-				node.innerHTML = ui.joint`
-					<hr>无名杀QQ频道：<br><img style=width:280px src=${lib.assetURL}extension/AI优化/img/promotion/qq.jpg>
-					<br><br>DoDo无名杀超级群：<br><img style=width:280px src=${lib.assetURL}extension/AI优化/img/promotion/dodo.jpg>
-					<br><br>无名杀本体更新内测群：392157644
-					<br><br>扩展功能调整意见征集：<br><img style=width:240px src=${lib.assetURL}extension/AI优化/img/promotion/word.png>
-				`;
+	recommendations: {
+		name: '<div style="color: #00FFFF">▶相关推荐（点击展开）</div>',
+		clear: true,
+		onclick: function () {
+			if (this.config_more === undefined) {
+				if (typeof game.copyGroup !== 'function') {
+					// 创建复制群号的全局函数
+					game.copyGroup = (name, number) => {
+						game.copy(number, `已成功将${name}群号复制到剪贴板`);
+					};
+				}
+				const groupStyle = 'font-size: 18px; cursor: pointer; text-decoration: underline; color: #1E90FF;';
+				let groups = [
+					['无名杀资源分享群', '518026909'],
+					['无名杀官方联机群', '367932654'],
+					['无名杀代码群', '698319604'],
+					['无名杀官方群Ⅱ', '885209661'],
+					['无名杀官方群Ⅲ', '459406548'],
+					['无名杀官方IV群', '833216087'],
+					['无名杀官方群V', '784030074'],
+					['无名杀官方群VI', '1079533768'],
+					['无名杀官方群VII', '707344364'],
+					['武将diy第九交流区', '693526248'],
+					['无名杀官方群X', '729583887'],
+					['无名杀官方群XII', '500004047'],
+					['无名杀官方群XIII', '752253383'],
+					['无名杀官方群XIV', '157944551'],
+					['无名杀官方群XV', '885656146'],
+					['无名杀官方群XVI', '699978396'],
+					['无名杀官方群XVIII', '514420615'],
+					['无名杀官方群XX', '565580233'],
+					['无名杀内测资源整合群', '1037970212'],
+					['无名杀本体更新内测群', '392157644'],
+				];
+				let str = '';
+				for (const arr of groups) {
+					str += `
+						<br /><span style="${groupStyle}" onclick="game.copyGroup('${arr[0]}', '${arr[1]}')">${arr[0]}：${arr[1]}</span>
+					`;
+				}
+				const more = ui.create.div(
+					'.config_more',
+					ui.joint`
+						<div style="line-height: 21px; text-align: left">
+							<span style="color: #FFFF00; font-size: 14px">
+								本体仓库地址：https://github.com/libnoname/noname
+							</span>
+							<br />无名杀QQ频道：
+							<br /><img style="width:256px" src="${lib.assetURL}extension/AI优化/img/promotion/qq.jpg">
+							<br /><br />点按即可复制对应群号：${str}
+						</div>
+					`
+				);
+				this.parentNode.insertBefore(more, this.nextSibling);
+				this.config_more = more;
+				this.innerHTML = '<div style="color: #00FFFF">▼相关推荐（点击折叠）</div>';
+			} else {
+				this.parentNode.removeChild(this.config_more);
+				delete this.config_more;
+				this.innerHTML = '<div style="color: #00FFFF">▶相关推荐（点击展开）</div>';
+			}
 		},
 	},
 	copyGit: {
-		name: '一键复制<font color=#FFFF00>GitHub</font><font color=#00FFFF>仓库链接</font>',
+		name: '一键复制<span style="color: #FFFF00">GitHub</span><span style="color: #00FFFF">仓库链接</span>',
 		clear: true,
 		onclick() {
 			game.copy('https://github.com/PZ157/noname_AIOptimization', '链接已复制到剪贴板，欢迎志同道合之人为无名杀和本扩展提供代码');
@@ -83,9 +127,13 @@ export let config = {
 	tip1: {
 		clear: true,
 		name: ui.joint`
-			<hr><center><font color=#00FFB0>以下大部分选项长按有提示</font>！</center>
-			<center><span style='font-family: xingkai'>行楷字体选项</span>均<font color=#FFFF00>即时生效</font>！</center>
-			<br><center>AI相关</center>
+			<hr aria-hidden="true"><div style="display: flex; justify-content: center">
+				<span style="color: #00FFB0">以下大部分选项长按有提示</span>！
+			</div>
+			<div style="display: flex; justify-content: center">
+				<span style="font-family: xingkai">行楷字体选项</span>均<span style="color: #FFFF00">即时生效</span>！
+			</div>
+			<br /><div style="display: flex; justify-content: center">AI相关</div>
 		`,
 		nopointer: true,
 	},
@@ -131,7 +179,7 @@ export let config = {
 	},
 	bd2: {
 		clear: true,
-		name: '<center>常用功能</center>',
+		name: '<div style="display: flex; justify-content: center">常用功能</div>',
 		nopointer: true,
 	},
 	viewAtt: {
@@ -144,7 +192,7 @@ export let config = {
 		intro: ui.joint`
 			去除手杀马钧〖巧思〗、手杀孙寒华〖冲虚〗、手杀南华老仙〖御风〗、手杀庞德公〖评才〗、手杀郑玄〖整经〗、手杀周群〖天算〗、
 				OL蒲元〖神工〗、国崎往人〖控物〗的小游戏，重启生效。
-			（注意：若有其他拓展修改了对应技能小游戏则可能会报错，关闭此选项即可）
+				（注意：若有其他拓展修改了对应技能小游戏则可能会报错，关闭此选项即可）
 		`,
 		init: false,
 	},
@@ -240,7 +288,7 @@ export let config = {
 	},
 	bd3: {
 		clear: true,
-		name: '<center>身份局相关功能</center>',
+		name: '<div style="display: flex; justify-content: center">身份局相关功能</div>',
 		nopointer: true,
 	},
 	findZhong: {
@@ -252,7 +300,7 @@ export let config = {
 		name: '<span style="font-family: xingkai">内奸可亮明身份</span>',
 		intro: ui.joint`
 			内奸可以于出牌阶段直接亮明身份并加1点体力上限，然后可以选择与主公各回复1点体力，建议与［身份局AI优化］搭配使用，
-			<font color=#FF3300>不然会显得非常无脑</font>
+				<span style="color: #FF3300">不然会显得非常无脑</span>
 		`,
 		init: 'off',
 		item: {
@@ -263,12 +311,13 @@ export let config = {
 	},
 	bd4: {
 		clear: true,
-		name: '<center>内奸权重策略</center>',
+		name: '<div style="display: flex; justify-content: center">内奸权重策略</div>',
 	},
 	tip2: {
 		name: ui.joint`
-			<font color=#FF3300>注意！</font>
-			通过以下功能设置的权重将<font color=#FFFF00>优先</font>作为<font color=#00FFFF>内奸AI</font>判断场上角色实力的参考
+			<span style="color: #FF3300">注意！</span>
+				通过以下功能设置的权重将<span style="color: #FFFF00">优先</span>
+				作为<span style="color: #00FFFF">内奸AI</span>判断场上角色实力的参考
 		`,
 		clear: true,
 	},
@@ -276,7 +325,7 @@ export let config = {
 		name: '<span style="font-family: xingkai">出牌可修改武将权重</span>',
 		intro: ui.joint`
 			出牌阶段可以设置/修改场上武将的权重，以此影响内奸AI策略
-			<br><font color=#FF3300>注意！</font>凡涉及影响权重的功能均需开启［身份局AI优化］方才有实际效果！
+			<br /><span style="color: #FF3300">注意！</span>凡涉及影响权重的功能均需开启［身份局AI优化］方才有实际效果！
 		`,
 		init: false,
 	},
@@ -403,15 +452,16 @@ export let config = {
 	},
 	bd5: {
 		clear: true,
-		name: '<center>技能威胁度</center>',
+		name: '<div style="display: flex; justify-content: center">技能威胁度</div>',
 		nopointer: true,
 	},
 	tip3: {
 		name: ui.joint`
-			<font color=#FF3300>注意！</font>通过以下功能修改的技能威胁度会<font color=#00FFFF>覆盖</font>技能原有的威胁度
-			<br>&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp由于威胁度一般会与卡牌收益作积，
+			<span style="color: #FF3300">注意！</span>
+				通过以下功能修改的技能威胁度会<span style="color: #00FFFF">覆盖</span>技能原有的威胁度
+			<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;由于威胁度一般会与卡牌收益作积，
 				为避免新手胡乱设置可能引起的错乱ai，
-				故部分功能不允许将威胁度设为<font color=#FFFF00>非正数</font>
+				故部分功能不允许将威胁度设为<span style="color: #FFFF00">非正数</span>
 		`,
 		clear: true,
 	},
@@ -424,8 +474,8 @@ export let config = {
 		name: '威胁度补充',
 		intro: ui.joint`
 			〔按评级自动补充〕会在进入游戏时根据武将评级对没有添加威胁度的武将技能增加一定威胁度；
-			<br>〔按品质自动补充〕与前者类似，区别在于前者分九档，后者分五档；此外单机时可通过〈千幻聆音〉等扩展修改武将品质；
-			<br>〔手动补充〕会在游戏开始或隐匿武将展示武将牌时建议玩家为没有添加威胁度的技能赋威胁度
+			<br />〔按品质自动补充〕与前者类似，区别在于前者分九档，后者分五档；此外单机时可通过〈千幻聆音〉等扩展修改武将品质；
+			<br />〔手动补充〕会在游戏开始或隐匿武将展示武将牌时建议玩家为没有添加威胁度的技能赋威胁度
 		`,
 		init: 'off',
 		item: {
@@ -520,7 +570,7 @@ export let config = {
 		},
 	},
 	bd6: {
-		name: '<hr>',
+		name: '<hr aria-hidden="true">',
 		clear: true,
 	},
 };
