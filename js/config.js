@@ -7,7 +7,8 @@ export let config = {
 	introduction: {
 		name: '<div style="color: #00FFFF">▶扩展介绍（点击展开）</div>',
 		clear: true,
-		onclick: function () {
+		onclick() {
+			/** 摘自《搬运自用》 */
 			if (this.config_more === undefined) {
 				const xutou = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
 				const more = ui.create.div(
@@ -57,7 +58,8 @@ export let config = {
 	recommendations: {
 		name: '<div style="color: #00FFFF">▶相关推荐（点击展开）</div>',
 		clear: true,
-		onclick: function () {
+		onclick() {
+			/** 摘自《搬运自用》 */
 			if (this.config_more === undefined) {
 				if (typeof game.copyGroup !== 'function') {
 					// 创建复制群号的全局函数
@@ -343,6 +345,15 @@ export let config = {
 		name: '胜率代替权重',
 		intro: '开启后，内奸AI分析局势时将检查场上武将所选身份/阵营对应胜负统计总场数是否满足上一选项条件，如果满足则用胜率换算值代替原有权重',
 		init: false,
+		onclick(bool) {
+			if (
+				!bool ||
+				typeof game.purifySFConfig === 'function' ||
+				confirm('检测到《胜负统计》未安装/未开启，此功能暂无效果，是否依然开启此功能？')
+			) {
+				game.saveExtensionConfig('AI优化', 'takeQz', bool);
+			}
+		},
 	},
 	min: {
 		name: '<span style="font-family: xingkai">只利用总场数不少于</font>',
