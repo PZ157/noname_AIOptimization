@@ -46,7 +46,7 @@ export function precontent(config, pack) {
 				'◆移除无效的［测试&前瞻AI开关］功能',
 				'◆修复版本检测逻辑',
 				'◆模块拆分',
-				'◆更正部分描述',
+				'◆移除部分过时内容',
 				'◆本扩展无限期停更，任何人均可二创修复',
 			];
 			let ul = document.createElement('ul');

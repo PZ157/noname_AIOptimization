@@ -40,8 +40,6 @@ export let config = {
 							</span>
 							<br /><br /><span style="font-family: xingkai">${xutou}具体AI优化内容参见</span>
 							<b>菜单→(选项→)其他→帮助→AI优化</b>
-							<br /><br />扩展功能调整意见征集：
-							<br /><img style="width:240px" src="${lib.assetURL}extension/AI优化/img/promotion/word.png">
 						</div>
 					`
 				);
