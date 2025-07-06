@@ -8,7 +8,7 @@ export function precontent(config, pack) {
 				.split('.')
 				.slice(2)
 				.map((i) => Number(i)),
-			min = [7],
+			min = [17],
 			status = false;
 		while (noname.length < min.length) {
 			noname.push(0);

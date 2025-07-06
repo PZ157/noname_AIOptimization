@@ -1,7 +1,7 @@
 {
 	"name": "AI优化",
 	"author": "",
-	"intro": "<span style='color: #FF3300'>注意！</span>当前为<b>测试版本</b>，可能有较多bug。最新稳定版本<span style='color: #FFFF00'>1.5.3.1</span><hr aria-hidden='true'><span style='color: #00FFFF'>更新日期</span>：25年<span style='color: #00FFB0'> 6</span>月<span style='color: #FFFF00'>25</span>日<br /><span style='color: #00FFFF'>建立者</span>：<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;柚子丶奶茶丶猫以及面具<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;翩翩浊世许公子<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;157<br /><span style='color: #00FFB0'>扩展当前版本号</span>：<span style='color: #FFFF00'>1.5.4.3</span><br /><span style='color: #00FFB0'>支持本体最低版本号</span>：<span style='color: #FFFF00'>1.10.7</span>",
+	"intro": "<span style='color: #FF3300'>注意！</span>当前为<b>测试版本</b>，可能有较多bug。最新稳定版本<span style='color: #FFFF00'>1.5.3.1</span><hr aria-hidden='true'><span style='color: #00FFFF'>更新日期</span>：25年<span style='color: #00FFB0'> 7</span>月<span style='color: #FFFF00'> 6</span>日<br /><span style='color: #00FFFF'>建立者</span>：<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;柚子丶奶茶丶猫以及面具<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;翩翩浊世许公子<br />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;157<br /><span style='color: #00FFB0'>扩展当前版本号</span>：<span style='color: #FFFF00'>1.5.4.3</span><br /><span style='color: #00FFB0'>支持本体最低版本号</span>：<span style='color: #FFFF00'>1.10.7</span>",
 	"version": "1.5.4.3",
 	"diskURL": "https://github.com/PZ157/noname_AIOptimization",
 	"forumURL": ""
