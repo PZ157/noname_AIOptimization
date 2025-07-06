@@ -10,8 +10,8 @@ let extensionPackage = {
 	content: function () {},
 	precontent,
 	arenaReady,
-	config: config,
-	help: help,
+	config,
+	help,
 	package: {},
 	files: {},
 };
