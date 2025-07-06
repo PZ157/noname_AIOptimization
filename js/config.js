@@ -174,11 +174,6 @@ export let config = {
 		intro: '开启后，即使队友残血AI依然会考虑要不要放南蛮万箭',
 		init: false,
 	},
-	dev: {
-		name: '测试&前瞻AI开关',
-		intro: '目前暂无测试/前瞻AI优化',
-		init: false,
-	},
 	bd2: {
 		clear: true,
 		name: '<div style="display: flex; justify-content: center">常用功能</div>',
