@@ -38,15 +38,14 @@ export function precontent(config, pack) {
 					<div style="display: flex; justify-content: center">
 						<span style="color: #00FFFF">更新日期</span>：
 						<span style="color: #FFFF00">2025</span>年
-						<span style="color: #00FFB0">11</span>月
-						<span style="color: rgb(255, 146, 68)">30</span>日
+						<span style="color: #00FFB0">12</span>月
+						<span style="color: rgb(255, 146, 68)">1</span>日
 					</div>
 				`,
 				'非常感谢@一寒 贡献的代码，本次更新仅作整理修复',
-				'◆修复身份局AI中的大量错误',
-				'◆修复AI强化〔置换〕发动概率错误',
-				'◆修正AI强化〔泣血〕〔破甲〕描述错误和发动提示',
-				'◆调整部分显示内容',
+				'◆修复上个版本AI强化〔置换〕bug',
+				'◆修复［防酒杀AI］的检测错误',
+				'◆移除部分无效代码片段',
 				'※本扩展无限期停更，任何人均可二创修复',
 			];
 			let ul = document.createElement('ul');
@@ -984,7 +983,6 @@ export function precontent(config, pack) {
 						const hand = ai.storage.enemyHandData;
 						const cardName = get.name(card, ai);
 						const playerHandSuits = hand.suits || {};
-						const playerHandNums = hand.numbers || {};
 						const playerEquips = hand.equips || {};
 
 						// 火攻花色判断
@@ -994,15 +992,6 @@ export function precontent(config, pack) {
 							const matchedSuits = requiredSuits.filter((s) => aiSuits.has(s));
 							if (matchedSuits.length < Math.ceil(requiredSuits.length / 2)) {
 								return [1, -3];
-							}
-						}
-
-						// 拼点策略
-						if (ai.hasSkill('compare') && cardName === 'compare') {
-							const playerMaxNum = Math.max(...(Object.values(playerHandNums) || [0]));
-							const aiMaxNum = Math.max(...ai.getCards('h').map((c) => get.number(c) || 0));
-							if (aiMaxNum > playerMaxNum) {
-								return [1, 2];
 							}
 						}
 
@@ -1041,35 +1030,6 @@ export function precontent(config, pack) {
 							if (['shunshou', 'guohe'].includes(cardName)) return [1, 2]; // 提高拆牌优先级
 						}
 					},
-					discard(card, ai) {
-						if (!ai.storage.enemyHandData || !lib.config.extension_AI优化_aiFuhui) return;
-						const hand = ai.storage.enemyHandData;
-						const cardName = get.name(card, ai);
-
-						// 玩家有酒→AI必留1张闪
-						if (hand.jiu > 0 && cardName === 'shan') {
-							const shanCount = ai.countCards('h', (c) => get.name(c, ai) === 'shan');
-							if (shanCount <= 1) return [1, -10];
-						}
-
-						// 玩家有无懈→AI必留1张无懈
-						if (hand.wuxie > 0 && cardName === 'wuxie') {
-							const wuxieCount = ai.countCards('h', (c) => get.name(c, ai) === 'wuxie');
-							if (wuxieCount <= 1) return [1, -10];
-						}
-
-						// 玩家有装备→AI保留拆牌
-						const playerEquips = hand.equips || {};
-						if (Object.keys(playerEquips).length > 0 && ['shunshou', 'guohe'].includes(cardName)) {
-							const cardCount = ai.countCards('h', (c) => ['shunshou', 'guohe'].includes(get.name(c, ai)));
-							if (cardCount <= 1) return [1, -10];
-						}
-					},
-					equip(card, ai) {
-						if (!ai.storage.enemyHandData || !lib.config.extension_AI优化_aiFuhui) return;
-						const hand = ai.storage.enemyHandData;
-						if (hand.guohe > 0 || hand.shunshou > 0) return [1, -5];
-					},
 				},
 			},
 			charlotte: true,
@@ -1087,7 +1047,7 @@ export function precontent(config, pack) {
 					player: (card, player, target) => {
 						if (typeof card !== 'object' || player.hp <= 1 || get.name(card, player) !== 'shan') return;
 						const par = _status.event.getParent(2);
-						if (par && par.player.hasCard('jiu', 'h') && player.mayHaveSha(player, 'use')) {
+						if (par && par.player.hasCard('jiu', 'hs') && par.player.mayHaveSha(player, 'use')) {
 							return 'zeroplayertarget';
 						}
 					},
@@ -1884,24 +1844,25 @@ export function precontent(config, pack) {
 			allowChooseAll: true,
 			prompt: '弃置任意张牌并摸等量的牌',
 			check(card) {
-				let player = _status.event.player;
+				const player = _status.event.player;
 				if (get.position(card) === 'h') {
 					const type = get.type(card);
+					const val = get.value(card);
 					if (type === 'equip') {
-						return 9 - get.value(card);
+						return 9 - value;
 					}
 					if (type === 'basic') {
 						const name = get.name(card);
 						const selected = ui.selected.cards.concat([card]);
 						const others = player.getCards('hs', (c) => !selected.includes(c)).map((c) => get.name(c));
 						if (!others.includes(name)) {
-							return player.getHp() - get.value(card);
+							return player.getHp() - val;
 						}
-						return 8 - get.value(card);
+						return 8 - val;
 					}
-					return 6 - get.value(card);
+					return 6 - val;
 				}
-				return player.getHp() - get.value(card);
+				return player.getHp() - val;
 			},
 			filter(event, player) {
 				if (player === game.me || !lib.config.extension_AI优化_aiEnhanceDiscardDraw || !lib.config.extension_AI优化_sfjAi) {
@@ -1927,9 +1888,8 @@ export function precontent(config, pack) {
 					init(player) {
 						player.storage._aiyh_aiEnhance_discardDraw_clear = Math.random() < 0.3;
 					},
-					trigger: { player: 'phaseEnd' },
-					silent: true,
-					locked: true,
+					charlotte: true,
+					superCharlotte: true,
 					onremove: true,
 				},
 			},
