@@ -39,7 +39,7 @@ export function precontent(config, pack) {
 						<span style="color: #00FFFF">更新日期</span>：
 						<span style="color: #FFFF00">2025</span>年
 						<span style="color: #00FFB0">11</span>月
-						<span style="color: rgb(255, 146, 68)">27</span>日
+						<span style="color: rgb(255, 146, 68)">30</span>日
 					</div>
 				`,
 				'非常感谢@一寒 贡献的代码，本次更新仅作整理修复',
