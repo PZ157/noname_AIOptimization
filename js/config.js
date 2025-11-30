@@ -288,10 +288,7 @@ export let config = {
 					if (map.length > 0) {
 						str += map.map((rule) => `	"${rule}"`).join(',\n') + '\n';
 					} else {
-						str += `	"leiji/sha/shan", // 雷击：自身有杀 + 目标有闪
- 	"releiji/sha/shan*bagua", // 雷击目标有闪或八卦阵
- 	"ao_xishi/diamond/none" // 习事：自身有方块牌
- `;
+						str += `\t"leiji/sha/shan", // 雷击：自身有杀 + 目标有闪\n\t"releiji/sha/shan*bagua", // 雷击目标有闪或八卦阵\n\t"ao_xishi/diamond/none" // 习事：自身有方块牌\n `;
 					}
 					str += '];';
 					node.code = str;
@@ -350,11 +347,9 @@ export let config = {
 					let map = lib.config.extension_AI优化_aiSkillReleaseOpt || [];
 					let str = 'skillIds = [\n';
 					if (map.length > 0) {
-						str += map.map((id) => `	"${id}"`).join(',\n') + '\n';
+						str += map.map((id) => `\t"${id}"`).join(',\n') + '\n';
 					} else {
-						str += `	"fangzhu", // 曹丕放逐
-	"sbfangzhu" // 同一技能不同ID
-`;
+						str += `\t"fangzhu", // 曹丕放逐\n\t"sbfangzhu" // 同一技能不同ID\n`;
 					}
 					str += '];';
 					node.code = str;
@@ -729,10 +724,9 @@ export let config = {
 	},
 	bd2: {
 		clear: true,
-		name: '<div style="display: flex; justify-content: center">〔以下功能未动过，可能开启会导致不兼容弹窗错误〕</div>',
+		name: '<div style="display: flex; justify-content: center">常用功能</div>',
 		nopointer: true,
 	},
-
 	rank: {
 		name: '修改武将评级显示',
 		intro: '开启后，将修改武将栏界面中的武将评级显示内容',
@@ -823,7 +817,6 @@ export let config = {
 			}
 		},
 	},
-
 	bd3: {
 		clear: true,
 		name: '<div style="display: flex; justify-content: center">内奸权重策略</div>',

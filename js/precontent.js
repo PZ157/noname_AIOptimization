@@ -39,15 +39,14 @@ export function precontent(config, pack) {
 						<span style="color: #00FFFF">更新日期</span>：
 						<span style="color: #FFFF00">2025</span>年
 						<span style="color: #00FFB0">11</span>月
-						<span style="color: rgb(255, 146, 68)">26</span>日
+						<span style="color: rgb(255, 146, 68)">27</span>日
 					</div>
 				`,
 				'非常感谢@一寒 贡献的代码，本次更新仅作整理修复',
-				'◆修复〔出牌可修改技能威胁度〕多技能的显示不全和弹窗问题',
-				'◆修正AI强化〔泣血〕〔破甲〕描述错误',
-				'◆将@一寒 的版本号从1.5.4.4～1.5.4.12改为2.0～2.0.7区间',
-				'◆移除开发者选项',
-				'◆格式化代码',
+				'◆修复身份局AI中的大量错误',
+				'◆修复AI强化〔置换〕发动概率错误',
+				'◆修正AI强化〔泣血〕〔破甲〕描述错误和发动提示',
+				'◆调整部分显示内容',
 				'※本扩展无限期停更，任何人均可二创修复',
 			];
 			let ul = document.createElement('ul');
@@ -341,8 +340,9 @@ export function precontent(config, pack) {
 					}
 				}
 			}
-
-			player.addSkill('aiyh_gjcx_qj');
+			if (lib.config.extension_AI优化_qjAi) {
+				player.addSkill('aiyh_gjcx_qj');
+			}
 
 			// 身份局专属AI
 			if (get.mode() === 'identity' && lib.config.extension_AI优化_sfjAi && !['zhong', 'purple'].includes(_status.mode)) {
@@ -989,7 +989,7 @@ export function precontent(config, pack) {
 
 						// 火攻花色判断
 						if (cardName === 'huogong') {
-							const aiSuits = new Set(ai.getCards('hand').map((c) => get.suit(c)));
+							const aiSuits = new Set(ai.getCards('h').map((c) => get.suit(c)));
 							const requiredSuits = Object.keys(playerHandSuits).filter((s) => playerHandSuits[s] > 0);
 							const matchedSuits = requiredSuits.filter((s) => aiSuits.has(s));
 							if (matchedSuits.length < Math.ceil(requiredSuits.length / 2)) {
@@ -1000,7 +1000,7 @@ export function precontent(config, pack) {
 						// 拼点策略
 						if (ai.hasSkill('compare') && cardName === 'compare') {
 							const playerMaxNum = Math.max(...(Object.values(playerHandNums) || [0]));
-							const aiMaxNum = Math.max(...ai.getCards('hand').map((c) => get.number(c) || 0));
+							const aiMaxNum = Math.max(...ai.getCards('h').map((c) => get.number(c) || 0));
 							if (aiMaxNum > playerMaxNum) {
 								return [1, 2];
 							}
@@ -1008,7 +1008,7 @@ export function precontent(config, pack) {
 
 						// 基础牌应对逻辑
 						if (cardName === 'sha' && hand.shan > 1) return [1, -2];
-						if ((cardName === 'sha' && ai.hasCard('jiu', 'hand')) || cardName === 'wanjian') {
+						if ((cardName === 'sha' && ai.hasCard('jiu', 'h')) || cardName === 'wanjian') {
 							if (hand.shan === 0) return [1, 2];
 						}
 						if ((cardName === 'nanman' || cardName === 'juedou') && hand.sha === 0) {
@@ -1048,20 +1048,20 @@ export function precontent(config, pack) {
 
 						// 玩家有酒→AI必留1张闪
 						if (hand.jiu > 0 && cardName === 'shan') {
-							const shanCount = ai.countCards('hand', (c) => get.name(c, ai) === 'shan');
+							const shanCount = ai.countCards('h', (c) => get.name(c, ai) === 'shan');
 							if (shanCount <= 1) return [1, -10];
 						}
 
 						// 玩家有无懈→AI必留1张无懈
 						if (hand.wuxie > 0 && cardName === 'wuxie') {
-							const wuxieCount = ai.countCards('hand', (c) => get.name(c, ai) === 'wuxie');
+							const wuxieCount = ai.countCards('h', (c) => get.name(c, ai) === 'wuxie');
 							if (wuxieCount <= 1) return [1, -10];
 						}
 
 						// 玩家有装备→AI保留拆牌
 						const playerEquips = hand.equips || {};
 						if (Object.keys(playerEquips).length > 0 && ['shunshou', 'guohe'].includes(cardName)) {
-							const cardCount = ai.countCards('hand', (c) => ['shunshou', 'guohe'].includes(get.name(c, ai)));
+							const cardCount = ai.countCards('h', (c) => ['shunshou', 'guohe'].includes(get.name(c, ai)));
 							if (cardCount <= 1) return [1, -10];
 						}
 					},
@@ -1087,7 +1087,7 @@ export function precontent(config, pack) {
 					player: (card, player, target) => {
 						if (typeof card !== 'object' || player.hp <= 1 || get.name(card, player) !== 'shan') return;
 						const par = _status.event.getParent(2);
-						if (par && par.player.hasCard('jiu', 'hand') && player.mayHaveSha(player, 'use')) {
+						if (par && par.player.hasCard('jiu', 'h') && player.mayHaveSha(player, 'use')) {
 							return 'zeroplayertarget';
 						}
 					},
@@ -1570,13 +1570,13 @@ export function precontent(config, pack) {
 				const isTargetMeetSingleCond = (target, cond) => {
 					if (cond === 'none') return true;
 					if (['diamond', 'heart', 'spade', 'club'].includes(cond)) {
-						return target.countCards('hand', (c) => get.suit(c) === cond) > 0;
+						return target.countCards('h', (c) => get.suit(c) === cond) > 0;
 					}
 					if (['bagua', 'qinggang', 'tengjia', 'renwang'].includes(cond)) {
 						const equips = target.getEquips();
 						return equips.some((equip) => get.name(equip, target) === cond || equip.type === cond);
 					}
-					return target.countCards('hand', (c) => get.name(c, target) === cond) > 0;
+					return target.countCards('h', (c) => get.name(c, target) === cond) > 0;
 				};
 
 				let hasValidCooperate = false;
@@ -1599,9 +1599,9 @@ export function precontent(config, pack) {
 					let selfMeet = false;
 					if (selfCond === 'none') selfMeet = true;
 					else if (['diamond', 'heart', 'spade', 'club'].includes(selfCond)) {
-						selfMeet = ai.countCards('hand', (c) => get.suit(c) === selfCond) > 0;
+						selfMeet = ai.countCards('h', (c) => get.suit(c) === selfCond) > 0;
 					} else {
-						selfMeet = ai.countCards('hand', (c) => get.name(c, ai) === selfCond) > 0;
+						selfMeet = ai.countCards('h', (c) => get.name(c, ai) === selfCond) > 0;
 					}
 					if (!selfMeet) {
 						if (debugMode)
@@ -1856,14 +1856,16 @@ export function precontent(config, pack) {
 
 		// AI强化〔置换〕
 		lib.skill._aiyh_aiEnhance_discardDraw = {
-			audio: 2,
-			audioname: ['gz_jun_sunquan'],
-			audioname2: {
-				xin_simayi: 'jilue_zhiheng',
-			},
 			mod: {
 				aiOrder(player, card, num) {
-					if (num <= 0 || get.itemtype(card) !== 'card' || get.type(card) !== 'equip') {
+					if (
+						num <= 0 ||
+						player === game.me ||
+						!lib.config.extension_AI优化_aiEnhanceDiscardDraw ||
+						!lib.config.extension_AI优化_sfjAi ||
+						get.itemtype(card) !== 'card' ||
+						get.type(card) !== 'equip'
+					) {
 						return num;
 					}
 					let eq = player.getEquip(get.subtype(card));
@@ -1883,101 +1885,65 @@ export function precontent(config, pack) {
 			prompt: '弃置任意张牌并摸等量的牌',
 			check(card) {
 				let player = _status.event.player;
-				if (get.position(card) == 'e') {
-					let subs = get.subtypes(card);
-					if (subs.includes('equip2') || subs.includes('equip3')) {
-						return player.getHp() - get.value(card);
+				if (get.position(card) === 'h') {
+					const type = get.type(card);
+					if (type === 'equip') {
+						return 9 - get.value(card);
 					}
+					if (type === 'basic') {
+						const name = get.name(card);
+						const selected = ui.selected.cards.concat([card]);
+						const others = player.getCards('hs', (c) => !selected.includes(c)).map((c) => get.name(c));
+						if (!others.includes(name)) {
+							return player.getHp() - get.value(card);
+						}
+						return 8 - get.value(card);
+					}
+					return 6 - get.value(card);
 				}
-				return 6 - get.value(card);
+				return player.getHp() - get.value(card);
 			},
 			filter(event, player) {
-				return player !== game.me && lib.config.extension_AI优化_aiEnhanceDiscardDraw && lib.config.extension_AI优化_sfjAi;
+				if (player === game.me || !lib.config.extension_AI优化_aiEnhanceDiscardDraw || !lib.config.extension_AI优化_sfjAi) {
+					return false;
+				}
+				player.addTempSkill('_aiyh_aiEnhance_discardDraw_clear');
+				return player.storage._aiyh_aiEnhance_discardDraw_clear;
 			},
-			filterTarget: false,
 			charlotte: true,
 			superCharlotte: true,
 			async content(event, trigger, player) {
-				// 二次校验开关，确保关闭时不执行
-				if (!lib.config.extension_AI优化_aiEnhanceDiscardDraw || !lib.config.extension_AI优化_sfjAi) return;
-
-				if (!player.storage.aiEnhanceDiscardCount) {
-					player.storage.aiEnhanceDiscardCount = 0;
-				}
-				player.storage.aiEnhanceDiscardCount += 1;
-				const discardCount = event.cards.length;
-				await player.discard(event.cards);
-				await player.draw(discardCount);
-				if (lib.config.extension_AI优化_devToolMutualFigh) {
-					const cardNames = event.cards.map((card) => get.name(card, player)).join('、');
-					const remaining = 1 - player.storage.aiEnhanceDiscardCount;
-					game.log(
-						player,
-						`<span style="color:#FFD700">〔${lib.translate._aiyh_aiEnhance_discardDraw}〕${get.translation(
-							player
-						)}触发30%几率发动弃牌摸牌，弃置${discardCount}张牌（${cardNames}），摸${discardCount}张牌，本回合剩余次数：${
-							remaining >= 0 ? remaining : 0
-						}</span>`
-					);
-				}
+				await player.draw(event.cards.length);
 			},
 			ai: {
 				order: 1,
 				result: {
-					player(player) {
-						const triggerRate = 30;
-						const random = Math.floor(Math.random() * 100) + 1;
-						const isTrigger = random <= triggerRate;
-						return isTrigger ? 1 : -Infinity;
-					},
-					card(card, player) {
-						const cardName = get.name(card, player);
-						const cardType = get.type(card);
-						const cardColor = get.color(card);
-						if (cardName === 'sha' && cardColor === 'black') return -5;
-						if (cardType === 'equip') {
-							const equipSubtype = get.subtype(card);
-							const hasSameEquip = player.getEquips(equipSubtype).length > 0;
-							if (hasSameEquip) return -2;
-							const coreEquips = ['qinggang', 'zhangba', 'zhuge', 'bagua', 'renwang'];
-							if (!coreEquips.includes(cardName)) return -1;
-						}
-						if (cardType === 'trick') {
-							const lowPriorityTricks = ['wanjian', 'nanman', 'juedou'];
-							if (lowPriorityTricks.includes(cardName)) return -1;
-						}
-						const highPriorityCards = [
-							'wuzhong',
-							'shunshou',
-							'lebu',
-							'bingliang',
-							'shan',
-							'tao',
-							'qinggang',
-							'bagua',
-							'zhuge',
-							'huosha',
-							'leisha',
-						];
-						if (highPriorityCards.includes(cardName)) return 5;
-						return 0;
-					},
+					player: 1,
 				},
 				threaten: 1.5,
 			},
-			_priority: 0,
+			subSkill: {
+				clear: {
+					init(player) {
+						player.storage._aiyh_aiEnhance_discardDraw_clear = Math.random() < 0.3;
+					},
+					trigger: { player: 'phaseEnd' },
+					silent: true,
+					locked: true,
+					onremove: true,
+				},
+			},
 		};
 
 		// AI强化〔泣血〕
 		lib.skill._aiyh_aiEnhance_redTaoHeal = {
+			mode: ['identity'],
+			trigger: { player: 'recoverBegin' },
 			forced: true,
-			trigger: { global: 'recoverBegin' },
 			// nopop: true,
 			charlotte: true,
 			superCharlotte: true,
 			priority: Infinity,
-			_priority: Infinity,
-			mode: ['identity'],
 			filter(event, player) {
 				return (
 					player !== game.me &&
@@ -2004,7 +1970,6 @@ export function precontent(config, pack) {
 			superCharlotte: true,
 			forced: true,
 			priority: Infinity,
-			_priority: 100,
 			filter(event, player) {
 				return (
 					player !== game.me &&
@@ -2019,13 +1984,12 @@ export function precontent(config, pack) {
 		};
 		// AI强化〔破甲〕
 		lib.skill._aiyh_aiEnhance_ignoreArmor = {
+			mode: ['identity'],
 			forced: true,
 			trigger: { source: 'damageBegin1' },
 			// nopop: true,
 			charlotte: true,
 			priority: Infinity,
-			_priority: Infinity,
-			mode: ['identity'],
 			filter(event, player) {
 				return (
 					player !== game.me &&
@@ -2060,7 +2024,7 @@ export function precontent(config, pack) {
 				};
 
 				// 统计手牌信息
-				player.getCards('hand').forEach((card) => {
+				player.getCards('h').forEach((card) => {
 					const name = get.name(card, player);
 					const suit = get.suit(card) || 'none';
 					const number = get.number(card) || 0;
@@ -2094,10 +2058,11 @@ export function precontent(config, pack) {
 					// （日志优化）
 					if (lib.config.extension_AI优化_devToolMutualFigh) {
 						const logMsg = `〖${get.translation(ai)}〗获取敌手牌：
-					武将ID: ${JSON.stringify(handData.controlledCharIds)}
-					牌型: ${JSON.stringify(handData.cards)}
-					花色: ${JSON.stringify(handData.suits)}
-					点数: ${JSON.stringify(handData.numbers)}`;
+							武将ID: ${JSON.stringify(handData.controlledCharIds)}
+							牌型: ${JSON.stringify(handData.cards)}
+							花色: ${JSON.stringify(handData.suits)}
+							点数: ${JSON.stringify(handData.numbers)}
+						`;
 						game.log(ai, logMsg.replace(/\n/g, '<br>'));
 					}
 				});
@@ -2121,11 +2086,10 @@ export function precontent(config, pack) {
 			async content(event, trigger, ai) {
 				// 定义各类牌完整名称映射
 				const cardMap = {
-					basic: ['sha', 'shan', 'tao', 'jiu', 'huosha', 'leisha'],
+					basic: ['sha', 'shan', 'tao', 'jiu'],
 					equip: {
 						armor: ['bagua', 'renwang', 'tengjia', 'baiyin'],
-						horse: ['fangyu_ma', 'jingong_ma'], // 防御马/进攻马（按实际ID调整）
-						weapon: ['zhuge', 'qinggang', 'shiguan', 'qilin', 'qinglong', 'zhangba', 'fangtian', 'zhuque', 'guding'],
+						weapon: ['zhuge', 'qinggang', 'guanshi', 'qilin', 'qinglong', 'zhangba', 'fangtian', 'zhuque', 'guding'],
 					},
 					trick: [
 						'wuxie',
@@ -2146,53 +2110,45 @@ export function precontent(config, pack) {
 				};
 
 				// 定义价值排序规则（基础分1-10，分数越高价值越高）
-				const getCardValue = (cardName, ai) => {
-					const cardType = get.type(get.cardByName(cardName));
+				const getCardValue = (card) => {
+					const cardName = get.name(card);
+					const cardType = get.type(card);
 					const enemies = game.filterPlayer((p) => get.attitude(ai, p) < 0 && p.isIn());
 					const hasFireThunderSha = enemies.some((p) =>
-						p.countCards('hand', (c) => ['huosha', 'leisha'].includes(get.name(c)))
+						p.countCards('h', (c) => get.name(c) === 'sha' && (game.hasNature(c, 'thunder') || game.hasNature(c, 'fire')))
 					);
 					const hasTieSuo =
-						ai.countCards('hand', (c) => get.name(c) === 'tiesuo') > 0 || enemies.some((p) => p.hasSkill('tiesuo_effect'));
-					const enemyNoHand = enemies.some((p) => p.countCards('hand') === 0);
-					const hasSpecialSkill = [
-						'leiji',
-						'releiji',
-						'guanxing',
-						'reguanxing',
-						'guicai',
-						'reguicai',
-						'guidao',
-						'reguidao',
-					].some((skill) => ai.hasSkill(skill));
+						ai.countCards('h', (c) => get.name(c) === 'tiesuo') > 0 || enemies.some((p) => p.hasSkill('tiesuo_effect'));
+					const enemyNoHand = enemies.some((p) => p.countCards('h') === 0);
+					const arraysEqual = (arr1, arr2) => {
+						if (arr1.length !== arr2.length) {
+							return false;
+						}
+						if (arr1.length === 1) {
+							return arr1[0] === arr2[0];
+						}
+						const sorted1 = [...arr1].sort();
+						const sorted2 = [...arr2].sort();
+						return JSON.stringify(sorted1) === JSON.stringify(sorted2);
+					};
 
 					// 基础牌价值
 					if (cardType === 'basic') {
-						const basicOrder =
-							ai.hp <= 1
-								? { tao: 10, jiu: 9, shan: 8, huosha: 7, leisha: 7, sha: 6 }
-								: { shan: 10, tao: 9, huosha: 8, leisha: 8, sha: 7, jiu: 6 };
+						const basicOrder = ai.hp <= 1 ? { tao: 10, jiu: 9, shan: 8, sha: 6 } : { shan: 10, tao: 9, sha: 7, jiu: 6 };
+						if (cardName === 'sha' && game.hasNature(card)) {
+							return basicOrder[cardName] + 1;
+						}
 						return basicOrder[cardName] || 5;
 					}
 
 					// 装备牌价值
 					if (cardType === 'equip') {
-						// 护甲类
-						if (cardMap.equip.armor.includes(cardName)) {
-							let armorOrder = { bagua: 9, renwang: 8, tengjia: 7, baiyin: 6 };
-							if (hasFireThunderSha) armorOrder = { bagua: 9, renwang: 8, baiyin: 7, tengjia: 5 };
-							return armorOrder[cardName] || 5;
-						}
-						// 马类
-						if (cardMap.equip.horse.includes(cardName)) {
-							return cardName.includes('fangyu') ? 8 : 7; // 防御马＞进攻马
-						}
 						// 武器类
 						if (cardMap.equip.weapon.includes(cardName)) {
 							let weaponOrder = {
 								zhuge: 9,
 								qinggang: 8,
-								shiguan: 7,
+								guanshi: 7,
 								qilin: 6,
 								qinglong: 5,
 								zhangba: 4,
@@ -2200,31 +2156,28 @@ export function precontent(config, pack) {
 								zhuque: 2,
 								guding: 1,
 							};
-							if (hasTieSuo)
-								weaponOrder = {
-									zhuque: 10,
-									zhuge: 9,
-									qinggang: 8,
-									shiguan: 7,
-									qilin: 6,
-									qinglong: 5,
-									zhangba: 4,
-									fangtian: 3,
-									guding: 2,
-								};
-							if (enemyNoHand)
-								weaponOrder = {
-									guding: 10,
-									zhuge: 9,
-									qinggang: 8,
-									shiguan: 7,
-									qilin: 6,
-									qinglong: 5,
-									zhangba: 4,
-									fangtian: 3,
-									zhuque: 2,
-								};
+							if (hasTieSuo) {
+								weaponOrder.zhuque = 10;
+								weaponOrder.guding++;
+							}
+							if (enemyNoHand) {
+								weaponOrder.guding = 10;
+							}
 							return weaponOrder[cardName] || 3;
+						}
+						// 护甲类
+						if (cardMap.equip.armor.includes(cardName)) {
+							let armorOrder = { bagua: 9, renwang: 8, tengjia: 7, baiyin: 6 };
+							if (hasFireThunderSha) armorOrder = { bagua: 9, renwang: 8, baiyin: 7, tengjia: 5 };
+							return armorOrder[cardName] || 5;
+						}
+						// 坐骑类，防御马＞进攻马
+						const subtypes = get.subtypes(card);
+						if (subtypes.includes('equip3')) {
+							return 7 + subtypes.length;
+						}
+						if (subtypes.includes('equip4')) {
+							return 6 + subtypes.length;
 						}
 						return 4;
 					}
@@ -2247,7 +2200,7 @@ export function precontent(config, pack) {
 							jiedao: 2,
 							shandian: 1,
 						};
-						if (hasSpecialSkill)
+						if (ai.hasSkillTag('rejudge') || ai.hasSkillTag('guanxing'))
 							trickOrder = {
 								shandian: 10,
 								wuxie: 9,
@@ -2272,27 +2225,27 @@ export function precontent(config, pack) {
 
 				// 1. 回合开始阶段 - 装备安置规则
 				if (event.name === 'phaseBegin' && event.phase === 'phaseBegin') {
-					const equipSlots = ['armor', 'horse', 'weapon']; // 装备栏类型
-					for (const slot of equipSlots) {
-						// 获取当前装备栏现有装备
-						const currentEquip = ai.getEquips(slot)[0];
-						const currentValue = currentEquip ? getCardValue(get.name(currentEquip), ai) : 0;
+					// 获取当前装备栏现有装备
+					const currentEquips = ai.getCards('e', (card) => lib.filter.canBeReplaced(card, player));
+					const equipSlots = currentEquips.map((card) => get.subtype(card));
+					for (let i = 0; i < currentEquips.length; i++) {
+						const slot = equipSlots[i];
+						const currentValue = getCardValue(currentEquips[i]);
 
 						// 筛选手牌中对应类型的装备
-						const handEquips = ai.getCards('hand').filter((card) => {
-							const cardName = get.name(card);
-							return (
-								(slot === 'armor' && cardMap.equip.armor.includes(cardName)) ||
-								(slot === 'horse' && cardMap.equip.horse.includes(cardName)) ||
-								(slot === 'weapon' && cardMap.equip.weapon.includes(cardName))
-							);
+						const handEquips = ai.getCards('h', (card) => {
+							const subtype = get.subtype(card);
+							if (subtype === 'equip6') {
+								return ['equip3', 'equip4'].includes(slot); // 已装备 equip6 的无需更换
+							}
+							return slot === subtype;
 						});
 
 						// 找到手牌中最高价值的装备
 						let bestEquip = null;
-						let bestValue = 0;
+						let bestValue = currentValue;
 						handEquips.forEach((equip) => {
-							const value = getCardValue(get.name(equip), ai);
+							const value = getCardValue(equip);
 							if (value > bestValue) {
 								bestValue = value;
 								bestEquip = equip;
@@ -2300,8 +2253,7 @@ export function precontent(config, pack) {
 						});
 
 						// 替换低价值装备
-						if (bestEquip && bestValue > currentValue) {
-							if (currentEquip) await ai.discard(currentEquip); // 弃置现有低价值装备
+						if (bestEquip) {
 							await ai.equip(bestEquip); // 装备最高价值装备
 							if (lib.config.extension_AI优化_devToolMutualFigh) {
 								game.log(
@@ -2317,38 +2269,40 @@ export function precontent(config, pack) {
 
 				// 2. 弃牌阶段前 - 同栏装备价值清零规则
 				if (event.name === 'phaseDiscardBegin') {
-					const equipSlots = ['armor', 'horse', 'weapon'];
+					const equipSlots = ai.getCards('e').map((card) => get.subtype(card));
 					for (const slot of equipSlots) {
-						const hasEquip = ai.getEquips(slot).length > 0;
-						if (!hasEquip) continue;
-
-						// 手牌中同类型装备价值设为0
-						const handEquips = ai.getCards('hand').filter((card) => {
-							const cardName = get.name(card);
-							return (
-								(slot === 'armor' && cardMap.equip.armor.includes(cardName)) ||
-								(slot === 'horse' && cardMap.equip.horse.includes(cardName)) ||
-								(slot === 'weapon' && cardMap.equip.weapon.includes(cardName))
-							);
+						const handEquips = ai.getCards('h', (card) => {
+							const subtype = get.subtype(card);
+							if (subtype === 'equip6') {
+								return ['equip3', 'equip4', 'equip6'].includes(slot);
+							}
+							return slot === subtype;
 						});
 
+						// 手牌中同类型装备价值设为0
+						if (!handEquips.length) {
+							continue;
+						}
+						if (!ai.cardValueCache) {
+							ai.cardValueCache = {};
+						}
 						handEquips.forEach((equip) => {
-							ai.cardValueCache = ai.cardValueCache || {};
 							ai.cardValueCache[equip.id] = 0; // 临时缓存价值为0
 						});
 					}
-
-					// 重写AI牌价值判定，优先使用缓存价值
-					const originalAiValue = lib.skill.aiyh_gjcx_qj.mod.aiValue;
-					lib.skill.aiyh_gjcx_qj.mod.aiValue = function (player, card, num) {
-						if (player.cardValueCache && player.cardValueCache[card.id] !== undefined) {
-							return player.cardValueCache[card.id];
-						}
-						return originalAiValue.call(this, player, card, num);
-					};
 				}
 			},
 		};
+		if (lib.config.extension_AI优化_qjAi) {
+			// 重写AI牌价值判定，优先使用缓存价值
+			const originalAiValue = lib.skill.aiyh_gjcx_qj.mod.aiValue;
+			lib.skill.aiyh_gjcx_qj.mod.aiValue = function (player, card, num) {
+				if (player.cardValueCache?.[card.id]) {
+					return player.cardValueCache[card.id];
+				}
+				return originalAiValue.call(this, player, card, num);
+			};
+		}
 
 		lib.translate._aiyh_aiEnhance_discardDraw = '<span style="color: #FFD700">置换</span>';
 		lib.translate._aiyh_aiEnhance_redTaoHeal = '<span style="color: #FFD700">泣血</span>';
@@ -2501,7 +2455,6 @@ export function precontent(config, pack) {
 				},
 				sub: true,
 				sourceSkill: '_aiyh_wujiangInfo',
-				_priority: 0,
 			},
 		},
 	};
@@ -2880,7 +2833,7 @@ export function precontent(config, pack) {
 		unique: true,
 		charlotte: true,
 		superCharlotte: true,
-		content() {
+		async content() {
 			const nonPlayerChars = game.filterPlayer((p) => p !== game.me);
 			nonPlayerChars.forEach((char) => {
 				delete char.storage.initialTotalValue;
