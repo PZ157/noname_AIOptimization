@@ -2373,18 +2373,11 @@ export function precontent(config, pack) {
 				const rankConfig = {
 					weights: [0.25, 0.46, 0.82, 1],
 					types: ['none', 'county', 'city', 'national'],
-					countyList:
-						'正定县、大名县、无极县、元氏县、灵寿县、行唐县、赞皇县、深泽县、高邑县、曲阳县、岑巩县、阳曲县、娄烦县、阳高县、天镇县、广灵县、灵丘县、浑源县、左云县、盂县、平定县、托克托县、和林格尔县、清水河县、武川县、固阳县、康平县、法库县、台安县、岫岩满族自治县、桓仁满族自治县、丰县、沛县、睢宁县、如东县、桐庐县、淳安县、象山县、宁海县'.split(
-							'、'
-						),
-					cityList:
-						'石家庄市、唐山市、秦皇岛市、邯郸市、邢台市、保定市、张家口市、承德市、贵阳市、广州市、韶关市、深圳市、珠海市、南京市、无锡市、徐州市、常州市、香港特别行政区、澳门特别行政区、台北市（台湾地区）'.split(
-							'、'
-						),
-					nationalList:
-						'河北省、山西省、辽宁省、吉林省、黑龙江省、江苏省、浙江省、安徽省、福建省、江西省、山东省、河南省、湖北省、湖南省、广东省、海南省、四川省、贵州省、云南省、陕西省、甘肃省、青海省、台湾省、内蒙古自治区、广西壮族自治区、西藏自治区、宁夏回族自治区、新疆维吾尔自治区、北京市、天津市、上海市、重庆市、香港特别行政区、澳门特别行政区'.split(
-							'、'
-						),
+					starRanges: {
+						county: [20, 30],
+						city: [30, 50],
+						national: [100, 200],
+					},
 				};
 				const randomRate = Math.random();
 				let rankType = 'none';
@@ -2395,28 +2388,37 @@ export function precontent(config, pack) {
 				} else if (randomRate >= rankConfig.weights[1]) {
 					rankType = rankConfig.types[1];
 				}
-				let rankPlace = '';
+				let starCount = 0;
 				let rankNum = 0;
 				const allWujiang = _status.connectMode ? get.charactersOL() : get.gainableCharacters();
 				const randomWujiang = allWujiang[Math.floor(Math.random() * allWujiang.length)];
 				const rankWujiang = get.translation(randomWujiang);
+
+				// 生成对应等级的随机星数和排名
 				switch (rankType) {
 					case 'county':
-						rankPlace = rankConfig.countyList[Math.floor(Math.random() * rankConfig.countyList.length)];
+						starCount =
+							Math.floor(Math.random() * (rankConfig.starRanges.county[1] - rankConfig.starRanges.county[0] + 1)) +
+							rankConfig.starRanges.county[0];
 						rankNum = Math.floor(Math.random() * 100) + 1;
 						break;
 					case 'city':
-						rankPlace = rankConfig.cityList[Math.floor(Math.random() * rankConfig.cityList.length)];
+						starCount =
+							Math.floor(Math.random() * (rankConfig.starRanges.city[1] - rankConfig.starRanges.city[0] + 1)) +
+							rankConfig.starRanges.city[0];
 						rankNum = Math.floor(Math.random() * 100) + 1;
 						break;
 					case 'national':
-						rankPlace = rankConfig.nationalList[Math.floor(Math.random() * rankConfig.nationalList.length)];
+						starCount =
+							Math.floor(Math.random() * (rankConfig.starRanges.national[1] - rankConfig.starRanges.national[0] + 1)) +
+							rankConfig.starRanges.national[0];
 						rankNum = Math.floor(Math.random() * 10) + 1;
 						break;
 				}
+
 				char.storage.rankInfo = {
 					type: rankType,
-					place: rankPlace,
+					starCount: starCount,
 					num: rankNum,
 					wujiang: rankWujiang,
 				};
@@ -2623,23 +2625,23 @@ export function precontent(config, pack) {
 			const imgPath = `${lib.assetURL}extension/AI优化/img/display/rank/${rankInfo.type}.png`;
 			rankImg.src = imgPath;
 			rankImg.className = 'wujiang-info-rank-img';
-			rankImg.title = `${rankInfo.place}排名标识`;
+			rankImg.title = `${rankInfo.type === 'county' ? '县级' : rankInfo.type === 'city' ? '市级' : '国家级'}排名标识`;
 			modal.appendChild(rankImg);
 		}
 		const labelText = document.createElement('div');
 		labelText.className = 'wujiang-info-label-text';
 		switch (rankInfo.type) {
 			case 'county':
-				labelText.innerHTML = `${rankInfo.place}第${rankInfo.num}名〔${rankInfo.wujiang}〕`;
+				labelText.innerHTML = `县 ${rankInfo.starCount}⭐ 第${rankInfo.num}名[${rankInfo.wujiang}]`;
 				break;
 			case 'city':
-				labelText.innerHTML = `${rankInfo.place}第${rankInfo.num}名〔${rankInfo.wujiang}〕`;
+				labelText.innerHTML = `市 ${rankInfo.starCount}⭐ 第${rankInfo.num}名[${rankInfo.wujiang}]`;
 				break;
 			case 'national':
-				labelText.innerHTML = `${rankInfo.place}第${rankInfo.num}名〔${rankInfo.wujiang}〕`;
+				labelText.innerHTML = `国 ${rankInfo.starCount}⭐ 第${rankInfo.num}名[${rankInfo.wujiang}]`;
 				break;
 			default:
-				labelText.innerHTML = '没有排名';
+				labelText.innerHTML = '暂无排名';
 		}
 		const settingIcon = document.createElement('img');
 		const settingIconPath = `${lib.assetURL}extension/AI优化/img/display/settingIcon.png`;
@@ -2802,6 +2804,7 @@ export function precontent(config, pack) {
 		});
 		identityProgressGroup.appendChild(progressContainerGroup);
 	}
+
 	// 显示初级榜
 	function showRankImage() {
 		const layoutPath = lib.assetURL + 'extension/AI优化/img/display/';
@@ -2823,7 +2826,6 @@ export function precontent(config, pack) {
 				rankModal.remove();
 			}
 		};
-
 		document.body.appendChild(rankModal);
 	}
 
