@@ -1,8 +1,8 @@
 {
 	"name": "AI优化",
 	"author": "",
-	"intro": "<span style='color: #FF3300'>注意！</span>当前版本可能存在较多bug，介意可使用<span style='color: #FFFF00'>1.5.4.3</span>完结版本。<hr aria-hidden='true'><span style='color: #00FFFF'>更新日期</span>：2025年<span style='color: #00FFB0'>12</span>月<span style='color: #FFFF00'> 2</span>日<br /><span style='color: #00FFFF'>建立者</span>：<ul><li>柚子丶奶茶丶猫以及面具</li><li>翩翩浊世许公子</li><li>157</li></ul><span style='color: #00FFFF'>特别鸣谢</span>：<ul><li>一寒</li><li>蓝色火鸡</li><li>寰宇星城</li></ul><span style='color: #00FFB0'>扩展当前版本号</span>：<span style='color: #FFFF00'>2.1</span><br /><span style='color: #00FFB0'>支持本体最低版本号</span>：<span style='color: #FFFF00'>1.10.17</span>",
-	"version": "2.1",
+	"intro": "<span style='color: #FF3300'>注意！</span>当前版本可能存在较多bug，介意可使用<span style='color: #FFFF00'>1.5.4.3</span>完结版本。<hr aria-hidden='true'><span style='color: #00FFFF'>更新日期</span>：2025年<span style='color: #00FFB0'>12</span>月<span style='color: #FFFF00'> 3</span>日<br /><span style='color: #00FFFF'>建立者</span>：<ul><li>柚子丶奶茶丶猫以及面具</li><li>翩翩浊世许公子</li><li>157</li></ul><span style='color: #00FFFF'>特别鸣谢</span>：<ul><li>一寒</li><li>蓝色火鸡</li><li>寰宇星城</li></ul><span style='color: #00FFB0'>扩展当前版本号</span>：<span style='color: #FFFF00'>2.1.0.1</span><br /><span style='color: #00FFB0'>支持本体最低版本号</span>：<span style='color: #FFFF00'>1.10.17</span>",
+	"version": "2.1.0.1",
 	"diskURL": "https://github.com/PZ157/noname_AIOptimization",
 	"forumURL": ""
 }
