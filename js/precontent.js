@@ -43,9 +43,12 @@ export function precontent(config, pack) {
 						<span style="color: rgb(255, 146, 68)">3</span>日
 					</div>
 				`,
-				'◆重写AI强化〔置换〕ai。bug并未彻底修复，请勿开启置换',
-				'◆移除［AI赋慧］残留代码',
-				'◆新优化［AI出牌逻辑优化］四张卡牌逻辑',
+				'非常感谢@一寒 贡献的代码，本次更新仅作整理修复',
+				'◆修复AI强化〔置换〕ai',
+				'◆调整扩展设置界面',
+				'◆移除［体力怪禁止］功能，更改部分配置，请检查扩展设置',
+				'◆［AI强化］［卡牌价值优化］不限于身份模式',
+				'◆调整并格式化代码',
 				'※本扩展无限期停更，任何人均可二创修复',
 			];
 			let ul = document.createElement('ul');
@@ -79,6 +82,10 @@ export function precontent(config, pack) {
 			});
 			lib.init.onfree();
 		};
+	}
+
+	if (lib.config.extension_AI优化_cardAiOpt) {
+		initAICardOpt();
 	}
 	if (lib.config.extension_AI优化_rank !== 'off') {
 		// 细化评级显示
@@ -217,16 +224,12 @@ export function precontent(config, pack) {
 		};
 	}
 
-	if (lib.config.extension_AI优化_aiFuhui) {
-		initAICardOpt();
-	}
-
 	lib.skill._aiyh_firstKs = {
 		available(mode) {
 			if (_status.connectMode && !game.me) {
 				return;
 			}
-			const configs = ['neiKey', 'findZhong', 'mjAi'];
+			const configs = ['neiKey', 'findZhong', 'noScope'];
 			let obj = {};
 			for (let name of configs) {
 				obj[name] = lib.config[`extension_AI优化_${name}`];
@@ -343,12 +346,12 @@ export function precontent(config, pack) {
 					}
 				}
 			}
-			if (lib.config.extension_AI优化_qjAi) {
+			if (lib.config.extension_AI优化_globalOpt) {
 				player.addSkill('aiyh_gjcx_qj');
 			}
 
 			// 身份局专属AI
-			if (get.mode() === 'identity' && lib.config.extension_AI优化_sfjAi && !['zhong', 'purple'].includes(_status.mode)) {
+			if (get.mode() === 'identity' && lib.config.extension_AI优化_identityOpt && !['zhong', 'purple'].includes(_status.mode)) {
 				if (player.identity === 'nei') {
 					player.addSkill(['gjcx_neiAi', 'gjcx_neiAi_expose', 'gjcx_neiAi_damage']);
 				}
@@ -384,47 +387,6 @@ export function precontent(config, pack) {
 		},
 	};
 
-	/*功能*/
-	// AI不砍队友
-	lib.skill._aiyh_nhFriends = {
-		silent: true,
-		unique: true,
-		charlotte: true,
-		superCharlotte: true,
-		ai: {
-			effect: {
-				player(card, player, target) {
-					if (
-						lib.config.extension_AI优化_nhFriends === 'off' ||
-						player._nhFriends_temp ||
-						get.itemtype(target) !== 'player' ||
-						player === game.me
-					) {
-						return;
-					}
-					if (
-						get.tag(card, 'damage') &&
-						card.name !== 'huogong' &&
-						(!lib.config.extension_AI优化_ntAoe || get.info(card)?.selectTarget !== -1) &&
-						get.attitude(player, target) > 0
-					) {
-						let num = 0;
-						if (lib.config.extension_AI优化_nhFriends === 'ph') num = player.hp;
-						else num = parseInt(lib.config.extension_AI优化_nhFriends);
-						if (target.hp > num) {
-							return;
-						}
-						player._nhFriends_temp = true;
-						let eff = get.effect(target, card, player, player);
-						delete player._nhFriends_temp;
-						if (eff > 0) {
-							return [1, 0, 1, -1 - eff];
-						}
-					}
-				},
-			},
-		},
-	};
 	// 开局功能
 	lib.skill._aiyh_meks = {
 		trigger: {
@@ -544,83 +506,6 @@ export function precontent(config, pack) {
 			}
 		},
 	};
-	// 内奸可亮明身份
-	lib.skill._aiyh_neiKey = {
-		mode: ['identity'],
-		enable: 'phaseUse',
-		filter(event, player) {
-			if (player.identity !== 'nei' || player.storage.neiKey) return false;
-			if (player.identityShown) return _status.aiyh_configs.neiKey === 'must';
-			return _status.aiyh_configs.neiKey !== 'off';
-		},
-		log: false,
-		unique: true,
-		charlotte: true,
-		superCharlotte: true,
-		ruleSkill: true,
-		async content(event, trigger, player) {
-			player.storage.neiKey = true;
-			game.log(player, '亮明了身份');
-			game.broadcastAll((player) => {
-				player.showIdentity();
-			}, player);
-			game.log(player, '的身份为', '#b内奸');
-			await player.gainMaxHp();
-			player.removeSkill('gjcx_neiAi_expose');
-			const bool = await player
-				.chooseBool('是否令你和' + get.translation(game.zhu) + '各回复1点体力？')
-				.set('ai', () => get.event('bool'))
-				.set(
-					'bool',
-					game.zhu.isHealthy() ||
-						!game.hasPlayer((current) => {
-							return current.identity === 'zhong' || current.identity === 'mingzhong';
-						}) ||
-						(player.isDamaged() && player.hp <= 2) ||
-						(game.zhu.isDamaged() && game.zhu.hp <= 1)
-				);
-			if (bool) {
-				await player.recover();
-				await game.zhu.recover();
-			}
-		},
-		ai: {
-			order: 1,
-			result: {
-				player(player) {
-					if (
-						!game.hasPlayer((current) => {
-							return current.identity === 'zhong' || current.identity === 'mingzhong';
-						}) ||
-						(player.hp <= 1 && !player.countCards('hs', 'tao') && !player.countCards('hs', 'jiu'))
-					) {
-						return 1;
-					}
-					if (
-						!game.hasPlayer((current) => {
-							return current.identity === 'fan';
-						})
-					) {
-						if (get.attitude(game.zhu, player) < -1 || (get.attitude(game.zhu, player) < 0 && player.ai.shown >= 0.95)) {
-							return 1;
-						}
-						return -3;
-					}
-					if (
-						(!player.hasSkill('gjcx_neiZhong') &&
-							!player.hasSkill('gjcx_neiJiang') &&
-							((player.hp <= 2 && game.zhu.hp <= 2) || (game.zhu.isHealthy() && lib.config.extension_AI优化_sfjAi))) ||
-						(game.zhu.hp <= 1 &&
-							!player.countCards('hs', 'tao') &&
-							(player.hasSkill('gjcx_neiZhong') || !lib.config.extension_AI优化_sfjAi))
-					) {
-						return 1;
-					}
-					return -3;
-				},
-			},
-		},
-	};
 	lib.skill._aiyh_fixQz = {
 		// 修改武将权重
 		enable: 'phaseUse',
@@ -699,7 +584,7 @@ export function precontent(config, pack) {
 		},
 	};
 	lib.skill._aiyh_fixCf = {
-		//技能威胁度
+		// 技能威胁度
 		enable: 'phaseUse',
 		filter(event, player) {
 			return !_status.connectMode && player === game.me && lib.config.extension_AI优化_fixCf;
@@ -811,8 +696,130 @@ export function precontent(config, pack) {
 			},
 		},
 	};
+	// 内奸可亮明身份
+	lib.skill._aiyh_neiKey = {
+		mode: ['identity'],
+		enable: 'phaseUse',
+		filter(event, player) {
+			if (player.identity !== 'nei' || player.storage.neiKey) return false;
+			if (player.identityShown) return _status.aiyh_configs.neiKey === 'must';
+			return _status.aiyh_configs.neiKey !== 'off';
+		},
+		log: false,
+		unique: true,
+		charlotte: true,
+		superCharlotte: true,
+		ruleSkill: true,
+		async content(event, trigger, player) {
+			player.storage.neiKey = true;
+			game.log(player, '亮明了身份');
+			game.broadcastAll((player) => {
+				player.showIdentity();
+			}, player);
+			game.log(player, '的身份为', '#b内奸');
+			await player.gainMaxHp();
+			player.removeSkill('gjcx_neiAi_expose');
+			const bool = await player
+				.chooseBool('是否令你和' + get.translation(game.zhu) + '各回复1点体力？')
+				.set('ai', () => get.event('bool'))
+				.set(
+					'bool',
+					game.zhu.isHealthy() ||
+						!game.hasPlayer((current) => {
+							return current.identity === 'zhong' || current.identity === 'mingzhong';
+						}) ||
+						(player.isDamaged() && player.hp <= 2) ||
+						(game.zhu.isDamaged() && game.zhu.hp <= 1)
+				);
+			if (bool) {
+				await player.recover();
+				await game.zhu.recover();
+			}
+		},
+		ai: {
+			order: 1,
+			result: {
+				player(player) {
+					if (
+						!game.hasPlayer((current) => {
+							return current.identity === 'zhong' || current.identity === 'mingzhong';
+						}) ||
+						(player.hp <= 1 && !player.countCards('hs', 'tao') && !player.countCards('hs', 'jiu'))
+					) {
+						return 1;
+					}
+					if (
+						!game.hasPlayer((current) => {
+							return current.identity === 'fan';
+						})
+					) {
+						if (get.attitude(game.zhu, player) < -1 || (get.attitude(game.zhu, player) < 0 && player.ai.shown >= 0.95)) {
+							return 1;
+						}
+						return -3;
+					}
+					if (
+						(!player.hasSkill('gjcx_neiZhong') &&
+							!player.hasSkill('gjcx_neiJiang') &&
+							((player.hp <= 2 && game.zhu.hp <= 2) ||
+								(game.zhu.isHealthy() && lib.config.extension_AI优化_identityOpt))) ||
+						(game.zhu.hp <= 1 &&
+							!player.countCards('hs', 'tao') &&
+							(player.hasSkill('gjcx_neiZhong') || !lib.config.extension_AI优化_identityOpt))
+					) {
+						return 1;
+					}
+					return -3;
+				},
+			},
+		},
+	};
+	lib.translate._aiyh_neiKey = '<span style="color: #8DD8FF">亮明身份</span>';
+	lib.translate._aiyh_fixQz = '<span style="color: #FFFF00">修改权重</span>';
+	lib.translate._aiyh_fixCf = '<span style="color: #FF3300">修改威胁度</span>';
+
+	// AI不砍队友
+	lib.skill._aiyh_holdFire = {
+		silent: true,
+		unique: true,
+		charlotte: true,
+		superCharlotte: true,
+		ai: {
+			effect: {
+				player(card, player, target) {
+					if (
+						lib.config.extension_AI优化_holdFire === 'off' ||
+						player._holdFire_temp ||
+						get.itemtype(target) !== 'player' ||
+						player === game.me
+					) {
+						return;
+					}
+					if (
+						get.tag(card, 'damage') &&
+						card.name !== 'huogong' &&
+						(!lib.config.extension_AI优化_ntAoe || get.info(card)?.selectTarget !== -1) &&
+						get.attitude(player, target) > 0
+					) {
+						let num = 0;
+						if (lib.config.extension_AI优化_holdFire === 'ph') num = player.hp;
+						else num = parseInt(lib.config.extension_AI优化_holdFire);
+						if (target.hp > num) {
+							return;
+						}
+						player._holdFire_temp = true;
+						let eff = get.effect(target, card, player, player);
+						delete player._holdFire_temp;
+						if (eff > 0) {
+							return [1, 0, 1, -1 - eff];
+						}
+					}
+				},
+			},
+		},
+	};
+	// 慧眼识忠
 	lib.skill._findZhong = {
-		//慧眼识忠
 		trigger: {
 			global: 'gameStart',
 		},
@@ -849,75 +856,9 @@ export function precontent(config, pack) {
 			}
 		},
 	};
-	lib.skill._mjAiSkill = {
-		//盲狙AI
-		trigger: { player: 'phaseZhunbeiBegin' },
-		filter(event, player) {
-			return _status.aiyh_configs.mjAi && player.phaseNumber === 1 && (player === game.zhu || player.identity === 'zhong');
-		},
-		silent: true,
-		unique: true,
-		charlotte: true,
-		superCharlotte: true,
-		mode: ['identity'],
-		async content(event, trigger, player) {
-			player.addTempSkill('aiMangju');
-		},
-	};
-	lib.skill.aiMangju = {
-		//盲狙
-		forced: true,
-		unique: true,
-		popup: false,
-		silent: true,
-		charlotte: true,
-		superCharlotte: true,
-		mode: ['identity'],
-		ai: {
-			effect: {
-				player(card, player, target, current) {
-					let name = get.name(card, player);
-					if (get.tag(card, 'damage') && Math.abs(get.attitude(player, target)) < 0.5) {
-						if (name === 'juedou') return [1, player.countCards('hs') / 400];
-						if (name === 'huogong') return [1, player.countCards('h') / 200];
-						if (name === 'sha' && !game.hasNature(card)) {
-							if (
-								(target.hasSkill('tengjia3') || target.hasSkill('rw_tengjia4')) &&
-								!(player.getEquip('qinggang') || player.getEquip('zhuque'))
-							)
-								return 'zeroplayertarget';
-						}
-						if (
-							name === 'sha' &&
-							get.color(card) === 'black' &&
-							(target.hasSkill('renwang_skill') || target.hasSkill('rw_renwang_skill'))
-						) {
-							if (!player.getEquip('qinggang')) return 'zeroplayertarget';
-						}
-						if (get.attitude(player, target) === 0) return [1, 0.005];
-					}
-					if (
-						name === 'guohe' ||
-						name === 'shunshou' ||
-						name === 'lebu' ||
-						name === 'bingliang' ||
-						name === 'caomu' ||
-						name === 'zhujinqiyuan' ||
-						name === 'caochuanjiejian' ||
-						name === 'toulianghuanzhu'
-					) {
-						if (get.attitude(player, target) === 0) return [1, 0.01];
-					}
-				},
-			},
-		},
-	};
-	lib.translate._aiyh_neiKey = '<span style="color: #8DD8FF">亮明身份</span>';
-	lib.translate._aiyh_fixQz = '<span style="color: #FFFF00">修改权重</span>';
-	lib.translate._aiyh_fixCf = '<span style="color: #FF3300">修改威胁度</span>';
 
-	/*AI优化*/
-	if (lib.config.extension_AI优化_qjAi) {
+	if (lib.config.extension_AI优化_globalOpt) {
+		/** 全局AI */
 		lib.skill.aiyh_gjcx_qj = {
 			mod: {
 				aiOrder: (player, card, num) => {
@@ -995,7 +936,7 @@ export function precontent(config, pack) {
 					player: (card, player, target) => {
 						if (typeof card !== 'object' || player.hp <= 1 || get.name(card, player) !== 'shan') return;
 						const par = _status.event.getParent(2);
-						if (par && par.player.hasCard('jiu', 'hs') && par.player.mayHaveSha(player, 'use')) {
+						if (par?.player.hasCard('jiu', 'hs') && par.player.mayHaveSha(player, 'use')) {
 							return 'zeroplayertarget';
 						}
 					},
@@ -1004,7 +945,452 @@ export function precontent(config, pack) {
 		};
 	}
 
-	if (lib.config.extension_AI优化_sfjAi) {
+	{
+		// 盲狙AI
+		lib.skill._noScopeSkill = {
+			trigger: { player: 'phaseZhunbeiBegin' },
+			filter(event, player) {
+				return _status.aiyh_configs.noScope && player.phaseNumber === 1 && (player === game.zhu || player.identity === 'zhong');
+			},
+			silent: true,
+			unique: true,
+			charlotte: true,
+			superCharlotte: true,
+			mode: ['identity'],
+			async content(event, trigger, player) {
+				player.addTempSkill('aiMangju');
+			},
+		};
+		lib.skill.aiMangju = {
+			// 盲狙
+			forced: true,
+			unique: true,
+			popup: false,
+			silent: true,
+			charlotte: true,
+			superCharlotte: true,
+			mode: ['identity'],
+			ai: {
+				effect: {
+					player(card, player, target, current) {
+						let name = get.name(card, player);
+						if (get.tag(card, 'damage') && Math.abs(get.attitude(player, target)) < 0.5) {
+							if (name === 'juedou') return [1, player.countCards('hs') / 400];
+							if (name === 'huogong') return [1, player.countCards('h') / 200];
+							if (name === 'sha' && !game.hasNature(card)) {
+								if (
+									(target.hasSkill('tengjia3') || target.hasSkill('rw_tengjia4')) &&
+									!(player.getEquip('qinggang') || player.getEquip('zhuque'))
+								)
+									return 'zeroplayertarget';
+							}
+							if (
+								name === 'sha' &&
+								get.color(card) === 'black' &&
+								(target.hasSkill('renwang_skill') || target.hasSkill('rw_renwang_skill'))
+							) {
+								if (!player.getEquip('qinggang')) return 'zeroplayertarget';
+							}
+							if (get.attitude(player, target) === 0) return [1, 0.005];
+						}
+						if (
+							name === 'guohe' ||
+							name === 'shunshou' ||
+							name === 'lebu' ||
+							name === 'bingliang' ||
+							name === 'caomu' ||
+							name === 'zhujinqiyuan' ||
+							name === 'caochuanjiejian' ||
+							name === 'toulianghuanzhu'
+						) {
+							if (get.attitude(player, target) === 0) return [1, 0.01];
+						}
+					},
+				},
+			},
+		};
+	}
+	{
+		// 卡牌价值优化 - 牌价值判定体系
+		lib.skill._aiyh_cardValueOpt = {
+			silent: true,
+			unique: true,
+			charlotte: true,
+			superCharlotte: true,
+			trigger: {
+				global: 'gameStart',
+				player: ['phaseBegin', 'phaseDiscardBegin'], // 回合开始+弃牌前触发
+			},
+			filter(event, player) {
+				return player !== game.me && lib.config.extension_AI优化_cardValueOpt;
+			},
+			async content(event, trigger, ai) {
+				// 定义各类牌完整名称映射
+				const cardMap = {
+					basic: ['sha', 'shan', 'tao', 'jiu'],
+					equip: {
+						armor: ['bagua', 'renwang', 'tengjia', 'baiyin'],
+						weapon: ['zhuge', 'qinggang', 'guanshi', 'qilin', 'qinglong', 'zhangba', 'fangtian', 'zhuque', 'guding'],
+					},
+					trick: [
+						'wuxie',
+						'lebu',
+						'bingliang',
+						'wuzhong',
+						'nanman',
+						'wanjian',
+						'guohe',
+						'shunshou',
+						'wugu',
+						'tiesuo',
+						'huogong',
+						'taoyuan',
+						'jiedao',
+						'shandian',
+					],
+				};
+
+				// 定义价值排序规则（基础分1-10，分数越高价值越高）
+				const getCardValue = (card) => {
+					const cardName = get.name(card);
+					const cardType = get.type(card);
+					const enemies = game.filterPlayer((p) => get.attitude(ai, p) < 0 && p.isIn());
+					const hasFireThunderSha = enemies.some((p) =>
+						p.countCards('h', (c) => get.name(c) === 'sha' && (game.hasNature(c, 'thunder') || game.hasNature(c, 'fire')))
+					);
+					const hasTieSuo =
+						ai.countCards('h', (c) => get.name(c) === 'tiesuo') > 0 || enemies.some((p) => p.hasSkill('tiesuo_effect'));
+					const enemyNoHand = enemies.some((p) => p.countCards('h') === 0);
+					const arraysEqual = (arr1, arr2) => {
+						if (arr1.length !== arr2.length) {
+							return false;
+						}
+						if (arr1.length === 1) {
+							return arr1[0] === arr2[0];
+						}
+						const sorted1 = [...arr1].sort();
+						const sorted2 = [...arr2].sort();
+						return JSON.stringify(sorted1) === JSON.stringify(sorted2);
+					};
+
+					// 基础牌价值
+					if (cardType === 'basic') {
+						const basicOrder = ai.hp <= 1 ? { tao: 10, jiu: 9, shan: 8, sha: 6 } : { shan: 10, tao: 9, sha: 7, jiu: 6 };
+						if (cardName === 'sha' && game.hasNature(card)) {
+							return basicOrder[cardName] + 1;
+						}
+						return basicOrder[cardName] || 5;
+					}
+
+					// 装备牌价值
+					if (cardType === 'equip') {
+						// 武器类
+						if (cardMap.equip.weapon.includes(cardName)) {
+							let weaponOrder = {
+								zhuge: 9,
+								qinggang: 8,
+								guanshi: 7,
+								qilin: 6,
+								qinglong: 5,
+								zhangba: 4,
+								fangtian: 3,
+								zhuque: 2,
+								guding: 1,
+							};
+							if (hasTieSuo) {
+								weaponOrder.zhuque = 10;
+								weaponOrder.guding++;
+							}
+							if (enemyNoHand) {
+								weaponOrder.guding = 10;
+							}
+							return weaponOrder[cardName] || 3;
+						}
+						// 护甲类
+						if (cardMap.equip.armor.includes(cardName)) {
+							let armorOrder = { bagua: 9, renwang: 8, tengjia: 7, baiyin: 6 };
+							if (hasFireThunderSha) armorOrder = { bagua: 9, renwang: 8, baiyin: 7, tengjia: 5 };
+							return armorOrder[cardName] || 5;
+						}
+						// 坐骑类，防御马＞进攻马
+						const subtypes = get.subtypes(card);
+						if (subtypes.includes('equip3')) {
+							return 7 + subtypes.length;
+						}
+						if (subtypes.includes('equip4')) {
+							return 6 + subtypes.length;
+						}
+						return 4;
+					}
+
+					// 锦囊牌价值
+					if (cardType === 'trick') {
+						let trickOrder = {
+							wuxie: 10,
+							lebu: 9,
+							bingliang: 9,
+							wuzhong: 8,
+							nanman: 7,
+							wanjian: 7,
+							guohe: 6,
+							shunshou: 6,
+							wugu: 5,
+							tiesuo: 4,
+							huogong: 4,
+							taoyuan: 3,
+							jiedao: 2,
+							shandian: 1,
+						};
+						if (ai.hasSkillTag('rejudge') || ai.hasSkillTag('guanxing'))
+							trickOrder = {
+								shandian: 10,
+								wuxie: 9,
+								lebu: 8,
+								bingliang: 8,
+								wuzhong: 7,
+								nanman: 6,
+								wanjian: 6,
+								guohe: 5,
+								shunshou: 5,
+								wugu: 4,
+								tiesuo: 3,
+								huogong: 3,
+								taoyuan: 2,
+								jiedao: 1,
+							};
+						return trickOrder[cardName] || 3;
+					}
+
+					return 5; // 默认价值
+				};
+
+				// 1. 回合开始阶段 - 装备安置规则
+				if (event.name === 'phaseBegin' && event.phase === 'phaseBegin') {
+					// 获取当前装备栏现有装备
+					const currentEquips = ai.getCards('e', (card) => lib.filter.canBeReplaced(card, player));
+					const equipSlots = currentEquips.map((card) => get.subtype(card));
+					for (let i = 0; i < currentEquips.length; i++) {
+						const slot = equipSlots[i];
+						const currentValue = getCardValue(currentEquips[i]);
+
+						// 筛选手牌中对应类型的装备
+						const handEquips = ai.getCards('h', (card) => {
+							const subtype = get.subtype(card);
+							if (subtype === 'equip6') {
+								return ['equip3', 'equip4'].includes(slot); // 已装备 equip6 的无需更换
+							}
+							return slot === subtype;
+						});
+
+						// 找到手牌中最高价值的装备
+						let bestEquip = null;
+						let bestValue = currentValue;
+						handEquips.forEach((equip) => {
+							const value = getCardValue(equip);
+							if (value > bestValue) {
+								bestValue = value;
+								bestEquip = equip;
+							}
+						});
+
+						// 替换低价值装备
+						if (bestEquip) {
+							await ai.equip(bestEquip); // 装备最高价值装备
+							if (lib.config.extension_AI优化_devToolMutualFigh) {
+								game.log(
+									ai,
+									`<span style="color:#00FFB0">〔卡牌价值优化〕装备${get.name(bestEquip)}（价值${bestValue}），替换原${
+										currentEquip ? get.name(currentEquip) : '空栏'
+									}（价值${currentValue}）</span>`
+								);
+							}
+						}
+					}
+				}
+
+				// 2. 弃牌阶段前 - 同栏装备价值清零规则
+				if (event.name === 'phaseDiscardBegin') {
+					const equipSlots = ai.getCards('e').map((card) => get.subtype(card));
+					for (const slot of equipSlots) {
+						const handEquips = ai.getCards('h', (card) => {
+							const subtype = get.subtype(card);
+							if (subtype === 'equip6') {
+								return ['equip3', 'equip4', 'equip6'].includes(slot);
+							}
+							return slot === subtype;
+						});
+
+						// 手牌中同类型装备价值设为0
+						if (!handEquips.length) {
+							continue;
+						}
+						if (!ai.cardValueCache) {
+							ai.cardValueCache = {};
+						}
+						handEquips.forEach((equip) => {
+							ai.cardValueCache[equip.id] = 0; // 临时缓存价值为0
+						});
+					}
+				}
+			},
+		};
+		if (lib.config.extension_AI优化_globalOpt) {
+			// 重写AI牌价值判定，优先使用缓存价值
+			const originalAiValue = lib.skill.aiyh_gjcx_qj.mod.aiValue;
+			lib.skill.aiyh_gjcx_qj.mod.aiValue = function (player, card, num) {
+				if (player.cardValueCache?.[card.id]) {
+					return player.cardValueCache[card.id];
+				}
+				return originalAiValue.call(this, player, card, num);
+			};
+		}
+	}
+	{
+		// AI强化〔置换〕
+		lib.skill._aiyh_aiEnhance_discardDraw = {
+			mod: {
+				aiOrder(player, card, num) {
+					if (
+						num <= 0 ||
+						player === game.me ||
+						!lib.config.extension_AI优化_aiEnhanceDiscardDraw ||
+						get.itemtype(card) !== 'card' ||
+						get.type(card) !== 'equip'
+					) {
+						return num;
+					}
+					let eq = player.getEquip(get.subtype(card));
+					if (eq && get.equipValue(card) - get.equipValue(eq) < Math.max(1.2, 6 - player.hp)) {
+						return 0;
+					}
+				},
+			},
+			enable: 'phaseUse',
+			usable: 1,
+			locked: false,
+			charlotte: true,
+			superCharlotte: true,
+			filter(event, player) {
+				if (player === game.me || !lib.config.extension_AI优化_aiEnhanceDiscardDraw) {
+					return false;
+				}
+				player.addTempSkill('_aiyh_aiEnhance_discardDraw_clear');
+				return player.storage._aiyh_aiEnhance_discardDraw_clear;
+			},
+			position: 'h',
+			filterCard: true,
+			selectCard: [1, Infinity],
+			allowChooseAll: true,
+			prompt: '弃置任意张手牌并摸等量的牌',
+			check(card) {
+				const player = _status.event?.player || game.currentPlayer;
+				if (!player) return 0;
+
+				const val = get.value(card);
+				const type = get.type(card);
+				if (type === 'equip') {
+					return 9 - val;
+				}
+				if (type === 'basic') {
+					const name = get.name(card);
+					const selected = (ui.selected?.cards || []).concat([card]);
+					const others = player.getCards('hs', (c) => !selected.includes(c)).map((c) => get.name(c));
+					return others.includes(name) ? 8 - val : player.getHp() - val;
+				}
+				return 6 - val;
+			},
+			async content(event, trigger, player) {
+				await player.draw(event.cards.length);
+			},
+			ai: {
+				order(item, player) {
+					const hasHighValueCard = player.hasCard((i) => {
+						return get.value(i) > Math.max(6, 9 - player.hp);
+					}, 'he');
+					return hasHighValueCard ? 1 : 10;
+				},
+				result: {
+					player: 1,
+				},
+				nokeep: true,
+				skillTagFilter(player, tag, arg) {
+					if (tag === 'nokeep') {
+						return (
+							(!arg || (arg && arg.card && get.name(arg.card) === 'tao')) &&
+							player.isPhaseUsing() &&
+							player.countSkill('_aiyh_aiEnhance_discardDraw') < 1 &&
+							player.hasCard((card) => get.name(card) !== 'tao', 'h')
+						);
+					}
+				},
+				threaten: 1.55,
+			},
+			subSkill: {
+				clear: {
+					init(player) {
+						player.storage._aiyh_aiEnhance_discardDraw_clear = Math.random() < 0.3;
+					},
+					charlotte: true,
+					superCharlotte: true,
+					onremove: true,
+				},
+			},
+		};
+		// AI强化〔泣血〕
+		lib.skill._aiyh_aiEnhance_taoHeal = {
+			trigger: { player: 'recoverBegin' },
+			forced: true,
+			charlotte: true,
+			superCharlotte: true,
+			priority: Infinity,
+			filter(event, player) {
+				return (
+					player !== game.me &&
+					lib.config.extension_AI优化_aiEnhanceTaoHeal &&
+					event.getParent()?.name === 'tao' &&
+					get.suit(event.getParent().card) === 'heart' &&
+					Math.random() < 0.2
+				);
+			},
+			async content(event, trigger, player) {
+				trigger.num++;
+			},
+		};
+		// AI强化〔养神〕
+		lib.skill._aiyh_aiEnhance_phaseEndDraw = {
+			trigger: { player: 'phaseEnd' },
+			charlotte: true,
+			superCharlotte: true,
+			forced: true,
+			priority: Infinity,
+			filter(event, player) {
+				return player !== game.me && lib.config.extension_AI优化_aiEnhancePhaseEndDraw && Math.random() < 0.4;
+			},
+			async content(event, trigger, player) {
+				await player.draw();
+			},
+		};
+		// AI强化〔破甲〕
+		lib.skill._aiyh_aiEnhance_ignoreArmor = {
+			trigger: { source: 'damageBegin1' },
+			filter(event, player) {
+				return player !== game.me && lib.config.extension_AI优化_aiEnhanceIgnoreArmor && event.player.hujia && Math.random() < 0.15;
+			},
+			forced: true,
+			charlotte: true,
+			priority: Infinity,
+			async content(event, trigger, player) {
+				trigger.set('nohujia', true);
+			},
+		};
+
+		lib.translate._aiyh_aiEnhance_discardDraw = '<span style="color: #FFFF00">置换</span>';
+		lib.translate._aiyh_aiEnhance_redTaoHeal = '<span style="color: #00FF00">泣血</span>';
+		lib.translate._aiyh_aiEnhance_phaseEndDraw = '<span style="color: #00FFFF">养神</span>';
+		lib.translate._aiyh_aiEnhance_ignoreArmor = '<span style="color: #FF3300">破甲</span>';
+	}
+
+	if (lib.config.extension_AI优化_identityOpt) {
 		// 身份局AI
 		lib.skill.gjcx_zhuAi = {
 			trigger: { global: 'zhuUpdate' },
@@ -1382,47 +1768,76 @@ export function precontent(config, pack) {
 			},
 		};
 
-		lib.skill._aiyh_skillReleaseFilter = {
+		// 联合ai
+		lib.skill._aiyh_lianhe = {
 			mode: ['identity'],
-			trigger: { global: 'gameStart' },
-			filter(event, player) {
-				return !_status.connectMode && get.mode() === 'identity';
-			},
-			silent: true,
+			locked: true,
 			unique: true,
+			forceDie: true,
 			charlotte: true,
 			superCharlotte: true,
-			async content(event, trigger, player) {
-				const ignoreSkills = lib.config.extension_AI优化_aiSkillReleaseOpt || [];
-				_status.aiyh_ignoreSkills = ignoreSkills;
-				_status.aiyh_ignoreSkillCharMap = {};
-				ignoreSkills.forEach((skillId) => {
-					_status.aiyh_ignoreSkillCharMap[skillId] = game
-						.filterPlayer((p) => p.isIn() && p.getSkills(null, false, false).includes(skillId))
-						.map((p) => ({
-							charId: p.name || p.name2,
-							charName: get.translation(p),
-						}));
-				});
-				if (lib.config.extension_AI优化_devToolMutualFigh) {
-					let logText = '〔AI释放优化〕';
-					if (ignoreSkills.length === 0) {
-						logText += '未配置优化技能';
-					} else {
-						logText += '已配置优化技能：';
-						ignoreSkills.forEach((skillId) => {
-							const chars = _status.aiyh_ignoreSkillCharMap[skillId];
-							const charInfo = chars.length
-								? `（武将ID：${chars.map((c) => c.charId).join('、')}，武将名：${chars
-										.map((c) => c.charName)
-										.join('、')}）`
-								: '（无场上武将拥有该技能）';
-							logText += `${skillId}${charInfo}、`;
-						});
-						logText = logText.slice(0, -1); // 去除tmn
-					}
-					game.log('系统', `<span style="color:#00FFFF">${logText}</span>`);
-				}
+			ai: {
+				effect: {
+					player(card, player, target) {
+						if (
+							typeof card !== 'object' ||
+							get.itemtype(target) !== 'player' ||
+							target.ai.shown < 0.95 ||
+							player === target
+						) {
+							return 1;
+						}
+						if (
+							target.identity === 'nei' &&
+							!player.getFriends().length &&
+							(player.identity === 'fan' || player === game.zhu) &&
+							game.countPlayer((current) => {
+								let num = 1;
+								if (typeof lib.aiyh.qz[current.name] === 'number') {
+									num = lib.aiyh.qz[current.name];
+								} else if (typeof lib.config.extension_AI优化_qz[current.name] === 'number') {
+									num = lib.config.extension_AI优化_qz[current.name];
+								}
+								if (current.name2 !== undefined) {
+									if (typeof lib.aiyh.qz[current.name2] === 'number') {
+										num = (num + lib.aiyh.qz[current.name2]) / 2;
+									} else if (typeof lib.config.extension_AI优化_qz[current.name2] === 'number') {
+										num = (num + lib.config.extension_AI优化_qz[current.name2]) / 2;
+									}
+								}
+								if (current.isTurnedOver()) num -= 0.28;
+								if (current.storage.gjcx_neiAi && current.storage.gjcx_neiAi !== current.maxHp) {
+									if (current.maxHp > current.storage.gjcx_neiAi) {
+										if (current.hp > current.storage.gjcx_neiAi) {
+											num *= ((1 + (current.maxHp - current.storage.gjcx_neiAi) / 10) * current.hp) / current.maxHp;
+										} else {
+											num *= current.hp / current.storage.gjcx_neiAi;
+										}
+									} else {
+										num *= current.hp / Math.min(5, current.storage.gjcx_neiAi);
+									}
+								} else {
+									num *= current.hp / current.maxHp;
+								}
+								num += current.countCards('hes') * 0.1 - current.countCards('j') * 0.16;
+								if (current === player) {
+									return -2 * num;
+								}
+								if (current.identity === 'nei') {
+									return -num;
+								}
+								return num;
+							}) > 0
+						) {
+							if (get.tag(card, 'damage')) {
+								return [1, -2];
+							}
+							if (get.name(card) === 'tao' && player.hp > 1 && player.countCards('hs', 'tao') + target.hp > 0) {
+								return [1, 2];
+							}
+						}
+					},
+				},
 			},
 		};
 
@@ -1430,7 +1845,7 @@ export function precontent(config, pack) {
 			mode: ['identity'],
 			trigger: { player: 'useCardBegin' },
 			filter(event, player) {
-				return player !== game.me && lib.config.extension_AI优化_sfjAi && !_status.connectMode;
+				return player !== game.me;
 			},
 			silent: true,
 			unique: true,
@@ -1559,12 +1974,54 @@ export function precontent(config, pack) {
 				}
 			},
 		};
-
+		lib.skill._aiyh_skillReleaseFilter = {
+			mode: ['identity'],
+			trigger: { global: 'gameStart' },
+			filter(event, player) {
+				return !_status.connectMode;
+			},
+			silent: true,
+			unique: true,
+			charlotte: true,
+			superCharlotte: true,
+			async content(event, trigger, player) {
+				const ignoreSkills = lib.config.extension_AI优化_aiSkillReleaseOpt || [];
+				_status.aiyh_ignoreSkills = ignoreSkills;
+				_status.aiyh_ignoreSkillCharMap = {};
+				ignoreSkills.forEach((skillId) => {
+					_status.aiyh_ignoreSkillCharMap[skillId] = game
+						.filterPlayer((p) => p.isIn() && p.getSkills(null, false, false).includes(skillId))
+						.map((p) => ({
+							charId: p.name || p.name2,
+							charName: get.translation(p),
+						}));
+				});
+				if (lib.config.extension_AI优化_devToolMutualFigh) {
+					let logText = '〔AI释放优化〕';
+					if (ignoreSkills.length === 0) {
+						logText += '未配置优化技能';
+					} else {
+						logText += '已配置优化技能：';
+						ignoreSkills.forEach((skillId) => {
+							const chars = _status.aiyh_ignoreSkillCharMap[skillId];
+							const charInfo = chars.length
+								? `（武将ID：${chars.map((c) => c.charId).join('、')}，武将名：${chars
+										.map((c) => c.charName)
+										.join('、')}）`
+								: '（无场上武将拥有该技能）';
+							logText += `${skillId}${charInfo}、`;
+						});
+						logText = logText.slice(0, -1); // 去除tmn
+					}
+					game.log('系统', `<span style="color:#00FFFF">${logText}</span>`);
+				}
+			},
+		};
 		lib.skill._aiyh_sfjSmartAi = {
 			mode: ['identity'],
 			trigger: { player: 'useCardBegin' },
 			filter(event, player) {
-				return player !== game.me && get.mode() === 'identity' && lib.config.extension_AI优化_sfjAi && !_status.connectMode;
+				return player !== game.me && !_status.connectMode;
 			},
 			silent: true,
 			unique: true,
@@ -1607,7 +2064,6 @@ export function precontent(config, pack) {
 				alivePlayers.forEach((target) => {
 					if (target === ai) return;
 
-					const targetIdentity = target.identity;
 					const targetHp = target.hp;
 					const targetHandCount = target.countCards('h');
 					const targetEquipCount = target.countCards('e');
@@ -1622,7 +2078,7 @@ export function precontent(config, pack) {
 						basePriority = ai.storage.cooperateTarget === target ? 9999 : 0;
 					} else if (isEnemy) {
 						basePriority =
-							lib.config.extension_AI优化_jiHuoSwitch && targetHp < 2 ? 999 : targetHp + targetHandCount + targetEquipCount;
+							lib.config.extension_AI优化_focusLow && targetHp < 2 ? 999 : targetHp + targetHandCount + targetEquipCount;
 					} else if (isNei) {
 						basePriority = (targetHp + targetHandCount + targetEquipCount) * 0.8;
 					}
@@ -1688,518 +2144,8 @@ export function precontent(config, pack) {
 				},
 			},
 		};
-
-		// 联合ai
-		lib.skill._aiyh_lianhe = {
-			mode: ['identity'],
-			locked: true,
-			unique: true,
-			forceDie: true,
-			charlotte: true,
-			superCharlotte: true,
-			ai: {
-				effect: {
-					player(card, player, target) {
-						if (
-							typeof card !== 'object' ||
-							get.itemtype(target) !== 'player' ||
-							target.ai.shown < 0.95 ||
-							player === target
-						) {
-							return 1;
-						}
-						if (
-							target.identity === 'nei' &&
-							!player.getFriends().length &&
-							(player.identity === 'fan' || player === game.zhu) &&
-							game.countPlayer((current) => {
-								let num = 1;
-								if (typeof lib.aiyh.qz[current.name] === 'number') {
-									num = lib.aiyh.qz[current.name];
-								} else if (typeof lib.config.extension_AI优化_qz[current.name] === 'number') {
-									num = lib.config.extension_AI优化_qz[current.name];
-								}
-								if (current.name2 !== undefined) {
-									if (typeof lib.aiyh.qz[current.name2] === 'number') {
-										num = (num + lib.aiyh.qz[current.name2]) / 2;
-									} else if (typeof lib.config.extension_AI优化_qz[current.name2] === 'number') {
-										num = (num + lib.config.extension_AI优化_qz[current.name2]) / 2;
-									}
-								}
-								if (current.isTurnedOver()) num -= 0.28;
-								if (current.storage.gjcx_neiAi && current.storage.gjcx_neiAi !== current.maxHp) {
-									if (current.maxHp > current.storage.gjcx_neiAi) {
-										if (current.hp > current.storage.gjcx_neiAi) {
-											num *= ((1 + (current.maxHp - current.storage.gjcx_neiAi) / 10) * current.hp) / current.maxHp;
-										} else {
-											num *= current.hp / current.storage.gjcx_neiAi;
-										}
-									} else {
-										num *= current.hp / Math.min(5, current.storage.gjcx_neiAi);
-									}
-								} else {
-									num *= current.hp / current.maxHp;
-								}
-								num += current.countCards('hes') * 0.1 - current.countCards('j') * 0.16;
-								if (current === player) {
-									return -2 * num;
-								}
-								if (current.identity === 'nei') {
-									return -num;
-								}
-								return num;
-							}) > 0
-						) {
-							if (get.tag(card, 'damage')) {
-								return [1, -2];
-							}
-							if (get.name(card) === 'tao' && player.hp > 1 && player.countCards('hs', 'tao') + target.hp > 0) {
-								return [1, 2];
-							}
-						}
-					},
-				},
-			},
-		};
-
-		// AI强化〔置换〕
-		lib.skill._aiyh_aiEnhance_discardDraw = {
-			mod: {
-				aiOrder(player, card, num) {
-					if (
-						num <= 0 ||
-						player === game.me ||
-						!lib.config.extension_AI优化_aiEnhanceDiscardDraw ||
-						!lib.config.extension_AI优化_sfjAi ||
-						get.itemtype(card) !== 'card' ||
-						get.type(card) !== 'equip'
-					) {
-						return num;
-					}
-					let eq = player.getEquip(get.subtype(card));
-					if (eq && get.equipValue(card) - get.equipValue(eq) < Math.max(1.2, 6 - player.hp)) {
-						return 0;
-					}
-				},
-			},
-			mode: ['identity'],
-			locked: false,
-			enable: 'phaseUse',
-			usable: 1,
-			position: 'he',
-			filterCard: true,
-			selectCard: [1, Infinity],
-			allowChooseAll: true,
-			prompt: '弃置任意张牌并摸等量的牌',
-			check(card) {
-				const player = _status.event?.player || game.currentPlayer;
-				if (!player) return 0;
-
-				if (get.position(card) === 'h') {
-					const type = get.type(card);
-					const val = get.value(card);
-					if (type === 'equip') {
-						return 9 - val;
-					}
-					if (type === 'basic') {
-						const name = get.name(card);
-						const selected = (ui.selected?.cards || []).concat([card]);
-						const others = player.getCards('hs', (c) => !selected.includes(c)).map((c) => get.name(c));
-						return others.includes(name) ? 8 - val : player.getHp() - val;
-					}
-					return 6 - val;
-				}
-				return player.getHp() - val;
-			},
-			filter(event, player) {
-				if (player === game.me || !lib.config.extension_AI优化_aiEnhanceDiscardDraw || !lib.config.extension_AI优化_sfjAi) {
-					return false;
-				}
-				player.addTempSkill('_aiyh_aiEnhance_discardDraw_clear');
-				return player.storage._aiyh_aiEnhance_discardDraw_clear;
-			},
-			charlotte: true,
-			superCharlotte: true,
-			async content(event, trigger, player) {
-				await player.draw(event.cards.length);
-			},
-			ai: {
-				order(item, player) {
-					const hasHighValueCard = player.hasCard((i) => {
-						return get.value(i) > Math.max(6, 9 - player.hp);
-					}, 'he');
-					return hasHighValueCard ? 1 : 10;
-				},
-				result: {
-					player: 1,
-				},
-				nokeep: true,
-				skillTagFilter(player, tag, arg) {
-					if (tag === 'nokeep') {
-						return (
-							(!arg || (arg && arg.card && get.name(arg.card) === 'tao')) &&
-							player.isPhaseUsing() &&
-							player.countSkill('_aiyh_aiEnhance_discardDraw') < 1 &&
-							player.hasCard((card) => get.name(card) !== 'tao', 'h')
-						);
-					}
-				},
-				threaten: 1.55,
-			},
-			subSkill: {
-				clear: {
-					init(player) {
-						player.storage._aiyh_aiEnhance_discardDraw_clear = Math.random() < 0.3;
-					},
-					charlotte: true,
-					superCharlotte: true,
-					onremove: true,
-				},
-			},
-		};
-
-		// AI强化〔泣血〕
-		lib.skill._aiyh_aiEnhance_redTaoHeal = {
-			mode: ['identity'],
-			trigger: { player: 'recoverBegin' },
-			forced: true,
-			// nopop: true,
-			charlotte: true,
-			superCharlotte: true,
-			priority: Infinity,
-			filter(event, player) {
-				return (
-					player !== game.me &&
-					lib.config.extension_AI优化_aiEnhanceRedTaoHeal &&
-					lib.config.extension_AI优化_sfjAi &&
-					event.player === player &&
-					event.getParent()?.name === 'tao' &&
-					get.suit(event.getParent().card) === 'heart' &&
-					Math.random() < 0.2
-				);
-			},
-			async content(event, trigger, player) {
-				trigger.num++;
-			},
-		};
-
-		// AI强化〔养神〕- 回合结束40%摸1牌
-		lib.skill._aiyh_aiEnhance_phaseEndDraw = {
-			mode: ['identity'],
-			inherit: 'zf_anyDraw',
-			trigger: { player: 'phaseEnd' },
-			// nopop: true,
-			charlotte: true,
-			superCharlotte: true,
-			forced: true,
-			priority: Infinity,
-			filter(event, player) {
-				return (
-					player !== game.me &&
-					lib.config.extension_AI优化_aiEnhancePhaseEndDraw &&
-					lib.config.extension_AI优化_sfjAi &&
-					Math.random() < 0.4
-				);
-			},
-			async content(event, trigger, player) {
-				await player.draw();
-			},
-		};
-		// AI强化〔破甲〕
-		lib.skill._aiyh_aiEnhance_ignoreArmor = {
-			mode: ['identity'],
-			forced: true,
-			trigger: { source: 'damageBegin1' },
-			// nopop: true,
-			charlotte: true,
-			priority: Infinity,
-			filter(event, player) {
-				return (
-					player !== game.me &&
-					lib.config.extension_AI优化_aiEnhanceIgnoreArmor &&
-					lib.config.extension_AI优化_sfjAi &&
-					Math.random() < 0.15
-				);
-			},
-			async content(event, trigger, player) {
-				trigger.set('nohujia', true);
-			},
-		};
-
-		// AI装备优化 - 牌价值判定体系
-		lib.skill._aiyh_aiEquipmentOpt = {
-			mode: ['identity'],
-			silent: true,
-			unique: true,
-			charlotte: true,
-			superCharlotte: true,
-			trigger: {
-				global: 'gameStart',
-				player: ['phaseBegin', 'phaseDiscardBegin'], // 回合开始+弃牌前触发
-			},
-			filter(event, player) {
-				return player !== game.me && lib.config.extension_AI优化_aiEquipmentOpt && lib.config.extension_AI优化_sfjAi;
-			},
-			async content(event, trigger, ai) {
-				// 定义各类牌完整名称映射
-				const cardMap = {
-					basic: ['sha', 'shan', 'tao', 'jiu'],
-					equip: {
-						armor: ['bagua', 'renwang', 'tengjia', 'baiyin'],
-						weapon: ['zhuge', 'qinggang', 'guanshi', 'qilin', 'qinglong', 'zhangba', 'fangtian', 'zhuque', 'guding'],
-					},
-					trick: [
-						'wuxie',
-						'lebu',
-						'bingliang',
-						'wuzhong',
-						'nanman',
-						'wanjian',
-						'guohe',
-						'shunshou',
-						'wugu',
-						'tiesuo',
-						'huogong',
-						'taoyuan',
-						'jiedao',
-						'shandian',
-					],
-				};
-
-				// 定义价值排序规则（基础分1-10，分数越高价值越高）
-				const getCardValue = (card) => {
-					const cardName = get.name(card);
-					const cardType = get.type(card);
-					const enemies = game.filterPlayer((p) => get.attitude(ai, p) < 0 && p.isIn());
-					const hasFireThunderSha = enemies.some((p) =>
-						p.countCards('h', (c) => get.name(c) === 'sha' && (game.hasNature(c, 'thunder') || game.hasNature(c, 'fire')))
-					);
-					const hasTieSuo =
-						ai.countCards('h', (c) => get.name(c) === 'tiesuo') > 0 || enemies.some((p) => p.hasSkill('tiesuo_effect'));
-					const enemyNoHand = enemies.some((p) => p.countCards('h') === 0);
-					const arraysEqual = (arr1, arr2) => {
-						if (arr1.length !== arr2.length) {
-							return false;
-						}
-						if (arr1.length === 1) {
-							return arr1[0] === arr2[0];
-						}
-						const sorted1 = [...arr1].sort();
-						const sorted2 = [...arr2].sort();
-						return JSON.stringify(sorted1) === JSON.stringify(sorted2);
-					};
-
-					// 基础牌价值
-					if (cardType === 'basic') {
-						const basicOrder = ai.hp <= 1 ? { tao: 10, jiu: 9, shan: 8, sha: 6 } : { shan: 10, tao: 9, sha: 7, jiu: 6 };
-						if (cardName === 'sha' && game.hasNature(card)) {
-							return basicOrder[cardName] + 1;
-						}
-						return basicOrder[cardName] || 5;
-					}
-
-					// 装备牌价值
-					if (cardType === 'equip') {
-						// 武器类
-						if (cardMap.equip.weapon.includes(cardName)) {
-							let weaponOrder = {
-								zhuge: 9,
-								qinggang: 8,
-								guanshi: 7,
-								qilin: 6,
-								qinglong: 5,
-								zhangba: 4,
-								fangtian: 3,
-								zhuque: 2,
-								guding: 1,
-							};
-							if (hasTieSuo) {
-								weaponOrder.zhuque = 10;
-								weaponOrder.guding++;
-							}
-							if (enemyNoHand) {
-								weaponOrder.guding = 10;
-							}
-							return weaponOrder[cardName] || 3;
-						}
-						// 护甲类
-						if (cardMap.equip.armor.includes(cardName)) {
-							let armorOrder = { bagua: 9, renwang: 8, tengjia: 7, baiyin: 6 };
-							if (hasFireThunderSha) armorOrder = { bagua: 9, renwang: 8, baiyin: 7, tengjia: 5 };
-							return armorOrder[cardName] || 5;
-						}
-						// 坐骑类，防御马＞进攻马
-						const subtypes = get.subtypes(card);
-						if (subtypes.includes('equip3')) {
-							return 7 + subtypes.length;
-						}
-						if (subtypes.includes('equip4')) {
-							return 6 + subtypes.length;
-						}
-						return 4;
-					}
-
-					// 锦囊牌价值
-					if (cardType === 'trick') {
-						let trickOrder = {
-							wuxie: 10,
-							lebu: 9,
-							bingliang: 9,
-							wuzhong: 8,
-							nanman: 7,
-							wanjian: 7,
-							guohe: 6,
-							shunshou: 6,
-							wugu: 5,
-							tiesuo: 4,
-							huogong: 4,
-							taoyuan: 3,
-							jiedao: 2,
-							shandian: 1,
-						};
-						if (ai.hasSkillTag('rejudge') || ai.hasSkillTag('guanxing'))
-							trickOrder = {
-								shandian: 10,
-								wuxie: 9,
-								lebu: 8,
-								bingliang: 8,
-								wuzhong: 7,
-								nanman: 6,
-								wanjian: 6,
-								guohe: 5,
-								shunshou: 5,
-								wugu: 4,
-								tiesuo: 3,
-								huogong: 3,
-								taoyuan: 2,
-								jiedao: 1,
-							};
-						return trickOrder[cardName] || 3;
-					}
-
-					return 5; // 默认价值
-				};
-
-				// 1. 回合开始阶段 - 装备安置规则
-				if (event.name === 'phaseBegin' && event.phase === 'phaseBegin') {
-					// 获取当前装备栏现有装备
-					const currentEquips = ai.getCards('e', (card) => lib.filter.canBeReplaced(card, player));
-					const equipSlots = currentEquips.map((card) => get.subtype(card));
-					for (let i = 0; i < currentEquips.length; i++) {
-						const slot = equipSlots[i];
-						const currentValue = getCardValue(currentEquips[i]);
-
-						// 筛选手牌中对应类型的装备
-						const handEquips = ai.getCards('h', (card) => {
-							const subtype = get.subtype(card);
-							if (subtype === 'equip6') {
-								return ['equip3', 'equip4'].includes(slot); // 已装备 equip6 的无需更换
-							}
-							return slot === subtype;
-						});
-
-						// 找到手牌中最高价值的装备
-						let bestEquip = null;
-						let bestValue = currentValue;
-						handEquips.forEach((equip) => {
-							const value = getCardValue(equip);
-							if (value > bestValue) {
-								bestValue = value;
-								bestEquip = equip;
-							}
-						});
-
-						// 替换低价值装备
-						if (bestEquip) {
-							await ai.equip(bestEquip); // 装备最高价值装备
-							if (lib.config.extension_AI优化_devToolMutualFigh) {
-								game.log(
-									ai,
-									`<span style="color:#00FFB0">〔AI装备优化〕装备${get.name(bestEquip)}（价值${bestValue}），替换原${
-										currentEquip ? get.name(currentEquip) : '空栏'
-									}（价值${currentValue}）</span>`
-								);
-							}
-						}
-					}
-				}
-
-				// 2. 弃牌阶段前 - 同栏装备价值清零规则
-				if (event.name === 'phaseDiscardBegin') {
-					const equipSlots = ai.getCards('e').map((card) => get.subtype(card));
-					for (const slot of equipSlots) {
-						const handEquips = ai.getCards('h', (card) => {
-							const subtype = get.subtype(card);
-							if (subtype === 'equip6') {
-								return ['equip3', 'equip4', 'equip6'].includes(slot);
-							}
-							return slot === subtype;
-						});
-
-						// 手牌中同类型装备价值设为0
-						if (!handEquips.length) {
-							continue;
-						}
-						if (!ai.cardValueCache) {
-							ai.cardValueCache = {};
-						}
-						handEquips.forEach((equip) => {
-							ai.cardValueCache[equip.id] = 0; // 临时缓存价值为0
-						});
-					}
-				}
-			},
-		};
-		if (lib.config.extension_AI优化_qjAi) {
-			// 重写AI牌价值判定，优先使用缓存价值
-			const originalAiValue = lib.skill.aiyh_gjcx_qj.mod.aiValue;
-			lib.skill.aiyh_gjcx_qj.mod.aiValue = function (player, card, num) {
-				if (player.cardValueCache?.[card.id]) {
-					return player.cardValueCache[card.id];
-				}
-				return originalAiValue.call(this, player, card, num);
-			};
-		}
-
-		lib.translate._aiyh_aiEnhance_discardDraw = '<span style="color: #FFD700">置换</span>';
-		lib.translate._aiyh_aiEnhance_redTaoHeal = '<span style="color: #FFD700">泣血</span>';
-		lib.translate._aiyh_aiEnhance_phaseEndDraw = '<span style="color: #FFD700">养神</span>';
-		lib.translate._aiyh_aiEnhance_ignoreArmor = '<span style="color: #FFD700">破甲</span>';
 	}
-	// 体力怪禁止功能
-	lib.skill._aiyh_tiLiGuaiJinZhi = {
-		mode: ['identity'],
-		trigger: { global: 'gameStart' },
-		filter(event, player) {
-			return !_status.aiyh_tiLiGuaiTriggered && lib.config.extension_AI优化_tiLiGuaiJinZhi && get.mode() === 'identity';
-		},
-		silent: true,
-		unique: true,
-		charlotte: true,
-		superCharlotte: true,
-		async content(event, trigger, player) {
-			_status.aiyh_tiLiGuaiTriggered = true;
 
-			const correctedChars = [];
-			const targetHp = 10;
-			game.filterPlayer((p) => p !== game.me).forEach((char) => {
-				if (char.hp >= targetHp) {
-					char.maxHp = targetHp;
-					char.hp = targetHp;
-					correctedChars.push(get.translation(char));
-				}
-			});
-
-			if (lib.config.extension_AI优化_devToolMutualFigh && correctedChars.length > 0) {
-				game.log(
-					'系统',
-					`<span style="color: #FF3300">由于体力怪禁止，已将当前体力≥8的武将修正为体力上限和当前体力均为${targetHp}，被更正的武将有：${correctedChars.join(
-						'、'
-					)}。</span>`
-				);
-			}
-		},
-	};
 	lib.skill._aiyh_wujiangInfo = {
 		mode: ['identity'],
 		trigger: {
@@ -2280,6 +2226,373 @@ export function precontent(config, pack) {
 					wujiang: rankWujiang,
 				};
 			}
+			const playerNameLib = [
+				'偷吃小饼干',
+				'咸鱼翻个身',
+				'熬夜打游戏',
+				'快乐加载中',
+				'迷路小笨蛋',
+				'菜鸡别追我',
+				'干饭第一名',
+				'摸鱼小能手',
+				'憨憨本憨呀',
+				'睡不醒玩家',
+				'调皮小怪兽',
+				'奶茶续命中',
+				'坑队友专业',
+				'可爱到犯规',
+				'搞事不手软',
+				'快乐小废物',
+				'佛系打游戏',
+				'发呆冠军号',
+				'零食守护者',
+				'懒癌晚期者',
+				'萌系小菜鸟',
+				'搞笑不打烊',
+				'咸鱼不翻身',
+				'调皮鬼本人',
+				'干饭不积极',
+				'摸鱼不被抓',
+				'憨憨打游戏',
+				'睡神附体啦',
+				'小笨蛋上线',
+				'菜鸡也快乐',
+				'奶茶控玩家',
+				'坑人第一名',
+				'可爱超标啦',
+				'搞怪小天才',
+				'废物也可爱',
+				'佛系小菜鸟',
+				'发呆小能手',
+				'零食小管家',
+				'懒虫打游戏',
+				'萌憨小怪兽',
+				'搞笑小达人',
+				'咸鱼快乐多',
+				'调皮不捣蛋',
+				'干饭超积极',
+				'摸鱼小天才',
+				'憨憨小菜鸟',
+				'睡不醒的我',
+				'小笨蛋本蛋',
+				'菜鸡的倔强',
+				'奶茶小宝贝',
+				'晚风遇星辰',
+				'月色落肩头',
+				'心动藏眼底',
+				'星光伴晚风',
+				'温柔满星河',
+				'爱意藏心间',
+				'清风拂脸颊',
+				'星河皆浪漫',
+				'心动一瞬间',
+				'温柔小月亮',
+				'星光落满怀',
+				'爱意随风起',
+				'清风伴明月',
+				'浪漫藏细节',
+				'心动不止步',
+				'月色照人心',
+				'温柔待世界',
+				'星河入梦来',
+				'爱意满人间',
+				'清风拂心尖',
+				'星光皆温柔',
+				'心动藏温柔',
+				'月色皆浪漫',
+				'温柔伴余生',
+				'星河映初心',
+				'爱意藏眼底',
+				'清风遇骄阳',
+				'浪漫满星河',
+				'心动如潮来',
+				'温柔小星光',
+				'月色藏温柔',
+				'爱意随风散',
+				'清风伴星辰',
+				'浪漫在人间',
+				'心动藏细节',
+				'月色照温柔',
+				'温柔待他人',
+				'星河皆温柔',
+				'爱意藏心间',
+				'清风拂星河',
+				'星光伴明月',
+				'浪漫藏眼底',
+				'心动不止息',
+				'月色满星河',
+				'温柔小清风',
+				'星河藏爱意',
+				'爱意满星河',
+				'清风遇温柔',
+				'浪漫伴余生',
+				'心动藏星河',
+			];
+			const tagTextLib = [
+				'大汉忠臣',
+				'匡扶汉室',
+				'乱世奸雄',
+				'平定天下',
+				'七进七出',
+				'乱世称王',
+				'魂佑江东',
+				'五子良将',
+				'五虎上将',
+				'江东小霸王',
+				'江东十二虎臣',
+				'单刀赴会',
+				'乐不思蜀',
+				'三国归晋',
+				'三英战吕布',
+				'万人斩',
+				'千人斩',
+				'百人斩',
+				'一夫莫开',
+				'三顾茅庐',
+				'隆中分三国',
+				'周郎妙计安世',
+				'铜雀锁二乔',
+				'魏遗风流',
+				'江东鼠辈',
+				'江东萝莉',
+				'蜀汉基情',
+			];
+			const tagColorLib = {
+				blue: '#1E90FF',
+				purple: '#9370DB',
+				gold: '#FFD700',
+				red: '#FF3300',
+			};
+			const showWujiangInfo = function (char) {
+				const layoutPath = lib.assetURL + 'extension/AI优化/img/';
+				const modal = document.createElement('div');
+				modal.className = 'wujiang-info-modal';
+				const bgImg = document.createElement('img');
+				bgImg.src = `${layoutPath}display/characterInfo.png`;
+				bgImg.className = 'wujiang-info-bg';
+				modal.appendChild(bgImg);
+				const avatarImg = document.createElement('img');
+				const avatarPath = `${lib.assetURL}extension/AI优化/img/portrait/${char.storage.wujiangInfoNum}.png`;
+				avatarImg.src = avatarPath;
+				avatarImg.className = 'wujiang-info-avatar';
+				modal.appendChild(avatarImg);
+				modal.onclick = (e) => {
+					if (e.target === modal) {
+						modal.remove();
+					}
+				};
+				document.body.appendChild(modal);
+				const labelContainer = document.createElement('div');
+				labelContainer.className = 'wujiang-info-label-container';
+				modal.appendChild(labelContainer);
+				const rankInfo = char.storage.rankInfo;
+				if (rankInfo.type !== 'none') {
+					const rankImg = document.createElement('img');
+					const imgPath = `${lib.assetURL}extension/AI优化/img/display/rank/${rankInfo.type}.png`;
+					rankImg.src = imgPath;
+					rankImg.className = 'wujiang-info-rank-img';
+					rankImg.title = `${rankInfo.type === 'county' ? '县级' : rankInfo.type === 'city' ? '市级' : '国家级'}排名标识`;
+					modal.appendChild(rankImg);
+				}
+				const labelText = document.createElement('div');
+				labelText.className = 'wujiang-info-label-text';
+				switch (rankInfo.type) {
+					case 'county':
+						labelText.innerHTML = `县 ${rankInfo.starCount}⭐ 第${rankInfo.num}名[${rankInfo.wujiang}]`;
+						break;
+					case 'city':
+						labelText.innerHTML = `市 ${rankInfo.starCount}⭐ 第${rankInfo.num}名[${rankInfo.wujiang}]`;
+						break;
+					case 'national':
+						labelText.innerHTML = `国 ${rankInfo.starCount}⭐ 第${rankInfo.num}名[${rankInfo.wujiang}]`;
+						break;
+					default:
+						labelText.innerHTML = '暂无排名';
+				}
+				const settingIcon = document.createElement('img');
+				const settingIconPath = `${lib.assetURL}extension/AI优化/img/display/settingIcon.png`;
+				settingIcon.src = settingIconPath;
+				settingIcon.className = 'wujiang-info-setting-icon';
+				settingIcon.title = '设置武将信息';
+				labelContainer.appendChild(settingIcon);
+				labelContainer.appendChild(labelText);
+				settingIcon.onclick = (e) => {
+					e.stopPropagation();
+					showRankImage();
+				};
+				const nameContainer = document.createElement('div');
+				nameContainer.className = 'wujiang-info-name-container';
+				if (!char.storage.randomPlayerName) {
+					char.storage.randomPlayerName = playerNameLib[Math.floor(Math.random() * playerNameLib.length)];
+				}
+				const nameText = document.createElement('div');
+				nameText.className = 'wujiang-info-name-text';
+				nameText.textContent = char.storage.randomPlayerName;
+				nameContainer.appendChild(nameText);
+				modal.appendChild(nameContainer);
+				const expContainer = document.createElement('div');
+				expContainer.className = 'wujiang-info-exp-container';
+				if (!char.storage.randomLevel) {
+					char.storage.randomLevel = Math.floor(Math.random() * 150) + 1;
+				}
+				const randomLevel = char.storage.randomLevel;
+				const expPercent = (randomLevel / 150) * 100;
+				const expFill = document.createElement('div');
+				expFill.className = 'wujiang-info-exp-fill';
+				expFill.style.width = `${expPercent}%`;
+				const expText = document.createElement('div');
+				expText.className = 'wujiang-info-exp-text';
+				expText.textContent = `max(${randomLevel})`;
+				expContainer.appendChild(expFill);
+				expContainer.appendChild(expText);
+				modal.appendChild(expContainer);
+				if (!char.storage.tagConfig) {
+					const config = {
+						colors: [],
+						texts: [],
+					};
+					const colorKeys = Object.keys(tagColorLib);
+					for (let i = 0; i < 3; i++) {
+						const randomColorKey = colorKeys[Math.floor(Math.random() * colorKeys.length)];
+						config.colors.push(tagColorLib[randomColorKey]);
+					}
+					const shuffledTextLib = [...tagTextLib].sort(() => Math.random() - 0.5);
+					config.texts = shuffledTextLib.slice(0, 3);
+					char.storage.tagConfig = config;
+				}
+				const tagConfigs = char.storage.tagConfig;
+				const tagContainers = [
+					{ className: 'wujiang-tag-container-1' },
+					{ className: 'wujiang-tag-container-2' },
+					{ className: 'wujiang-tag-container-3' },
+				];
+				tagContainers.forEach((container, idx) => {
+					const tagContainer = document.createElement('div');
+					tagContainer.className = container.className;
+					tagContainer.style.backgroundColor = tagConfigs.colors[idx];
+					tagContainer.textContent = tagConfigs.texts[idx];
+					modal.appendChild(tagContainer);
+				});
+				const identityProgressGroup = document.createElement('div');
+				identityProgressGroup.className = 'wujiang-identity-progress-group';
+				modal.appendChild(identityProgressGroup);
+				const identityZhu = document.createElement('div');
+				identityZhu.className = 'wujiang-identity-zhu';
+				identityZhu.textContent = '主公';
+				identityProgressGroup.appendChild(identityZhu);
+				const identityZhong = document.createElement('div');
+				identityZhong.className = 'wujiang-identity-zhong';
+				identityZhong.textContent = '忠臣';
+				identityProgressGroup.appendChild(identityZhong);
+				const identityFan = document.createElement('div');
+				identityFan.className = 'wujiang-identity-fan';
+				identityFan.textContent = '反贼';
+				identityProgressGroup.appendChild(identityFan);
+				const identityNei = document.createElement('div');
+				identityNei.className = 'wujiang-identity-nei';
+				identityNei.textContent = '内奸';
+				identityProgressGroup.appendChild(identityNei);
+				const progressContainerGroup = document.createElement('div');
+				progressContainerGroup.className = 'wujiang-progress-container-group';
+				if (!char.storage.progressValues) {
+					let totalValue = char.storage.initialTotalValue;
+					const rankType = rankInfo.type;
+					switch (rankType) {
+						case 'none':
+							if (totalValue > 150) {
+								totalValue = 120;
+								totalValue = Math.floor(totalValue * 0.7);
+							} else {
+								totalValue = Math.floor(totalValue * 0.7);
+							}
+							totalValue = Math.max(totalValue, 4);
+							break;
+						case 'county':
+							totalValue = Math.floor(totalValue * 1.1);
+							if (totalValue < 100) {
+								totalValue = Math.floor(Math.random() * 61) + 100;
+							}
+							break;
+						case 'city':
+							totalValue = Math.floor(totalValue * 1.4);
+							if (totalValue < 180) {
+								totalValue = Math.floor(Math.random() * 31) + 180;
+							}
+							break;
+						case 'national':
+							totalValue = Math.floor(totalValue * 1.7);
+							if (totalValue < 300) {
+								totalValue = Math.floor(Math.random() * 101) + 300;
+							}
+							break;
+					}
+					const distributeValues = (total, count) => {
+						const values = [];
+						let remaining = total;
+						const getRareValue = () => {
+							const rand = Math.random();
+							if (rand < 0.5) return Math.floor(Math.random() * 50) + 1;
+							if (rand < 0.8) return Math.floor(Math.random() * 30) + 51;
+							if (rand < 0.95) return Math.floor(Math.random() * 15) + 81;
+							return Math.floor(Math.random() * 6) + 96;
+						};
+						for (let i = 0; i < count; i++) {
+							if (i === count - 1) {
+								const finalVal = Math.min(remaining, 100);
+								values.push(Math.max(finalVal, 1));
+							} else {
+								let val = getRareValue();
+								val = Math.min(val, remaining - (count - i - 1));
+								values.push(val);
+								remaining -= val;
+							}
+						}
+						return values.sort(() => Math.random() - 0.5);
+					};
+					char.storage.progressValues = distributeValues(totalValue, 4);
+				}
+				const progressValues = char.storage.progressValues;
+				const identities = ['zhu', 'zhong', 'fan', 'nei'];
+				identities.forEach((_, idx) => {
+					const progressBar = document.createElement('div');
+					progressBar.className = 'wujiang-progress-bar';
+					const value = progressValues[idx];
+					const fillWidth = `${Math.min(value, 100)}%`;
+					const progressFill = document.createElement('div');
+					progressFill.className = 'wujiang-progress-fill';
+					progressFill.style.width = fillWidth;
+					const progressValue = document.createElement('div');
+					progressValue.className = 'wujiang-progress-value';
+					progressValue.textContent = value;
+					progressBar.appendChild(progressFill);
+					progressBar.appendChild(progressValue);
+					progressContainerGroup.appendChild(progressBar);
+				});
+				identityProgressGroup.appendChild(progressContainerGroup);
+			};
+			const showRankImage = function () {
+				// 显示初级榜
+				const layoutPath = lib.assetURL + 'extension/AI优化/img/display/';
+				const rankModal = document.createElement('div');
+				rankModal.className = 'wujiang-rank-modal';
+				const rankImg = document.createElement('img');
+				rankImg.src = `${layoutPath}countyRank.png`;
+				rankImg.className = 'wujiang-rank-img';
+				rankModal.appendChild(rankImg);
+				const closeBtn = document.createElement('div');
+				closeBtn.className = 'wujiang-rank-close';
+				closeBtn.textContent = '×';
+				closeBtn.onclick = () => {
+					rankModal.remove();
+				};
+				rankModal.appendChild(closeBtn);
+				rankModal.onclick = (e) => {
+					if (e.target === rankModal) {
+						rankModal.remove();
+					}
+				};
+				document.body.appendChild(rankModal);
+			};
 			for (const char of nonPlayerChars) {
 				const num = char.storage.wujiangInfoNum;
 				const portraitPath = `${lib.assetURL}extension/AI优化/img/portrait/${num}.png`;
@@ -2317,375 +2630,6 @@ export function precontent(config, pack) {
 			},
 		},
 	};
-	const playerNameLib = [
-		'偷吃小饼干',
-		'咸鱼翻个身',
-		'熬夜打游戏',
-		'快乐加载中',
-		'迷路小笨蛋',
-		'菜鸡别追我',
-		'干饭第一名',
-		'摸鱼小能手',
-		'憨憨本憨呀',
-		'睡不醒玩家',
-		'调皮小怪兽',
-		'奶茶续命中',
-		'坑队友专业',
-		'可爱到犯规',
-		'搞事不手软',
-		'快乐小废物',
-		'佛系打游戏',
-		'发呆冠军号',
-		'零食守护者',
-		'懒癌晚期者',
-		'萌系小菜鸟',
-		'搞笑不打烊',
-		'咸鱼不翻身',
-		'调皮鬼本人',
-		'干饭不积极',
-		'摸鱼不被抓',
-		'憨憨打游戏',
-		'睡神附体啦',
-		'小笨蛋上线',
-		'菜鸡也快乐',
-		'奶茶控玩家',
-		'坑人第一名',
-		'可爱超标啦',
-		'搞怪小天才',
-		'废物也可爱',
-		'佛系小菜鸟',
-		'发呆小能手',
-		'零食小管家',
-		'懒虫打游戏',
-		'萌憨小怪兽',
-		'搞笑小达人',
-		'咸鱼快乐多',
-		'调皮不捣蛋',
-		'干饭超积极',
-		'摸鱼小天才',
-		'憨憨小菜鸟',
-		'睡不醒的我',
-		'小笨蛋本蛋',
-		'菜鸡的倔强',
-		'奶茶小宝贝',
-		'晚风遇星辰',
-		'月色落肩头',
-		'心动藏眼底',
-		'星光伴晚风',
-		'温柔满星河',
-		'爱意藏心间',
-		'清风拂脸颊',
-		'星河皆浪漫',
-		'心动一瞬间',
-		'温柔小月亮',
-		'星光落满怀',
-		'爱意随风起',
-		'清风伴明月',
-		'浪漫藏细节',
-		'心动不止步',
-		'月色照人心',
-		'温柔待世界',
-		'星河入梦来',
-		'爱意满人间',
-		'清风拂心尖',
-		'星光皆温柔',
-		'心动藏温柔',
-		'月色皆浪漫',
-		'温柔伴余生',
-		'星河映初心',
-		'爱意藏眼底',
-		'清风遇骄阳',
-		'浪漫满星河',
-		'心动如潮来',
-		'温柔小星光',
-		'月色藏温柔',
-		'爱意随风散',
-		'清风伴星辰',
-		'浪漫在人间',
-		'心动藏细节',
-		'月色照温柔',
-		'温柔待他人',
-		'星河皆温柔',
-		'爱意藏心间',
-		'清风拂星河',
-		'星光伴明月',
-		'浪漫藏眼底',
-		'心动不止息',
-		'月色满星河',
-		'温柔小清风',
-		'星河藏爱意',
-		'爱意满星河',
-		'清风遇温柔',
-		'浪漫伴余生',
-		'心动藏星河',
-	];
-	const tagTextLib = [
-		'大汉忠臣',
-		'匡扶汉室',
-		'乱世奸雄',
-		'平定天下',
-		'七进七出',
-		'乱世称王',
-		'魂佑江东',
-		'五子良将',
-		'五虎上将',
-		'江东小霸王',
-		'江东十二虎臣',
-		'单刀赴会',
-		'乐不思蜀',
-		'三国归晋',
-		'三英战吕布',
-		'万人斩',
-		'千人斩',
-		'百人斩',
-		'一夫莫开',
-		'三顾茅庐',
-		'隆中分三国',
-		'周郎妙计安世',
-		'铜雀锁二乔',
-		'魏遗风流',
-		'江东鼠辈',
-		'江东萝莉',
-		'蜀汉基情',
-	];
-	const tagColorLib = {
-		blue: '#1E90FF',
-		purple: '#9370DB',
-		gold: '#FFD700',
-		red: '#FF3300',
-	};
-	function showWujiangInfo(char) {
-		const layoutPath = lib.assetURL + 'extension/AI优化/img/';
-		const modal = document.createElement('div');
-		modal.className = 'wujiang-info-modal';
-		const bgImg = document.createElement('img');
-		bgImg.src = `${layoutPath}display/characterInfo.png`;
-		bgImg.className = 'wujiang-info-bg';
-		modal.appendChild(bgImg);
-		const avatarImg = document.createElement('img');
-		const avatarPath = `${lib.assetURL}extension/AI优化/img/portrait/${char.storage.wujiangInfoNum}.png`;
-		avatarImg.src = avatarPath;
-		avatarImg.className = 'wujiang-info-avatar';
-		modal.appendChild(avatarImg);
-		modal.onclick = (e) => {
-			if (e.target === modal) {
-				modal.remove();
-			}
-		};
-		document.body.appendChild(modal);
-		const labelContainer = document.createElement('div');
-		labelContainer.className = 'wujiang-info-label-container';
-		modal.appendChild(labelContainer);
-		const rankInfo = char.storage.rankInfo;
-		if (rankInfo.type !== 'none') {
-			const rankImg = document.createElement('img');
-			const imgPath = `${lib.assetURL}extension/AI优化/img/display/rank/${rankInfo.type}.png`;
-			rankImg.src = imgPath;
-			rankImg.className = 'wujiang-info-rank-img';
-			rankImg.title = `${rankInfo.type === 'county' ? '县级' : rankInfo.type === 'city' ? '市级' : '国家级'}排名标识`;
-			modal.appendChild(rankImg);
-		}
-		const labelText = document.createElement('div');
-		labelText.className = 'wujiang-info-label-text';
-		switch (rankInfo.type) {
-			case 'county':
-				labelText.innerHTML = `县 ${rankInfo.starCount}⭐ 第${rankInfo.num}名[${rankInfo.wujiang}]`;
-				break;
-			case 'city':
-				labelText.innerHTML = `市 ${rankInfo.starCount}⭐ 第${rankInfo.num}名[${rankInfo.wujiang}]`;
-				break;
-			case 'national':
-				labelText.innerHTML = `国 ${rankInfo.starCount}⭐ 第${rankInfo.num}名[${rankInfo.wujiang}]`;
-				break;
-			default:
-				labelText.innerHTML = '暂无排名';
-		}
-		const settingIcon = document.createElement('img');
-		const settingIconPath = `${lib.assetURL}extension/AI优化/img/display/settingIcon.png`;
-		settingIcon.src = settingIconPath;
-		settingIcon.className = 'wujiang-info-setting-icon';
-		settingIcon.title = '设置武将信息';
-		labelContainer.appendChild(settingIcon);
-		labelContainer.appendChild(labelText);
-		settingIcon.onclick = (e) => {
-			e.stopPropagation();
-			showRankImage();
-		};
-		const nameContainer = document.createElement('div');
-		nameContainer.className = 'wujiang-info-name-container';
-		if (!char.storage.randomPlayerName) {
-			char.storage.randomPlayerName = playerNameLib[Math.floor(Math.random() * playerNameLib.length)];
-		}
-		const nameText = document.createElement('div');
-		nameText.className = 'wujiang-info-name-text';
-		nameText.textContent = char.storage.randomPlayerName;
-		nameContainer.appendChild(nameText);
-		modal.appendChild(nameContainer);
-		const expContainer = document.createElement('div');
-		expContainer.className = 'wujiang-info-exp-container';
-		if (!char.storage.randomLevel) {
-			char.storage.randomLevel = Math.floor(Math.random() * 150) + 1;
-		}
-		const randomLevel = char.storage.randomLevel;
-		const expPercent = (randomLevel / 150) * 100;
-		const expFill = document.createElement('div');
-		expFill.className = 'wujiang-info-exp-fill';
-		expFill.style.width = `${expPercent}%`;
-		const expText = document.createElement('div');
-		expText.className = 'wujiang-info-exp-text';
-		expText.textContent = `max(${randomLevel})`;
-		expContainer.appendChild(expFill);
-		expContainer.appendChild(expText);
-		modal.appendChild(expContainer);
-		if (!char.storage.tagConfig) {
-			const config = {
-				colors: [],
-				texts: [],
-			};
-			const colorKeys = Object.keys(tagColorLib);
-			for (let i = 0; i < 3; i++) {
-				const randomColorKey = colorKeys[Math.floor(Math.random() * colorKeys.length)];
-				config.colors.push(tagColorLib[randomColorKey]);
-			}
-			const shuffledTextLib = [...tagTextLib].sort(() => Math.random() - 0.5);
-			config.texts = shuffledTextLib.slice(0, 3);
-			char.storage.tagConfig = config;
-		}
-		const tagConfigs = char.storage.tagConfig;
-		const tagContainers = [
-			{ className: 'wujiang-tag-container-1' },
-			{ className: 'wujiang-tag-container-2' },
-			{ className: 'wujiang-tag-container-3' },
-		];
-		tagContainers.forEach((container, idx) => {
-			const tagContainer = document.createElement('div');
-			tagContainer.className = container.className;
-			tagContainer.style.backgroundColor = tagConfigs.colors[idx];
-			tagContainer.textContent = tagConfigs.texts[idx];
-			modal.appendChild(tagContainer);
-		});
-		const identityProgressGroup = document.createElement('div');
-		identityProgressGroup.className = 'wujiang-identity-progress-group';
-		modal.appendChild(identityProgressGroup);
-		const identityZhu = document.createElement('div');
-		identityZhu.className = 'wujiang-identity-zhu';
-		identityZhu.textContent = '主公';
-		identityProgressGroup.appendChild(identityZhu);
-		const identityZhong = document.createElement('div');
-		identityZhong.className = 'wujiang-identity-zhong';
-		identityZhong.textContent = '忠臣';
-		identityProgressGroup.appendChild(identityZhong);
-		const identityFan = document.createElement('div');
-		identityFan.className = 'wujiang-identity-fan';
-		identityFan.textContent = '反贼';
-		identityProgressGroup.appendChild(identityFan);
-		const identityNei = document.createElement('div');
-		identityNei.className = 'wujiang-identity-nei';
-		identityNei.textContent = '内奸';
-		identityProgressGroup.appendChild(identityNei);
-		const progressContainerGroup = document.createElement('div');
-		progressContainerGroup.className = 'wujiang-progress-container-group';
-		if (!char.storage.progressValues) {
-			let totalValue = char.storage.initialTotalValue;
-			const rankType = rankInfo.type;
-			switch (rankType) {
-				case 'none':
-					if (totalValue > 150) {
-						totalValue = 120;
-						totalValue = Math.floor(totalValue * 0.7);
-					} else {
-						totalValue = Math.floor(totalValue * 0.7);
-					}
-					totalValue = Math.max(totalValue, 4);
-					break;
-				case 'county':
-					totalValue = Math.floor(totalValue * 1.1);
-					if (totalValue < 100) {
-						totalValue = Math.floor(Math.random() * 61) + 100;
-					}
-					break;
-				case 'city':
-					totalValue = Math.floor(totalValue * 1.4);
-					if (totalValue < 180) {
-						totalValue = Math.floor(Math.random() * 31) + 180;
-					}
-					break;
-				case 'national':
-					totalValue = Math.floor(totalValue * 1.7);
-					if (totalValue < 300) {
-						totalValue = Math.floor(Math.random() * 101) + 300;
-					}
-					break;
-			}
-			const distributeValues = (total, count) => {
-				const values = [];
-				let remaining = total;
-				const getRareValue = () => {
-					const rand = Math.random();
-					if (rand < 0.5) return Math.floor(Math.random() * 50) + 1;
-					if (rand < 0.8) return Math.floor(Math.random() * 30) + 51;
-					if (rand < 0.95) return Math.floor(Math.random() * 15) + 81;
-					return Math.floor(Math.random() * 6) + 96;
-				};
-				for (let i = 0; i < count; i++) {
-					if (i === count - 1) {
-						const finalVal = Math.min(remaining, 100);
-						values.push(Math.max(finalVal, 1));
-					} else {
-						let val = getRareValue();
-						val = Math.min(val, remaining - (count - i - 1));
-						values.push(val);
-						remaining -= val;
-					}
-				}
-				return values.sort(() => Math.random() - 0.5);
-			};
-			char.storage.progressValues = distributeValues(totalValue, 4);
-		}
-		const progressValues = char.storage.progressValues;
-		const identities = ['zhu', 'zhong', 'fan', 'nei'];
-		identities.forEach((_, idx) => {
-			const progressBar = document.createElement('div');
-			progressBar.className = 'wujiang-progress-bar';
-			const value = progressValues[idx];
-			const fillWidth = `${Math.min(value, 100)}%`;
-			const progressFill = document.createElement('div');
-			progressFill.className = 'wujiang-progress-fill';
-			progressFill.style.width = fillWidth;
-			const progressValue = document.createElement('div');
-			progressValue.className = 'wujiang-progress-value';
-			progressValue.textContent = value;
-			progressBar.appendChild(progressFill);
-			progressBar.appendChild(progressValue);
-			progressContainerGroup.appendChild(progressBar);
-		});
-		identityProgressGroup.appendChild(progressContainerGroup);
-	}
-
-	// 显示初级榜
-	function showRankImage() {
-		const layoutPath = lib.assetURL + 'extension/AI优化/img/display/';
-		const rankModal = document.createElement('div');
-		rankModal.className = 'wujiang-rank-modal';
-		const rankImg = document.createElement('img');
-		rankImg.src = `${layoutPath}countyRank.png`;
-		rankImg.className = 'wujiang-rank-img';
-		rankModal.appendChild(rankImg);
-		const closeBtn = document.createElement('div');
-		closeBtn.className = 'wujiang-rank-close';
-		closeBtn.textContent = '×';
-		closeBtn.onclick = () => {
-			rankModal.remove();
-		};
-		rankModal.appendChild(closeBtn);
-		rankModal.onclick = (e) => {
-			if (e.target === rankModal) {
-				rankModal.remove();
-			}
-		};
-		document.body.appendChild(rankModal);
-	}
-
 	lib.skill._aiyh_clearProgressValues = {
 		trigger: { global: 'gameEnd' },
 		silent: true,

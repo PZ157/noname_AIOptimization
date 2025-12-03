@@ -4,7 +4,7 @@ import { lib, game, ui, get, _status } from './utils.js';
  * @AI出牌逻辑优化初始化函数
  */
 export function initAICardOpt() {
-	lib.skill._aiyh_aiFuhui = {
+	lib.skill._aiyh_cardAiOpt = {
 		mode: ['identity'],
 		silent: true,
 		unique: true,
@@ -12,21 +12,23 @@ export function initAICardOpt() {
 		superCharlotte: true,
 		trigger: { global: 'gameStart' },
 		filter(event, player) {
-			return player === game.me && lib.config.extension_AI优化_aiFuhui;
+			return player === game.me && lib.config.extension_AI优化_cardAiOpt;
 		},
 		async content(event, trigger, player) {
 			const optimizeCards = {
 				// 顺手牵羊
 				shunshou: {
-					_aiyh_wuxie(target, card, player, viewer) {
+					wuxie(target, card, player, viewer) {
 						if (!target.countCards('hej') || get.attitude(viewer, player._trueMe || player) > 0) {
 							return 0;
 						}
 					},
 					basic: {
 						order: 7.5,
-						useful: (card, i) => 8 / (3 + i),
-						value: (card, player) => {
+						useful(card, i) {
+							return 8 / (3 + i);
+						},
+						value(card, player) {
 							let max = 0;
 							game.countPlayer((cur) => {
 								max = Math.max(max, lib.card.shunshou.ai.result.target(player, cur) * get.attitude(player, cur));
@@ -35,19 +37,19 @@ export function initAICardOpt() {
 							return 0.53 * max;
 						},
 					},
-					button: (button) => {
-						let _aiyh_player = _status.event.player,
-							_aiyh_target = _status.event.target;
-						if (!lib.filter.canBeGained(button.link, _aiyh_player, _aiyh_target)) return 0;
-						let att = get.attitude(_aiyh_player, _aiyh_target),
-							val = get.value(button.link, _aiyh_player) / 60,
+					button(button) {
+						let player = _status.event.player,
+							target = _status.event.target;
+						if (!lib.filter.canBeGained(button.link, player, target)) return 0;
+						let att = get.attitude(player, target),
+							val = get.value(button.link, player) / 60,
 							btv = get.buttonValue(button),
 							pos = get.position(button.link),
 							name = get.name(button.link);
 						if (pos === 'j') {
 							let viewAs = button.link.viewAs;
 							if (viewAs === 'lebu') {
-								let needs = _aiyh_target.needsToDiscard(2);
+								let needs = target.needsToDiscard(2);
 								btv *= 20 + 0.2 * needs;
 							} else if (viewAs === 'shandian' || viewAs === 'fulei') {
 								btv /= 2;
@@ -55,30 +57,25 @@ export function initAICardOpt() {
 						}
 						if (att > 0) btv = -btv;
 						if (pos !== 'e') {
-							return pos === 'h' && !_aiyh_player.hasSkillTag('viewHandcard', null, _aiyh_target, true)
-								? btv + 0.1
-								: btv + val;
+							return pos === 'h' && !player.hasSkillTag('viewHandcard', null, target, true) ? btv + 0.1 : btv + val;
 						}
 						let sub = get.subtype(button.link);
-						if (sub === 'equip1') return (btv * Math.min(3.6, _aiyh_target.hp)) / 3;
+						if (sub === 'equip1') return (btv * Math.min(3.6, target.hp)) / 3;
 						if (sub === 'equip2') {
-							if (name === 'baiyin' && pos === 'e' && _aiyh_target.isDamaged()) {
-								let by = 1 - 0.2 * Math.min(5, _aiyh_target.hp);
-								return get.sgn(get.recoverEffect(_aiyh_target, _aiyh_player, _aiyh_player)) * by;
+							if (name === 'baiyin' && pos === 'e' && target.isDamaged()) {
+								let by = 1 - 0.2 * Math.min(5, target.hp);
+								return get.sgn(get.recoverEffect(target, player, player)) * by;
 							}
 							return 1.57 * btv + val;
 						}
 						if (
 							att <= 0 &&
 							(sub === 'equip3' || sub === 'equip4') &&
-							(_aiyh_player.hasSkill('shouli') || _aiyh_player.hasSkill('psshouli'))
+							(player.hasSkill('shouli') || player.hasSkill('psshouli'))
 						) {
 							return 0;
 						}
-						if (
-							sub === 'equip3' &&
-							!game.hasPlayer((cur) => !cur.inRange(_aiyh_target) && get.attitude(cur, _aiyh_target) < 0)
-						) {
+						if (sub === 'equip3' && !game.hasPlayer((cur) => !cur.inRange(target) && get.attitude(cur, target) < 0)) {
 							return 0.4 * btv + val;
 						}
 						if (sub === 'equip4') return btv / 2 + val;
@@ -163,7 +160,7 @@ export function initAICardOpt() {
 				},
 				// 过河拆桥
 				guohe: {
-					_aiyh_wuxie: (target, card, player, viewer, status) => {
+					wuxie(target, card, player, viewer, status) {
 						if (
 							!target.countCards('hej') ||
 							status * get.attitude(viewer, player._trueMe || player) > 0 ||
@@ -183,8 +180,10 @@ export function initAICardOpt() {
 					},
 					basic: {
 						order: 9,
-						useful: (card, i) => 10 / (3 + i),
-						value: (card, player) => {
+						useful(card, i) {
+							return 10 / (3 + i);
+						},
+						value(card, player) {
 							let max = 0;
 							game.countPlayer((cur) => {
 								max = Math.max(max, lib.card.guohe.ai.result.target(player, cur) * get.attitude(player, cur));
@@ -193,7 +192,7 @@ export function initAICardOpt() {
 							return 0.42 * max;
 						},
 					},
-					_aiyh_yingbian(card, player, targets, viewer) {
+					yingbian(card, player, targets, viewer) {
 						if (get.attitude(viewer, player) <= 0) return 0;
 						if (
 							game.hasPlayer(
@@ -207,18 +206,18 @@ export function initAICardOpt() {
 						}
 						return 0;
 					},
-					button: (button) => {
-						let _aiyh_player = _status.event.player,
-							_aiyh_target = _status.event.target;
-						if (!lib.filter.canBeDiscarded(button.link, _aiyh_player, _aiyh_target)) return 0;
-						let att = get.attitude(_aiyh_player, _aiyh_target),
+					button(button) {
+						const player = _status.event.player,
+							target = _status.event.target;
+						if (!lib.filter.canBeDiscarded(button.link, player, target)) return 0;
+						let att = get.attitude(player, target),
 							val = get.buttonValue(button),
 							pos = get.position(button.link),
 							name = get.name(button.link);
 						if (pos === 'j') {
 							let viewAs = button.link.viewAs;
 							if (viewAs === 'lebu') {
-								let needs = _aiyh_target.needsToDiscard(2);
+								let needs = target.needsToDiscard(2);
 								val *= 20 + 0.2 * needs;
 							} else if (viewAs === 'shandian' || viewAs === 'fulei') {
 								val /= 2;
@@ -227,27 +226,24 @@ export function initAICardOpt() {
 						if (att > 0) val = -val;
 						if (pos !== 'e') return val;
 						let sub = get.subtypes(button.link);
-						if (sub.includes('equip1')) return (val * Math.min(3.6, _aiyh_target.hp)) / 3;
+						if (sub.includes('equip1')) return (val * Math.min(3.6, target.hp)) / 3;
 						if (sub.includes('equip2')) {
-							if (name === 'baiyin' && pos === 'e' && _aiyh_target.isDamaged()) {
-								let by = 1 - 0.2 * Math.min(5, _aiyh_target.hp);
-								return get.sgn(get.recoverEffect(_aiyh_target, _aiyh_player, _aiyh_player)) * by;
+							if (name === 'baiyin' && pos === 'e' && target.isDamaged()) {
+								let by = 1 - 0.2 * Math.min(5, target.hp);
+								return get.sgn(get.recoverEffect(target, player, player)) * by;
 							}
 							return 1.57 * val;
 						}
 						if (
 							att <= 0 &&
 							(sub.includes('equip3') || sub.includes('equip4')) &&
-							(_aiyh_player.hasSkill('shouli') || _aiyh_player.hasSkill('psshouli'))
+							(player.hasSkill('shouli') || player.hasSkill('psshouli'))
 						) {
 							return 0;
 						}
 						if (sub.includes('equip6')) return val;
 						if (sub.includes('equip4')) return val / 2;
-						if (
-							sub.includes('equip3') &&
-							!game.hasPlayer((cur) => !cur.inRange(_aiyh_target) && get.attitude(cur, _aiyh_target) < 0)
-						) {
+						if (sub.includes('equip3') && !game.hasPlayer((cur) => !cur.inRange(target) && get.attitude(cur, target) < 0)) {
 							return 0.4 * val;
 						}
 						return val;
@@ -326,8 +322,8 @@ export function initAICardOpt() {
 						return get.order({ name: 'sha' }) - 0.1;
 					},
 					equipValue: function (card, player) {
-						if (player._aiyh_zhuge_temp) return 1;
-						player._aiyh_zhuge_temp = true;
+						if (player._zhuge_temp) return 1;
+						player._zhuge_temp = true;
 						var result = (function () {
 							if (
 								!game.hasPlayer(
@@ -347,16 +343,13 @@ export function initAICardOpt() {
 							var num = player.countCards('hs', 'sha');
 							return num > 1 ? 6 + num : 3 + num;
 						})();
-						delete player._aiyh_zhuge_temp;
+						delete player._zhuge_temp;
 						return result;
 					},
 					basic: {
 						equipValue: 5,
-						order: (card, player) => {
-							if (
-								[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(player.countUsed('sha')) &&
-								[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(player.getCardUsable('sha'))
-							) {
+						order(card, player) {
+							if (player.countUsed('sha') <= 10 && player.getCardUsable('sha') <= 10) {
 								if (
 									player.countCards('hs', 'sha') > 0 &&
 									player.countUsed('sha') <= player.getCardUsable('sha') &&
@@ -374,9 +367,9 @@ export function initAICardOpt() {
 							return player && player.hasSkillTag('reverseEquip') ? 8.5 - equipValue : 8 + equipValue;
 						},
 						useful: 2,
-						value: (card, player, index, method) => {
+						value(card, player, index, method) {
 							if (!player.isPhaseUsing()) {
-								if ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(player.getCardUsable('sha'))) {
+								if (player.getCardUsable('sha') <= 10) {
 									if (
 										game.hasPlayer(
 											(current) =>
@@ -390,7 +383,7 @@ export function initAICardOpt() {
 									}
 								}
 							} else {
-								if ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(player.getCardUsable('sha'))) {
+								if (player.getCardUsable('sha') <= 10) {
 									if (
 										game.hasPlayer(
 											(current) =>
@@ -421,60 +414,63 @@ export function initAICardOpt() {
 						},
 					},
 					tag: { valueswap: 1 },
-					result: { target: (player, target, card) => get.equipResult(player, target, card) },
+					result: {
+						target(player, target, card) {
+							return get.equipResult(player, target, card);
+						},
+					},
 				},
 				// 火攻
 				huogong: {
-					_aiyh_wuxie(target, card, player, viewer, status) {
+					wuxie(target, card, player, viewer, status) {
 						if (get.attitude(viewer, player._trueMe || player) > 0) return 0;
 						if (status * get.attitude(viewer, target) * get.effect(target, card, player, target) >= 0) return 0;
 						if (_status.event.getRand('huogong_wuxie') * 4 > player.countCards('h')) return 0;
 					},
 					basic: { order: 9.2, value: [3, 1], useful: 0.6 },
-					content() {
-						'step 0'
-						const huogongCard = _status.event.card;
+					async content(event, trigger, player) {
+						const huogongCard = event.card;
+						const target = event.target;
 						const targetSuit = get.suit(huogongCard);
 						if (target.countCards('h') === 0) {
-							event.finish();
 							return;
-						} else if (target.countCards('h') === 1) {
-							event._result = { cards: target.getCards('h') };
-						} else {
-							target.chooseCard(true).ai = function (card) {
-								return get.suit(card) === targetSuit
-									? 3 + (get.value(card) || 1)
-									: _status.event.getRand() < 0.5
-									? Math.random() + 1
-									: get.value(card) || 1;
-							};
 						}
-						'step 1'
-						target.showCards(result.cards).setContent(function () {});
-						event.dialog = ui.create.dialog(get.translation(target) + '展示的手牌', result.cards);
+						let cards;
+						if (target.countCards('h') === 1) {
+							cards = target.getCards('h');
+						} else {
+							cards = await target
+								.chooseCard(true)
+								.set('ai', (card) => {
+									return get.suit(card) === targetSuit
+										? 3 + (get.value(card) || 1)
+										: _status.event.getRand() < 0.5
+										? Math.random() + 1
+										: get.value(card) || 1;
+								})
+								.forResultCards();
+						}
+						await target.showCards(cards).setContent(function () {});
+						event.dialog = ui.create.dialog(get.translation(target) + '展示的手牌', cards);
 						event.videoId = lib.status.videoId++;
-						game.broadcast('createDialog', event.videoId, get.translation(target) + '展示的手牌', result.cards);
-						game.addVideo('cardDialog', null, [
-							get.translation(target) + '展示的手牌',
-							get.cardsInfo(result.cards),
-							event.videoId,
-						]);
-						event.card2 = result.cards[0];
+						game.broadcast('createDialog', event.videoId, get.translation(target) + '展示的手牌', cards);
+						game.addVideo('cardDialog', null, [get.translation(target) + '展示的手牌', get.cardsInfo(cards), event.videoId]);
+						event.card2 = cards[0];
 						game.log(target, '展示了', event.card2);
-						game.addCardKnower(result.cards, 'everyone');
-						event._result = {};
-						player
+						game.addCardKnower(cards, 'everyone');
+						let result = {};
+						result = await player
 							.chooseToDiscard({ suit: get.suit(event.card2) }, function (card) {
 								var evt = _status.event.getParent();
 								return get.damageEffect(evt.target, evt.player, evt.player, 'fire') > 0
 									? 6.2 + Math.min(4, evt.player.hp) - get.value(card, evt.player)
 									: -1;
 							})
-							.set('prompt', false);
-						game.delay(2);
-						'step 2'
+							.set('prompt', false)
+							.forResult();
+						await game.delay(2);
 						if (result.bool) {
-							target.damage('fire');
+							await target.damage('fire');
 						} else {
 							target.addTempSkill('huogong2');
 						}
@@ -533,7 +529,7 @@ export function initAICardOpt() {
 				},
 				// 铁锁链环
 				tiesuo: {
-					wuxie: (target, card, player, viewer, status) => {
+					wuxie(target, card, player, viewer, status) {
 						if (
 							status * get.attitude(viewer, player._trueMe || player) > 0 ||
 							target.hasSkillTag('noLink') ||
@@ -555,7 +551,7 @@ export function initAICardOpt() {
 					},
 					basic: { order: 7.3, useful: 1.2, value: 4 },
 					result: {
-						target: (player, target) => {
+						target(player, target) {
 							if (target.hasSkillTag('link') || target.hasSkillTag('noLink')) return 0;
 							let curs = game.filterPlayer(
 								(current) =>
@@ -625,8 +621,10 @@ export function initAICardOpt() {
 						return true;
 					},
 					tao: {
-						order: (card, player) => (player.hasSkillTag('pretao') ? 9 : 2),
-						useful: (card, i) => {
+						order(card, player) {
+							return player.hasSkillTag('pretao') ? 9 : 2;
+						},
+						useful(card, i) {
 							const player = _status.event.player;
 							const target = _status.event.target || _status.event.dying;
 							let isEnough = true;
@@ -696,7 +694,7 @@ export function initAICardOpt() {
 							if (damaged) return Math.max(3, 7.8 - i);
 							return Math.max(1, 7.2 - i);
 						},
-						value: (card, player) => {
+						value(card, player) {
 							const target = _status.event.target || _status.event.dying;
 							let isEnough = true;
 							if (target) {
@@ -754,7 +752,7 @@ export function initAICardOpt() {
 						},
 					},
 					result: {
-						target: (player, target) => {
+						target(player, target) {
 							let isEnough = true;
 							const dyingRole = _status.event.dying;
 							if (target) {
@@ -799,7 +797,7 @@ export function initAICardOpt() {
 							if (!isEnough) return 0;
 							return target.hasSkillTag('maixie') ? 3 : 2;
 						},
-						target_use: (player, target, card) => {
+						target_use(player, target, card) {
 							let isEnough = true;
 							const dyingRole = _status.event.dying;
 							if (target) {
@@ -986,7 +984,7 @@ export function initAICardOpt() {
 				// 桃园结义
 				taoyuan: {
 					basic: {
-						order: (item, player) => {
+						order(item, player) {
 							let allyLoseHp = 0,
 								enemyLoseHp = 0;
 							game.countPlayer((current) => {
@@ -1028,12 +1026,6 @@ export function initAICardOpt() {
 			Object.keys(optimizeCards).forEach((cardName) => {
 				if (lib.card[cardName]) {
 					lib.card[cardName].ai = { ...lib.card[cardName].ai, ...optimizeCards[cardName] };
-					if (optimizeCards[cardName]._aiyh_wuxie) {
-						lib.card[cardName].ai.wuxie = optimizeCards[cardName]._aiyh_wuxie;
-					}
-					if (optimizeCards[cardName]._aiyh_yingbian) {
-						lib.card[cardName].ai.yingbian = optimizeCards[cardName]._aiyh_yingbian;
-					}
 				}
 			});
 
