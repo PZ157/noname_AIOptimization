@@ -440,17 +440,17 @@ export let config = {
 							<span style="font-size:15px">开启后，将添加防酒杀ai（透视）；人机拥有多张同名牌时鼓励人机使用点数较小的牌，弃牌时鼓励保留点数较大的牌</span>
 						</div>
 					</div>
-					<!-- 〖AI赋慧〗搭配全局AI -->
+					<!-- 〖AI出牌逻辑优化〗-->
 					<div class="config_item switch-item" data-name="aiFuhui">
 						<div class="switch-header">
 							<label class="config_switch">
 								<input type="checkbox" ${lib.config.extension_AI优化_aiFuhui ? 'checked' : ''}>
 								<span class="config_slider"></span>
 							</label>
-							<span class="config_name"><span style="color: #90EE90">〖AI赋慧〗搭配全局AI</span></span>
+							<span class="config_name"><span style="color: #90EE90">〖AI出牌逻辑优化〗</span></span>
 						</div>
 						<div class="config_intro">
-							<span style="font-size:15px">需同时开启全局AI优化方可生效</span>
+							<span style="font-size:15px">开启后重启生效</span>
 						</div>
 					</div>
 					<!-- 残血集火逻辑开关 -->
