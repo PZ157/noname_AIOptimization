@@ -396,6 +396,9 @@
 .config_more {
 	width: 90%;
 	margin: 0 auto;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
 }
 
 /* 开关类功能样式（开关+名称一行居中） */
@@ -403,7 +406,6 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	margin: 25px 0;
 	padding: 15px;
 	background-color: rgba(0, 0, 0, 0.05);
 	border-radius: 8px;

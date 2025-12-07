@@ -2,29 +2,26 @@ import { lib, game, ui, get, ai, _status } from './utils.js';
 import { initAICardOpt } from './optimization.js';
 
 export function precontent(config, pack) {
-	// 非常感谢@柚子丶奶茶丶猫以及面具 提供的『云将』相关部分AI优化的修复代码
 	{
 		// 本体版本检测
 		let noname = lib.version
 				.split('.')
-				.slice(2)
+				.slice(1)
 				.map((i) => Number(i)),
-			min = [17],
+			min = [10, 17],
 			status = false;
 		while (noname.length < min.length) {
 			noname.push(0);
 		}
-		if (lib.version.slice(0, 5) === '1.10.') {
-			for (let i = 0; i < min.length; i++) {
-				if (noname[i] < min[i]) {
-					status = '您的无名杀版本太低';
-					break;
-				}
-				if (noname[i] > min[i]) {
-					break;
-				}
+		for (let i = 0; i < min.length; i++) {
+			if (noname[i] < min[i]) {
+				status = '您的无名杀版本太低';
+				break;
 			}
-		} else status = '检测到游戏大版本号与本扩展支持版本号不同';
+			if (noname[i] > min[i]) {
+				break;
+			}
+		}
 		if (typeof status === 'string') {
 			alert(status + '，为避免版本不兼容产生不必要的问题，已为您关闭《AI优化》，稍后重启游戏');
 			game.saveExtensionConfig('AI优化', 'enable', false);
@@ -40,15 +37,13 @@ export function precontent(config, pack) {
 						<span style="color: #00FFFF">更新日期</span>：
 						<span style="color: #FFFF00">2025</span>年
 						<span style="color: #00FFB0">12</span>月
-						<span style="color: rgb(255, 146, 68)">3</span>日
+						<span style="color: rgb(255, 146, 68)">7</span>日
 					</div>
 				`,
-				'非常感谢@一寒 贡献的代码，本次更新仅作整理修复',
-				'◆修复AI强化〔置换〕ai',
-				'◆调整扩展设置界面',
-				'◆移除［体力怪禁止］功能，更改部分配置，请检查扩展设置',
-				'◆［AI强化］［卡牌价值优化］不限于身份模式',
-				'◆调整并格式化代码',
+				// '非常感谢@一寒 贡献的代码，本次更新仅作整理修复',
+				'◆调整菜单样式',
+				'◆适配最新版本',
+				'◆移除头像素材，但仍支持读取原路径素材',
 				'※本扩展无限期停更，任何人均可二创修复',
 			];
 			let ul = document.createElement('ul');
@@ -1323,7 +1318,6 @@ export function precontent(config, pack) {
 						);
 					}
 				},
-				threaten: 1.55,
 			},
 			subSkill: {
 				clear: {
@@ -1374,7 +1368,9 @@ export function precontent(config, pack) {
 		lib.skill._aiyh_aiEnhance_ignoreArmor = {
 			trigger: { source: 'damageBegin1' },
 			filter(event, player) {
-				return player !== game.me && lib.config.extension_AI优化_aiEnhanceIgnoreArmor && event.player.hujia && Math.random() < 0.15;
+				return (
+					player !== game.me && lib.config.extension_AI优化_aiEnhanceIgnoreArmor && event.player.hujia && Math.random() < 0.15
+				);
 			},
 			forced: true,
 			charlotte: true,
@@ -2159,16 +2155,21 @@ export function precontent(config, pack) {
 		charlotte: true,
 		superCharlotte: true,
 		async content(event, trigger, player) {
-			const nonPlayerChars = game.filterPlayer((p) => p !== game.me);
-			const usedNums = [];
-			const maxNum = 40;
+			if (typeof lib.config.extension_AI优化_wujiangInfoDisplay !== 'number') {
+				lib.config.extension_AI优化_wujiangInfoDisplay = 1;
+			}
+			const nonPlayerChars = game.filterPlayer((p) => p !== game.me).randomSort();
+			const getPortrait = async (idx) => {
+				for (const ext of ['png', 'jpg']) {
+					const url = `extension/AI优化/img/portrait/${idx}.${ext}`;
+					if ((await game.promises.checkFile(url)) > 0) {
+						return url;
+					}
+				}
+				return `image/emotion/chaijun_emotion/${idx}.gif`;
+			};
 			for (const char of nonPlayerChars) {
-				let randomNum;
-				do {
-					randomNum = Math.floor(Math.random() * maxNum) + 1;
-				} while (usedNums.includes(randomNum));
-				usedNums.push(randomNum);
-				char.storage.wujiangInfoNum = randomNum;
+				char.storage.wujiangInfoNum = lib.config.extension_AI优化_wujiangInfoDisplay++;
 				char.addMark('wujiangInfoMark', 1);
 				char.storage.initialTotalValue = Math.floor(Math.random() * 150) + 1;
 				char.storage.progressValues = null;
@@ -2363,7 +2364,7 @@ export function precontent(config, pack) {
 				gold: '#FFD700',
 				red: '#FF3300',
 			};
-			const showWujiangInfo = function (char) {
+			const showWujiangInfo = async function (char) {
 				const layoutPath = lib.assetURL + 'extension/AI优化/img/';
 				const modal = document.createElement('div');
 				modal.className = 'wujiang-info-modal';
@@ -2372,7 +2373,8 @@ export function precontent(config, pack) {
 				bgImg.className = 'wujiang-info-bg';
 				modal.appendChild(bgImg);
 				const avatarImg = document.createElement('img');
-				const avatarPath = `${lib.assetURL}extension/AI优化/img/portrait/${char.storage.wujiangInfoNum}.png`;
+
+				const avatarPath = await getPortrait(char.storage.wujiangInfoNum);
 				avatarImg.src = avatarPath;
 				avatarImg.className = 'wujiang-info-avatar';
 				modal.appendChild(avatarImg);
@@ -2594,14 +2596,13 @@ export function precontent(config, pack) {
 				document.body.appendChild(rankModal);
 			};
 			for (const char of nonPlayerChars) {
-				const num = char.storage.wujiangInfoNum;
-				const portraitPath = `${lib.assetURL}extension/AI优化/img/portrait/${num}.png`;
+				const portraitPath = await getPortrait(char.storage.wujiangInfoNum);
 				const markElement = document.createElement('div');
 				markElement.className = 'wujiang-info-mark';
 				markElement.style.backgroundImage = `url("${portraitPath}")`;
 				markElement.title = '点击查看武将信息';
 				markElement.onclick = () => {
-					showWujiangInfo(char);
+					showWujiangInfo(char); // onclick不支持异步，但异步为最后一句则无需await
 				};
 				const positionConfig = lib.config.extension_AI优化_wujiangAvatarPosition || 'center';
 				const rightValues = {
