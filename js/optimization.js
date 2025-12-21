@@ -527,7 +527,7 @@ export function initAICardOpt() {
 					},
 					tag: { damage: 1, fireDamage: 1, natureDamage: 1, norepeat: 1 },
 				},
-				// 铁锁链环
+				// 铁索连环
 				tiesuo: {
 					wuxie(target, card, player, viewer, status) {
 						if (
@@ -549,14 +549,31 @@ export function initAICardOpt() {
 							return 0;
 						}
 					},
-					basic: { order: 7.3, useful: 1.2, value: 4 },
+					basic: {
+						order(card, i) {
+							if (game.countPlayer(
+								(current) =>
+									!(current.hasSkillTag('noLink') || current.hasSkillTag('nodamage')) &&
+									!(current.hasSkillTag('nofire') && current.hasSkillTag('nothunder'))
+							) < 2) {
+								return 0;
+							}
+							const player = get.event().player;
+							if (player.hasCard((c) => get.name(c, player) === 'huogong', 'hs')) {
+								return 9.3;
+							}
+							return 7.3;
+						},
+						useful: 1.2,
+						value: [4, 2],
+					},
 					result: {
 						target(player, target) {
 							if (target.hasSkillTag('link') || target.hasSkillTag('noLink')) return 0;
 							let curs = game.filterPlayer(
 								(current) =>
 									!(current.hasSkillTag('noLink') || current.hasSkillTag('nodamage')) &&
-									(current.hasSkillTag('nofire') || current.hasSkillTag('nothunder'))
+									!(current.hasSkillTag('nofire') && current.hasSkillTag('nothunder'))
 							);
 							if (curs.length < 2) return 0;
 							let f = target.hasSkillTag('nofire'),
@@ -566,46 +583,15 @@ export function initAICardOpt() {
 							if (f || t) res = 0.45;
 							if (!f && target.getEquip('tengjia')) res *= 2;
 							if (!target.isLinked()) res = -res;
-							const aiIdentity = player.identity;
-							const targetIdentity = target.identity;
-							if (aiIdentity === 'fan') {
-								if (['zhong', 'nei'].includes(targetIdentity)) res *= 1.8;
-								else if (targetIdentity === 'zhu') {
-									const hasZhongNei = curs.some(
-										(c) => ['zhong', 'nei'].includes(c.identity) && get.attitude(player, c) < 0
-									);
-									if (hasZhongNei) res *= 0.4;
-								}
-							}
-							if (aiIdentity === 'nei') {
-								if (targetIdentity === 'fan') res *= 1.8;
-								else {
-									const hasFan = curs.some((c) => c.identity === 'fan' && get.attitude(player, c) < 0);
-									if (hasFan) res *= 0.5;
-								}
-							}
-							const enemies = curs.filter((c) => get.attitude(player, c) < 0);
-							const allEnemiesHealthy = enemies.every((c) => c.hp >= 3);
-							if (allEnemiesHealthy && enemies.includes(target)) {
-								res *= (4 - target.hp) * 0.5 + 1;
-							}
 							if (ui.selected.targets.length) return res;
 							let fs = 0,
-								es = 0,
-								att = get.attitude(player, target),
-								linkf = false,
-								alink = true;
+								es = 0;
 							curs.forEach((i) => {
-								let atti = get.attitude(player, i);
-								if (atti > 0) {
-									fs++;
-									if (i.isLinked()) linkf = true;
-								} else if (atti < 0) {
-									es++;
-									if (!i.isLinked()) alink = false;
-								}
+								const atti = get.attitude(player, i);
+								atti > 0 ? fs++ : atti < 0 && es++;
 							});
-							if (es < 2 && !alink && (att <= 0 || (att > 0 && linkf && fs < 2))) {
+							const att = get.attitude(player, target);
+							if ((att <= 0 && es < 2) || (att > 0 && fs < 2)) {
 								return 0;
 							}
 							return res;
@@ -620,7 +606,7 @@ export function initAICardOpt() {
 						if (arg && get.attitude(player, arg) <= 0) return false;
 						return true;
 					},
-					tao: {
+					basic: {
 						order(card, player) {
 							return player.hasSkillTag('pretao') ? 9 : 2;
 						},
