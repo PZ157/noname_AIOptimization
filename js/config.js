@@ -1,4 +1,4 @@
-import { lib, game, ui, get, ai, _status, security } from './utils.js';
+import { lib, game, ui, get, ai, _status } from './utils.js';
 export let config = {
 	bd1: {
 		clear: true,
@@ -349,120 +349,74 @@ export let config = {
 
 				// 配合技能补充按钮绑定事件（逻辑不变，仅样式适配）
 				foldContent.querySelectorAll('.config_button')[0].addEventListener('click', () => {
-					let container = ui.create.div('.popup-container.editor');
-					let node = container;
-					let map = lib.config.extension_AI优化_aiCooperateSkill || [];
-					let str = 'cooperateSkills = [\n';
-					if (map.length > 0) {
-						str += map.map((rule) => `	"${rule}"`).join(',\n') + '\n';
-					} else {
-						str += `\t"leiji/sha/shan", // 雷击：自身有杀 + 目标有闪\n\t"releiji/sha/shan*bagua", // 雷击目标有闪或八卦阵\n\t"ao_xishi/diamond/none" // 习事：自身有方块牌\n `;
-					}
-					str += '];';
-					node.code = str;
 					ui.window.classList.add('shortcutpaused');
 					ui.window.classList.add('systempaused');
-					let saveInput = function () {
-						let code;
-						if (container.editor) code = container.editor.getValue();
-						else if (container.textarea) code = container.textarea.value;
-						try {
-							var cooperateSkills = [];
-							eval(code);
-							if (!Array.isArray(cooperateSkills)) throw '需为数组格式';
-							const validRules = cooperateSkills.filter((rule) => {
-								if (typeof rule !== 'string') return false;
-								const parts = rule.split('/');
-								return parts.length === 3 && parts.every((part) => part.trim() !== '');
-							});
-							game.saveExtensionConfig('AI优化', 'aiCooperateSkill', validRules);
-							alert(`配置成功！有效规则${validRules.length}条`);
-						} catch (e) {
-							alert('语法错误：' + e);
-							return;
-						}
-						ui.window.classList.remove('shortcutpaused');
-						ui.window.classList.remove('systempaused');
-						container.delete();
-						delete window.saveNonameInput;
-					};
-					window.saveNonameInput = saveInput;
-					let editor = ui.create.editor(container, saveInput);
-					if (node.aced) {
-						ui.window.appendChild(node);
-						node.editor.setValue(node.code, 1);
-					} else if (lib.device === 'ios') {
-						ui.window.appendChild(node);
-						if (!node.textarea) {
-							let textarea = document.createElement('textarea');
-							editor.appendChild(textarea);
-							node.textarea = textarea;
-							lib.setScroll(textarea);
-						}
-						node.textarea.value = node.code;
+
+					let map = lib.config.extension_AI优化_aiCooperateSkill || [];
+					let initialCode = 'cooperateSkills = [\n';
+					if (map.length > 0) {
+						initialCode += map.map((rule) => `\t"${rule}"`).join(',\n') + '\n';
 					} else {
-						if (!window.CodeMirror) {
-							import('../../../game/codemirror.js').then(() => lib.codeMirrorReady(node, editor));
-							lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
-						} else lib.codeMirrorReady(node, editor);
+						initialCode += `\t"leiji/sha/shan", // 雷击：自身有杀 + 目标有闪\n\t"releiji/sha/shan*bagua", // 雷击目标有闪或八卦阵\n\t"ao_xishi/diamond/none" // 习事：自身有方块牌\n`;
 					}
+					initialCode += '];';
+
+					ui.create.editor({
+						value: initialCode,
+						language: 'javascript',
+						saveInput: (code) => {
+							try {
+								var cooperateSkills = [];
+								eval(code);
+								if (!Array.isArray(cooperateSkills)) throw '需为数组格式';
+								const validRules = cooperateSkills.filter((rule) => {
+									if (typeof rule !== 'string') return false;
+									const parts = rule.split('/');
+									return parts.length === 3 && parts.every((part) => part.trim() !== '');
+								});
+								game.saveExtensionConfig('AI优化', 'aiCooperateSkill', validRules);
+								alert(`配置成功！有效规则${validRules.length}条`);
+							} catch (e) {
+								alert('语法错误：' + e);
+								throw e;
+							}
+						},
+					});
 				});
 
 				// AI技能释放优化按钮绑定事件（逻辑不变）
 				foldContent.querySelectorAll('.config_button')[1].addEventListener('click', () => {
-					let container = ui.create.div('.popup-container.editor');
-					let node = container;
-					let map = lib.config.extension_AI优化_aiSkillReleaseOpt || [];
-					let str = 'skillIds = [\n';
-					if (map.length > 0) {
-						str += map.map((id) => `\t"${id}"`).join(',\n') + '\n';
-					} else {
-						str += `\t"fangzhu", // 曹丕放逐\n\t"sbfangzhu" // 同一技能不同ID\n`;
-					}
-					str += '];';
-					node.code = str;
 					ui.window.classList.add('shortcutpaused');
 					ui.window.classList.add('systempaused');
-					let saveInput = function () {
-						let code;
-						if (container.editor) code = container.editor.getValue();
-						else if (container.textarea) code = container.textarea.value;
-						try {
-							var skillIds = [];
-							eval(code);
-							if (!Array.isArray(skillIds)) throw '需为数组格式';
-							const validIds = skillIds.filter((id) => typeof id === 'string' && id.trim() !== '').map((id) => id.trim());
-							game.saveExtensionConfig('AI优化', 'aiSkillReleaseOpt', validIds);
-							alert(`配置成功！有效技能ID${validIds.length}个`);
-						} catch (e) {
-							alert('语法错误：' + e);
-							return;
-						}
-						ui.window.classList.remove('shortcutpaused');
-						ui.window.classList.remove('systempaused');
-						container.delete();
-						delete window.saveNonameInput;
-					};
-					window.saveNonameInput = saveInput;
-					let editor = ui.create.editor(container, saveInput);
-					if (node.aced) {
-						ui.window.appendChild(node);
-						node.editor.setValue(node.code, 1);
-					} else if (lib.device === 'ios') {
-						ui.window.appendChild(node);
-						if (!node.textarea) {
-							let textarea = document.createElement('textarea');
-							editor.appendChild(textarea);
-							node.textarea = textarea;
-							lib.setScroll(textarea);
-						}
-						node.textarea.value = node.code;
+
+					let map = lib.config.extension_AI优化_aiSkillReleaseOpt || [];
+					let initialCode = 'skillIds = [\n';
+					if (map.length > 0) {
+						initialCode += map.map((id) => `\t"${id}"`).join(',\n') + '\n';
 					} else {
-						if (!window.CodeMirror) {
-							import('../../../game/codemirror.js').then(() => lib.codeMirrorReady(node, editor));
-							lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
-						} else lib.codeMirrorReady(node, editor);
+						initialCode += `\t"fangzhu", // 曹丕放逐\n\t"sbfangzhu" // 同一技能不同ID\n`;
 					}
+					initialCode += '];';
+
+					ui.create.editor({
+						value: initialCode,
+						language: 'javascript',
+						saveInput: (code) => {
+							try {
+								var skillIds = [];
+								eval(code);
+								if (!Array.isArray(skillIds)) throw '需为数组格式';
+								const validIds = skillIds
+									.filter((id) => typeof id === 'string' && id.trim() !== '')
+									.map((id) => id.trim());
+								game.saveExtensionConfig('AI优化', 'aiSkillReleaseOpt', validIds);
+								alert(`配置成功！有效技能ID${validIds.length}个`);
+							} catch (e) {
+								alert('语法错误：' + e);
+								throw e;
+							}
+						},
+					});
 				});
 
 				foldContent.querySelectorAll('.config_button')[2].addEventListener('click', () => {
@@ -742,59 +696,40 @@ export let config = {
 		name: '载入本扩展配置',
 		clear: true,
 		onclick() {
-			let container = ui.create.div('.popup-container.editor');
-			let node = container;
-			let str = '//完整粘贴你保存的『AI优化』配置到等号右端\n_status.aiyh_config = ';
-			node.code = str;
 			ui.window.classList.add('shortcutpaused');
 			ui.window.classList.add('systempaused');
-			let saveInput = function () {
-				let code, j;
-				if (container.editor) code = container.editor.getValue();
-				else if (container.textarea) code = container.textarea.value;
-				try {
-					eval(code);
-					if (Object.prototype.toString.call(_status.aiyh_config) !== '[object Object]') throw 'typeError';
-				} catch (e) {
-					if (e === 'typeError') alert('类型不为[object Object]');
-					else alert('代码语法有错误，请仔细检查（' + e + '）');
-					return;
-				}
-				for (let i in _status.aiyh_config) {
-					if (i[0] === 'b') j = 'extension_AI优化_' + i.slice(1);
-					else j = 'aiyh_character_skill_id_' + i.slice(1);
-					game.saveConfig(j, _status.aiyh_config[i]);
-				}
-				ui.window.classList.remove('shortcutpaused');
-				ui.window.classList.remove('systempaused');
-				container.delete();
-				container.code = code;
-				delete window.saveNonameInput;
-				alert('配置已成功载入！即将重启游戏');
-				game.reload();
-			};
-			window.saveNonameInput = saveInput;
-			let editor = ui.create.editor(container, saveInput);
-			if (node.aced) {
-				ui.window.appendChild(node);
-				node.editor.setValue(node.code, 1);
-			} else if (lib.device === 'ios') {
-				ui.window.appendChild(node);
-				if (!node.textarea) {
-					let textarea = document.createElement('textarea');
-					editor.appendChild(textarea);
-					node.textarea = textarea;
-					lib.setScroll(textarea);
-				}
-				node.textarea.value = node.code;
-			} else {
-				if (!window.CodeMirror) {
-					import('../../../game/codemirror.js').then(() => {
-						lib.codeMirrorReady(node, editor);
-					});
-					lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
-				} else lib.codeMirrorReady(node, editor);
-			}
+
+			let initialCode = '//完整粘贴你保存的『AI优化』配置到等号右端\n_status.aiyh_config = ';
+
+			ui.create.editor({
+				value: initialCode,
+				language: 'javascript',
+				saveInput: (code) => {
+					try {
+						eval(code);
+						if (Object.prototype.toString.call(_status.aiyh_config) !== '[object Object]') {
+							throw new Error('配置格式错误：类型不为[object Object]');
+						}
+
+						for (let i in _status.aiyh_config) {
+							let j;
+							if (i[0] === 'b') j = 'extension_AI优化_' + i.slice(1);
+							else j = 'aiyh_character_skill_id_' + i.slice(1);
+							game.saveConfig(j, _status.aiyh_config[i]);
+						}
+
+						alert('配置已成功载入！即将重启游戏');
+						game.reload();
+					} catch (e) {
+						if (e.message?.includes('类型不为[object Object]')) {
+							alert(e.message);
+						} else {
+							alert('代码语法有错误，请仔细检查（' + e + '）');
+						}
+						throw e;
+					}
+				},
+			});
 		},
 	},
 	tip1: {
@@ -865,69 +800,49 @@ export let config = {
 		name: '编辑武将权重',
 		clear: true,
 		onclick() {
-			let container = ui.create.div('.popup-container.editor');
-			let node = container;
+			ui.window.classList.add('shortcutpaused');
+			ui.window.classList.add('systempaused');
+
 			let map = lib.config.extension_AI优化_qz || {};
-			let str = 'weight = {',
-				len = false;
+			let initialCode = 'weight = {';
+			let len = false;
+
 			for (let i in map) {
 				len = true;
-				str += '\n	"' + i + '": ' + map[i] + ',';
+				initialCode += '\n\t"' + i + '": ' + map[i] + ',';
 			}
+
 			if (!localStorage.getItem('weight_alerted')) {
 				localStorage.setItem('weight_alerted', true);
-				str += '\n	"shen_zhugeliang": 1.75,\n	"liangxing": 1.57,';
+				initialCode += '\n\t"shen_zhugeliang": 1.75,\n\t"liangxing": 1.57,';
 				len = true;
 				alert('检测到您首次使用此功能，系统将自动为您补充两个作者给定的武将权重作为样例参考（点“取消”不会保存此样例）');
 			}
-			str += '\n};';
-			if (len) str += '\n//请按照上面的写法规则进行编辑，或借此复制/粘贴内容以备份/还原配置\n//请务必使用英文标点符号！';
-			node.code = str;
-			ui.window.classList.add('shortcutpaused');
-			ui.window.classList.add('systempaused');
-			let saveInput = function () {
-				let code;
-				if (container.editor) code = container.editor.getValue();
-				else if (container.textarea) code = container.textarea.value;
-				try {
-					var { weight } = security.exec2(code);
-					if (Object.prototype.toString.call(weight) !== '[object Object]') {
-						throw 'typeError';
+
+			initialCode += '\n};';
+			if (len) initialCode += '\n//请按照上面的写法规则进行编辑，或借此复制/粘贴内容以备份/还原配置\n//请务必使用英文标点符号！';
+
+			ui.create.editor({
+				value: initialCode,
+				language: 'javascript',
+				saveInput: (code) => {
+					try {
+						var weight;
+						eval(code);
+						if (Object.prototype.toString.call(weight) !== '[object Object]') {
+							throw new Error('配置格式错误：类型不为[object Object]');
+						}
+						game.saveExtensionConfig('AI优化', 'qz', weight);
+					} catch (e) {
+						if (e.message?.includes('类型不为[object Object]')) {
+							alert(e.message);
+						} else {
+							alert('代码语法有错误，请仔细检查（' + e + '）');
+						}
+						throw e;
 					}
-				} catch (e) {
-					if (e === 'typeError') alert('类型不为[object Object]');
-					else alert('代码语法有错误，请仔细检查（' + e + '）');
-					return;
-				}
-				game.saveExtensionConfig('AI优化', 'qz', weight);
-				ui.window.classList.remove('shortcutpaused');
-				ui.window.classList.remove('systempaused');
-				container.delete();
-				container.code = code;
-				delete window.saveNonameInput;
-			};
-			window.saveNonameInput = saveInput;
-			let editor = ui.create.editor(container, saveInput);
-			if (node.aced) {
-				ui.window.appendChild(node);
-				node.editor.setValue(node.code, 1);
-			} else if (lib.device === 'ios') {
-				ui.window.appendChild(node);
-				if (!node.textarea) {
-					let textarea = document.createElement('textarea');
-					editor.appendChild(textarea);
-					node.textarea = textarea;
-					lib.setScroll(textarea);
-				}
-				node.textarea.value = node.code;
-			} else {
-				if (!window.CodeMirror) {
-					import('../../../game/codemirror.js').then(() => {
-						lib.codeMirrorReady(node, editor);
-					});
-					lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
-				} else lib.codeMirrorReady(node, editor);
-			}
+				},
+			});
 		},
 	},
 	clearQz: {
@@ -979,64 +894,42 @@ export let config = {
 		name: '编辑修改的技能威胁度',
 		clear: true,
 		onclick() {
-			let container = ui.create.div('.popup-container.editor');
-			let node = container;
-			let map = lib.config.extension_AI优化_cf || {};
-			let str = 'threaten = {',
-				len = false;
-			for (let i in map) {
-				len = true;
-				str += '\n	"' + i + '": ' + map[i] + ',';
-			}
-			str += '\n};';
-			if (len) str += '\n//请按照上面的写法规则进行编辑，或借此复制/粘贴内容以备份/还原配置\n//请务必使用英文标点符号！';
-			node.code = str;
 			ui.window.classList.add('shortcutpaused');
 			ui.window.classList.add('systempaused');
-			let saveInput = function () {
-				let code;
-				if (container.editor) code = container.editor.getValue();
-				else if (container.textarea) code = container.textarea.value;
-				try {
-					var threaten = null;
-					eval(code);
-					if (Object.prototype.toString.call(threaten) !== '[object Object]') {
-						throw '类型不符';
-					}
-				} catch (e) {
-					if (e === '类型不符') alert(e);
-					else alert('代码语法有错误，请仔细检查（' + e + '）');
-					return;
-				}
-				game.saveExtensionConfig('AI优化', 'cf', threaten);
-				ui.window.classList.remove('shortcutpaused');
-				ui.window.classList.remove('systempaused');
-				container.delete();
-				container.code = code;
-				delete window.saveNonameInput;
-			};
-			window.saveNonameInput = saveInput;
-			let editor = ui.create.editor(container, saveInput);
-			if (node.aced) {
-				ui.window.appendChild(node);
-				node.editor.setValue(node.code, 1);
-			} else if (lib.device === 'ios') {
-				ui.window.appendChild(node);
-				if (!node.textarea) {
-					let textarea = document.createElement('textarea');
-					editor.appendChild(textarea);
-					node.textarea = textarea;
-					lib.setScroll(textarea);
-				}
-				node.textarea.value = node.code;
-			} else {
-				if (!window.CodeMirror) {
-					import('../../../game/codemirror.js').then(() => {
-						lib.codeMirrorReady(node, editor);
-					});
-					lib.init.css(lib.assetURL + 'layout/default', 'codemirror');
-				} else lib.codeMirrorReady(node, editor);
+
+			let map = lib.config.extension_AI优化_cf || {};
+			let initialCode = 'threaten = {';
+			let len = false;
+
+			for (let i in map) {
+				len = true;
+				initialCode += '\n\t"' + i + '": ' + map[i] + ',';
 			}
+
+			initialCode += '\n};';
+			if (len) initialCode += '\n//请按照上面的写法规则进行编辑，或借此复制/粘贴内容以备份/还原配置\n//请务必使用英文标点符号！';
+
+			ui.create.editor({
+				value: initialCode,
+				language: 'javascript',
+				saveInput: (code) => {
+					try {
+						let threaten = null;
+						eval(code);
+						if (Object.prototype.toString.call(threaten) !== '[object Object]') {
+							throw new Error('配置格式错误：类型不符');
+						}
+						game.saveExtensionConfig('AI优化', 'cf', threaten);
+					} catch (e) {
+						if (e.message?.includes('类型不符')) {
+							alert(e.message);
+						} else {
+							alert('代码语法有错误，请仔细检查（' + e + '）');
+						}
+						throw e;
+					}
+				},
+			});
 		},
 	},
 	clearCf: {

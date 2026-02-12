@@ -1,5 +1,4 @@
 import { lib, game, ui, get, ai, _status } from '../../../noname.js';
-import security from '../../../noname/util/security.js';
 
 /**
  * 获取专项优化技能配置
@@ -67,4 +66,4 @@ ui.joint = function (strings, ...values) {
 	return lines.join('').trim();
 };
 
-export { lib, game, ui, get, ai, _status, security };
+export { lib, game, ui, get, ai, _status };

@@ -8,7 +8,7 @@ export function precontent(config, pack) {
 				.split('.')
 				.slice(1)
 				.map((i) => Number(i)),
-			min = [10, 17],
+			min = [11, 1],
 			status = false;
 		while (noname.length < min.length) {
 			noname.push(0);
@@ -35,14 +35,13 @@ export function precontent(config, pack) {
 				ui.joint`
 					<div style="display: flex; justify-content: center">
 						<span style="color: #00FFFF">更新日期</span>：
-						<span style="color: #FFFF00">2025</span>年
-						<span style="color: #00FFB0">12</span>月
-						<span style="color: rgb(255, 146, 68)">21</span>日
+						<span style="color: #FFFF00">2026</span>年
+						<span style="color: #00FFB0">2</span>月
+						<span style="color: rgb(255, 146, 68)">12</span>日
 					</div>
 				`,
-				'非常感谢@一寒 的勘误，本次更新仅作整理修复',
-				'◆优化【铁索连环】ai',
-				'◆应作者要求，移除［AI限制/模拟玩家］功能',
+				'◆修复【过河拆桥】透视AI效果',
+				'◆适配最新版本',
 				'※本扩展无限期停更，任何人均可二创修复',
 			];
 			let ul = document.createElement('ul');

@@ -168,10 +168,10 @@ export function initAICardOpt() {
 								!target.hasCard((i) => {
 									let val = get.value(i, target),
 										subtypes = get.subtypes(i);
-									return (
-										val > 3 + Math.min(5, target.hp) &&
-										!(val < 8 && target.hp < 2 && !subtypes.includes('equip2') && !subtypes.includes('equip5'))
-									);
+									if (val < 8 && target.hp < 2 && !subtypes.includes('equip2') && !subtypes.includes('equip5')) {
+										return false;
+									}
+									return val > 3 + Math.min(5, target.hp);
 								}, 'e') &&
 								target.countCards('h') * _status.event.getRand('guohe_wuxie') > 1.57)
 						) {
@@ -186,14 +186,28 @@ export function initAICardOpt() {
 						value(card, player) {
 							let max = 0;
 							game.countPlayer((cur) => {
-								max = Math.max(max, lib.card.guohe.ai.result.target(player, cur) * get.attitude(player, cur));
+								const hasPriorityEquip = cur
+									.getEquips('e')
+									.some(
+										(eq) =>
+											get.subtypes(eq).includes('equip3') ||
+											get.subtypes(eq).includes('equip2') ||
+											get.subtypes(eq).includes('equip1')
+									);
+								const hasPriorityHand = cur.getCards('h').some((c) => get.name(c) === 'shan' || get.name(c) === 'tao');
+								const weight = hasPriorityEquip ? 1.5 : hasPriorityHand ? 1.2 : 1;
+								max = Math.max(max, lib.card.guohe.ai.result.target(player, cur) * get.attitude(player, cur) * weight);
 							});
-							if (max <= 0) return 5;
+							if (max <= 0) {
+								return 5;
+							}
 							return 0.42 * max;
 						},
 					},
 					yingbian(card, player, targets, viewer) {
-						if (get.attitude(viewer, player) <= 0) return 0;
+						if (get.attitude(viewer, player) <= 0) {
+							return 0;
+						}
 						if (
 							game.hasPlayer(
 								(current) =>
@@ -209,112 +223,116 @@ export function initAICardOpt() {
 					button(button) {
 						const player = _status.event.player,
 							target = _status.event.target;
-						if (!lib.filter.canBeDiscarded(button.link, player, target)) return 0;
+						if (!lib.filter.canBeDiscarded(button.link, player, target)) {
+							return 0;
+						}
 						let att = get.attitude(player, target),
 							val = get.buttonValue(button),
 							pos = get.position(button.link),
-							name = get.name(button.link);
+							name = get.name(button.link),
+							subtypes = get.subtypes(button.link);
+						if (pos === 'h') {
+							if (name === 'shan' || name === 'tao') {
+								val *= 2.5;
+							}
+							return att > 0 ? -val : val;
+						}
 						if (pos === 'j') {
 							let viewAs = button.link.viewAs;
 							if (viewAs === 'lebu') {
 								let needs = target.needsToDiscard(2);
-								val *= 20 + 0.2 * needs;
+								val *= 1.08 + 0.2 * needs;
 							} else if (viewAs === 'shandian' || viewAs === 'fulei') {
 								val /= 2;
 							}
+							return att > 0 ? -val : val;
 						}
-						if (att > 0) val = -val;
-						if (pos !== 'e') return val;
-						let sub = get.subtypes(button.link);
-						if (sub.includes('equip1')) return (val * Math.min(3.6, target.hp)) / 3;
-						if (sub.includes('equip2')) {
-							if (name === 'baiyin' && pos === 'e' && target.isDamaged()) {
-								let by = 1 - 0.2 * Math.min(5, target.hp);
-								return get.sgn(get.recoverEffect(target, player, player)) * by;
+
+						// 装备区：优先级+马（equip3）> 防具（equip2）> 武器（equip1）> 手牌
+						if (pos === 'e') {
+							if (subtypes.includes('equip3')) {
+								val *= 3.2; // 权重拉满
+							} else if (subtypes.includes('equip2')) {
+								val *= 2.1;
+								if (name === 'baiyin' && target.isDamaged()) {
+									let by = 3 - 0.6 * Math.min(5, target.hp);
+									val = get.sgn(get.recoverEffect(target, player, player)) * by;
+								}
+							} else if (subtypes.includes('equip1')) {
+								val *= 1.8;
+								val = (val * Math.min(3.6, target.hp)) / 3;
+							} else if (subtypes.includes('equip6')) {
+								val *= 1.0;
+							} else if (subtypes.includes('equip4')) {
+								val /= 2;
 							}
-							return 1.57 * val;
+							if (att > 0) val = -val;
+							if (
+								att <= 0 &&
+								(subtypes.includes('equip3') || subtypes.includes('equip4')) &&
+								(player.hasSkill('shouli') || player.hasSkill('psshouli'))
+							) {
+								return 0;
+							}
+							if (
+								subtypes.includes('equip3') &&
+								!game.hasPlayer((cur) => !cur.inRange(target) && get.attitude(cur, target) < 0)
+							) {
+								return 0.4 * val;
+							}
+
+							return val;
 						}
-						if (
-							att <= 0 &&
-							(sub.includes('equip3') || sub.includes('equip4')) &&
-							(player.hasSkill('shouli') || player.hasSkill('psshouli'))
-						) {
-							return 0;
-						}
-						if (sub.includes('equip6')) return val;
-						if (sub.includes('equip4')) return val / 2;
-						if (sub.includes('equip3') && !game.hasPlayer((cur) => !cur.inRange(target) && get.attitude(cur, target) < 0)) {
-							return 0.4 * val;
-						}
-						return val;
+
+						return att > 0 ? -val : val;
 					},
 					result: {
 						target(player, target) {
 							const att = get.attitude(player, target);
 							const hs = target.getDiscardableCards(player, 'h');
-							let es = target.getDiscardableCards(player, 'e');
+							const es = target.getDiscardableCards(player, 'e');
 							const js = target.getDiscardableCards(player, 'j');
-							if (target.hp === 1 && hs.length === 0) {
-								es = es.filter((card) => !get.subtypes(card).includes('equip4'));
-							}
 							if (!hs.length && !es.length && !js.length) return 0;
 							if (att > 0) {
-								if (
-									es.some((card) => {
-										const cardj = card.viewAs ? { name: card.viewAs } : card;
-										return cardj.name === 'baiyin';
-									})
-								) {
-									if (target.maxHp > target.hp && target.hp === 1) return 3;
-								}
-								if (
-									es.some((card) => {
-										const cardj = card.viewAs ? { name: card.viewAs } : card;
-										return get.value(cardj, target) <= 0 && cardj.name !== 'baiyin';
-									})
-								)
-									return 3;
-								if (
-									js.some((card) => {
-										var cardj = card.viewAs ? { name: card.viewAs } : card;
-										return cardj.name === 'xumou_jsrg'
-											? true
-											: cardj.name === 'lebu' && get.effect(target, cardj, target, player) < 0;
-									})
-								)
-									return 10;
-								if (
+								const hasHarmful =
 									js.some((card) => {
 										const cardj = card.viewAs ? { name: card.viewAs } : card;
-										return cardj.name === 'xumou_jsrg' ? false : get.effect(target, cardj, target, player) < 0;
-									})
-								)
-									return 3;
+										return cardj.name !== 'xumou_jsrg' && get.effect(target, cardj, target, player) < 0;
+									}) || es.some((card) => get.value(card, target) < 0);
+
+								if (hasHarmful) return 3;
 								if (
 									target.isDamaged() &&
 									es.some((card) => card.name === 'baiyin') &&
-									get.recoverEffect(target, player, player) > 0
+									get.recoverEffect(target, player, player) > 0 &&
+									target.hp === 1 &&
+									!target.hujia
 								) {
-									if (target.hp === 1 && !target.hujia) return 1.6;
+									return 1.6;
 								}
-								if (es.some((card) => get.value(card, target) < 0)) return 1;
 								return -1.5;
 							} else {
+								const hasPriorityEquip = es.some(
+									(eq) =>
+										get.subtypes(eq).includes('equip3') ||
+										get.subtypes(eq).includes('equip2') ||
+										get.subtypes(eq).includes('equip1')
+								);
 								const noh = hs.length === 0 || target.hasSkillTag('noh');
 								const noe = es.length === 0 || target.hasSkillTag('noe');
-								const noe2 = noe || !es.some((card) => get.value(card, target) > 0);
+								const noe2 = noe || !hasPriorityEquip;
 								const noj =
 									js.length === 0 ||
 									!js.some((card) => {
 										const cardj = card.viewAs ? { name: card.viewAs } : card;
 										return cardj.name === 'xumou_jsrg' || get.effect(target, cardj, target, player) < 0;
 									});
+
 								if (noh && noe2 && noj) return 1.5;
 								return -1.5;
 							}
 						},
 					},
-					tag: { loseCard: 1, discard: 1 },
 				},
 				// 诸葛连弩
 				zhuge: {
@@ -445,8 +463,8 @@ export function initAICardOpt() {
 									return get.suit(card) === targetSuit
 										? 3 + (get.value(card) || 1)
 										: _status.event.getRand() < 0.5
-										? Math.random() + 1
-										: get.value(card) || 1;
+											? Math.random() + 1
+											: get.value(card) || 1;
 								})
 								.forResultCards();
 						}
@@ -551,11 +569,13 @@ export function initAICardOpt() {
 					},
 					basic: {
 						order(card, i) {
-							if (game.countPlayer(
-								(current) =>
-									!(current.hasSkillTag('noLink') || current.hasSkillTag('nodamage')) &&
-									!(current.hasSkillTag('nofire') && current.hasSkillTag('nothunder'))
-							) < 2) {
+							if (
+								game.countPlayer(
+									(current) =>
+										!(current.hasSkillTag('noLink') || current.hasSkillTag('nodamage')) &&
+										!(current.hasSkillTag('nofire') && current.hasSkillTag('nothunder'))
+								) < 2
+							) {
 								return 0;
 							}
 							const player = get.event().player;
@@ -1021,6 +1041,37 @@ export function initAICardOpt() {
 				cardName: get.translation(cardId) || cardId,
 			}));
 			console.log('[AI出牌逻辑] 卡牌优化加载完成：', loadedCards);
+		},
+	};
+	lib.skill._aiyh_cardAiOpt_guohe = {
+		//辅助AI判断敌方目标（只限过河拆桥）
+		trigger: {
+			player: 'chooseToUse',
+		},
+		filter(event, player) {
+			return event.card?.name === 'guohe' && get.mode() === 'identity' && player !== game.me;
+		},
+		silent: true,
+		charlotte: true,
+		superCharlotte: true,
+		async content(event, trigger, player) {
+			game.countPlayer((current) => current.setIdentity());
+			player.storage.guohe_viewhand = game.players;
+			player
+				.when('useCardEnd')
+				.filter((evt) => evt.card?.name === 'guohe')
+				.step(async () => {
+					delete player.storage.guohe_viewhand;
+				});
+		},
+		ai: {
+			viewHandcard: true,
+			skillTagFilter(player, tag, arg) {
+				if (player.storage.guohe_viewhand?.includes(arg)) {
+					return get.attitude(player, arg) <= 0;
+				}
+				return false;
+			},
 		},
 	};
 }
